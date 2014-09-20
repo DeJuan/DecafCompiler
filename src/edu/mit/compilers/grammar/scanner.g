@@ -17,7 +17,20 @@ options
 
 tokens 
 {
+  "boolean";
+  "break";
+  "callout";
   "class";
+  "continue";
+  "else";
+  "false";
+  "for";
+  "if";
+  "int";
+  "return";
+  "true";
+  "void";
+  "while";
 }
 
 // Selectively turns on debug tracing mode.
@@ -42,21 +55,54 @@ tokens
     }
   }
 }
+LPAREN : "(";
+RPAREN : ")";
 
-LCURLY options { paraphrase = "{"; } : "{";
-RCURLY options { paraphrase = "}"; } : "}";
+LCURLY : "{";
+RCURLY : "}";
+
+LBRACKET : "[";
+RBRACKET : "]";
+
+ARITH_OP : "+" | "-" | "*" | "/" | "%";
+ASSIGN_OP : "=" | "+=" | "-=";
+REL_OP : "<" | ">" | "<=" | ">=";
+EQ_OP : "==" | "!=";
+COND_OP : "&&" | "||";
+
+SEMICOLON : ";";
+COMMA 	  : ",";
+PERIOD    : ".";
+COLON 	  : ":";
+QUESTION  : "?";
 
 ID options { paraphrase = "an identifier"; } : 
-  ('a'..'z' | 'A'..'Z')+;
+  ALPHA (ALPHA_NUM)*;
 
 // Note that here, the {} syntax allows you to literally command the lexer
 // to skip mark this token as skipped, or to advance to the next line
 // by directly adding Java commands.
-WS_ : (' ' | '\n' {newline();}) {_ttype = Token.SKIP; };
-SL_COMMENT : "//" (~'\n')* '\n' {_ttype = Token.SKIP; newline (); };
+WS_ : (' ' | '\t' | ('\r' | "\r\n" | '\n' {newline();})) {_ttype = Token.SKIP; };
+SL_COMMENT : "//" (~'\n')* '\n' {_ttype = Token.SKIP; newline(); };
 
-CHAR : '\'' (ESC|~'\'') '\'';
-STRING : '"' (ESC|~'"')* '"';
+CHAR_LITERAL : '\'' CHAR '\'';
+STRING_LITERAL : '"' (CHAR)* '"';
+INT_LITERAL : DIGIT (DIGIT)* | "0x" HEXDIGIT (HEXDIGIT)*;
 
 protected
-ESC :  '\\' ('n'|'"');
+ESC :  '\\' ( 'n' | '"' | 't' | '\'' | '\\' );
+
+protected
+DIGIT : '0'..'9';
+
+protected
+HEXDIGIT : DIGIT | 'a'..'f' | 'A'..'F';
+
+protected
+CHAR : ESC | ' '..'!' | '#'..'&' | '('..'[' | ']'..'~';
+
+protected
+ALPHA : 'a'..'z' | 'A'..'Z' | '_';
+
+protected
+ALPHA_NUM : ALPHA | DIGIT;
