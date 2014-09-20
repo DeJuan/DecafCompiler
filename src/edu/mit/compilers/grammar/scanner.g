@@ -64,15 +64,16 @@ RCURLY : "}";
 LBRACKET : "[";
 RBRACKET : "]";
 
+ASSIGN_OP_PLUS : "+=";
+ASSIGN_OP_MINUS : "-=";
 ARITH_OP : "+" | "-" | "*" | "/" | "%";
-ASSIGN_OP : "=" | "+=" | "-=";
+ASSIGN_OP : "=";
 REL_OP : "<" | ">" | "<=" | ">=";
 EQ_OP : "==" | "!=";
 COND_OP : "&&" | "||";
 
 SEMICOLON : ";";
 COMMA 	  : ",";
-PERIOD    : ".";
 COLON 	  : ":";
 QUESTION  : "?";
 
