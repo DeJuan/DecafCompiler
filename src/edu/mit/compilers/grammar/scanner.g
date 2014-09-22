@@ -58,34 +58,41 @@ tokens
 }
 
 // Symbols are added on a need basis
-LPAREN : "(";
-RPAREN : ")";
+LPAREN     : "(";
+RPAREN     : ")";
 
-LCURLY : "{";
-RCURLY : "}";
+LCURLY     : "{";
+RCURLY     : "}";
 
-LBRACKET : "[";
-RBRACKET : "]";
+LBRACKET   : "[";
+RBRACKET   : "]";
 
-ASSIGN_OP_PLUS : "+=";
-ASSIGN_OP_MINUS : "-=";
-ASSIGN_OP : "=";
-REL_OP : "<" | ">" | "<=" | ">=";
-EQ_OP : "==" | "!=";
-COND_OP : "&&" | "||";
+ASSIGN_PLUS  : "+=";
+ASSIGN_MINUS : "-=";
+ASSIGN     : "=";
 
-SEMICOLON : ";";
-COMMA 	  : ",";
-COLON 	  : ":";
-QUESTION  : "?";
-AT        : "@";
-BANG	  : "!";
+PLUS 	   : "+";
+MINUS      : "-";
+TIMES      : "*";
+DIVIDE     : "/";
+MOD        : "%";
 
-PLUS 	  : "+";
-MINUS     : "-";
-TIMES     : "*";
-DIVIDE    : "/";
-MOD       : "%";
+LT         : "<";
+GT         : ">";
+LTE        : "<=";
+GTE        : ">=";
+EQUALS     : "==";
+NOT_EQUALS : "!=";
+
+AND        : "&&";
+OR         : "||";
+BANG	   : "!";
+
+SEMICOLON  : ";";
+COMMA 	   : ",";
+COLON 	   : ":";
+QUESTION   : "?";
+AT         : "@";
 
 ID options { paraphrase = "an identifier"; } : 
   ALPHA (ALPHA_NUM)*;
