@@ -60,4 +60,35 @@ options
   }
 }
 
-program: TK_class ID LCURLY RCURLY EOF;
+program: (callout_decl)* (field_decl)* (method_decl)* EOF;
+callout_decl: TK_callout ID SEMICOLON;
+field_decl: type (ID | ID LBRACKET INT_LITERAL RBRACKET) (COMMA (ID | ID LBRACKET INT_LITERAL RBRACKET))* SEMICOLON;
+method_decl: (type | TK_void) ID LPAREN ((type ID) (COMMA type ID)*)? RPAREN block;
+block: LCURLY (field_decl)* (statement)* RCURLY;
+type: TK_int | TK_boolean;
+statement: location assign_op expr SEMICOLON
+		 | method_call SEMICOLON
+		 | TK_if LPAREN expr RPAREN block (TK_else block)?
+		 | TK_for LPAREN ID ASSIGN_OP expr COMMA expr RPAREN block
+		 | TK_while LPAREN expr RPAREN (COLON INT_LITERAL)? block
+		 | TK_return (expr)? SEMICOLON
+		 | TK_break SEMICOLON
+		 | TK_continue SEMICOLON;
+assign_op: ASSIGN_OP | ASSIGN_OP_MINUS | ASSIGN_OP_PLUS;
+method_call: method_name LPAREN (callout_arg (COMMA callout_arg)*)? RPAREN;
+method_name: ID;
+location: ID | ID LBRACKET expr RBRACKET;
+expr: bin_op_expr (QUESTION expr COLON expr)?;
+bin_op_expr: base_expr (bin_op bin_op_expr)?; 
+base_expr: location
+	     | method_call
+	     | literal
+	     | AT ID
+	     | MINUS expr
+	     | BANG expr
+	     | LPAREN expr RPAREN;
+callout_arg: expr | STRING_LITERAL;
+bin_op: arith_op | REL_OP | EQ_OP | COND_OP;
+arith_op: PLUS | MINUS | TIMES | DIVIDE | MOD;
+literal: INT_LITERAL | CHAR_LITERAL | bool_literal;
+bool_literal: TK_true | TK_false;

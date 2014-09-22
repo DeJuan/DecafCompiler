@@ -15,6 +15,7 @@ options
   k = 2;
 }
 
+// reserved words can be designated as tokens to save some typing.
 tokens 
 {
   "boolean";
@@ -55,6 +56,8 @@ tokens
     }
   }
 }
+
+// Symbols are added on a need basis
 LPAREN : "(";
 RPAREN : ")";
 
@@ -66,7 +69,6 @@ RBRACKET : "]";
 
 ASSIGN_OP_PLUS : "+=";
 ASSIGN_OP_MINUS : "-=";
-ARITH_OP : "+" | "-" | "*" | "/" | "%";
 ASSIGN_OP : "=";
 REL_OP : "<" | ">" | "<=" | ">=";
 EQ_OP : "==" | "!=";
@@ -76,6 +78,14 @@ SEMICOLON : ";";
 COMMA 	  : ",";
 COLON 	  : ":";
 QUESTION  : "?";
+AT        : "@";
+BANG	  : "!";
+
+PLUS 	  : "+";
+MINUS     : "-";
+TIMES     : "*";
+DIVIDE    : "/";
+MOD       : "%";
 
 ID options { paraphrase = "an identifier"; } : 
   ALPHA (ALPHA_NUM)*;
