@@ -1,0 +1,5 @@
+*.sw*
+classes
+autogen
+dist
+.DS_Store
