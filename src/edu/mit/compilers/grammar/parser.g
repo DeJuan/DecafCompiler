@@ -87,8 +87,8 @@ location: ID (LBRACKET expr RBRACKET)?;
 
 // This section is the only one that needed "hacking" to remove the 
 // left recursion... for now.
-expr: bin_op_expr (QUESTION expr COLON expr)?;
-bin_op_expr: base_expr (bin_op bin_op_expr)?; 
+expr: bin_op_expr ( options {greedy=true;}: QUESTION expr COLON expr)?;
+bin_op_expr: base_expr ( options {greedy=true;}: bin_op bin_op_expr)?; 
 base_expr: location
 	     | method_call
 	     | literal
