@@ -64,8 +64,8 @@ options
 // Naming convention follows the spec page very closely.
 // CAPITAL CASE = tokenized by scanner.
 
-program: (callout_decl)* (field_decl)* (method_decl)* EOF;
-callout_decl: TK_callout ID SEMICOLON;
+program: (callout_decl)* (field_decl)* (method_decl)* EOF!;
+callout_decl: TK_callout^ ID SEMICOLON!;
 field_decl: type (ID | ID LBRACKET INT_LITERAL RBRACKET) (COMMA (ID | ID LBRACKET INT_LITERAL RBRACKET))* SEMICOLON;
 method_decl: (type | TK_void) ID LPAREN ((type ID) (COMMA type ID)*)? RPAREN block;
 block: LCURLY (field_decl)* (statement)* RCURLY;
@@ -87,8 +87,14 @@ location: ID (LBRACKET expr RBRACKET)?;
 
 // This section is the only one that needed "hacking" to remove the 
 // left recursion... for now.
-expr: bin_op_expr ( options {greedy=true;}: QUESTION expr COLON expr)?;
-bin_op_expr: base_expr ( options {greedy=true;}: bin_op bin_op_expr)?; 
+expr:    or_exp  (options {greedy=true;}:QUESTION^ expr COLON  or_exp)* ;
+or_exp:  and_exp (options {greedy=true;}:OR^ and_exp)*;
+and_exp: eq_exp  (options {greedy=true;}:AND^ eq_exp)*;
+eq_exp:  rel_exp (options {greedy=true;}:eq_op rel_exp)*;
+rel_exp: add_exp (options {greedy=true;}:rel_op add_exp)*;
+add_exp: mul_exp (options {greedy=true;}:(PLUS|MINUS) mul_exp)*;
+mul_exp: base_expr (options {greedy=true;}:(TIMES|DIVIDE|MOD) base_expr)*;
+
 base_expr: location
 	     | method_call
 	     | literal
