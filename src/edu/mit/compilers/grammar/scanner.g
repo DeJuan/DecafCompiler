@@ -32,6 +32,10 @@ tokens
   "true";
   "void";
   "while";
+  FIELD_DECL;
+  METHOD_CALL;
+  METHOD_DECL;
+  PROGRAM;
 }
 
 // Selectively turns on debug tracing mode.
