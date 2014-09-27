@@ -1,12 +1,31 @@
 package edu.mit.compilers;
 
 import java.io.*;
+
 import antlr.Token;
+import antlr.collections.AST;
 import edu.mit.compilers.grammar.*;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
 class Main {
+  public static void printAst(AST node, int indent){
+	  for(int ii = 0;ii<indent;ii++){
+		  System.out.print("  ");
+	  }
+	  System.out.println(node.getText());
+	  int nChildren =node.getNumberOfChildren();
+	  if(nChildren==0){
+		  return;
+	  }
+	  
+	  AST child = node.getFirstChild();
+	  
+	  for(int ii = 0; ii<nChildren; ii++){
+		  printAst(child, indent+1);
+		  child = child.getNextSibling();
+	  }
+  }
   public static void main(String[] args) {
     try {
       CLI.parse(args, new String[0]);
@@ -63,6 +82,8 @@ class Main {
         if(parser.getError()) {
           System.exit(1);
         }
+        //System.out.println(parser.getAST().toStringTree());
+//        printAst(parser.getAST(),0);
       }
     } catch(Exception e) {
       // print the error:
