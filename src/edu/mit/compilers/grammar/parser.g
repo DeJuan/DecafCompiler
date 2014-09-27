@@ -64,51 +64,44 @@ options
 // Naming convention follows the spec page very closely.
 // CAPITAL CASE = tokenized by scanner.
 
-program: (callout_decl)* (field_decl)* (method_decl)* EOF!
-{#program = #([PROGRAM,"program"],#program);};
-
+program: (callout_decl)* (field_decl)* (method_decl)* EOF!;
 callout_decl: TK_callout^ ID SEMICOLON!;
-field_decl: type (ID | ID LBRACKET! INT_LITERAL RBRACKET!) (COMMA! (ID | ID LBRACKET! INT_LITERAL RBRACKET!))* SEMICOLON!
-{#field_decl = #([FIELD_DECL,"field_decl"],#field_decl);};
-method_decl: (type | TK_void) ID LPAREN! ((type ID) (COMMA! type ID)*)? RPAREN! block
-{#method_decl = #([METHOD_DECL,"method_decl"],#method_decl);};
-
-block: LCURLY! (field_decl)* (statement)* RCURLY!;
+field_decl: type (ID | ID LBRACKET INT_LITERAL RBRACKET) (COMMA (ID | ID LBRACKET INT_LITERAL RBRACKET))* SEMICOLON;
+method_decl: (type | TK_void) ID LPAREN ((type ID) (COMMA type ID)*)? RPAREN block;
+block: LCURLY (field_decl)* (statement)* RCURLY;
 type: TK_int | TK_boolean;
 
-statement: location (ASSIGN^ | ASSIGN_MINUS^ | ASSIGN_PLUS^) expr SEMICOLON!
-     | method_call SEMICOLON!
-		 | TK_if^ LPAREN! expr RPAREN! block (TK_else block)?
-		 | TK_for^ LPAREN! ID ASSIGN expr COMMA! expr RPAREN! block
-		 | TK_while^ LPAREN! expr RPAREN! (COLON! INT_LITERAL)? block
-		 | TK_return^ (expr)? SEMICOLON!
-		 | TK_break^ SEMICOLON!
-		 | TK_continue^ SEMICOLON!;
-
+statement: location assign_op expr SEMICOLON
+		 | method_call SEMICOLON
+		 | TK_if LPAREN expr RPAREN block (TK_else block)?
+		 | TK_for LPAREN ID ASSIGN expr COMMA expr RPAREN block
+		 | TK_while LPAREN expr RPAREN (COLON INT_LITERAL)? block
+		 | TK_return (expr)? SEMICOLON
+		 | TK_break SEMICOLON
+		 | TK_continue SEMICOLON;
+		 
 assign_op: ASSIGN | ASSIGN_MINUS | ASSIGN_PLUS;
-method_call: method_name LPAREN! (callout_arg (COMMA! callout_arg)*)? RPAREN!
-{#method_call = #([METHOD_CALL,"method_call"],#method_call);};
-
+method_call: method_name LPAREN (callout_arg (COMMA callout_arg)*)? RPAREN;
 method_name: ID;
-location: ID | (ID^ LBRACKET! expr RBRACKET!);
+location: ID (LBRACKET expr RBRACKET)?;
 
 // This section is the only one that needed "hacking" to remove the 
 // left recursion... for now.
-expr:    or_exp  (options {greedy=true;}:QUESTION^ expr COLON! or_exp)* ;
+expr:    or_exp  (options {greedy=true;}:QUESTION^ expr COLON  or_exp)* ;
 or_exp:  and_exp (options {greedy=true;}:OR^ and_exp)*;
 and_exp: eq_exp  (options {greedy=true;}:AND^ eq_exp)*;
-eq_exp:  rel_exp (options {greedy=true;}:(EQUALS^ | NOT_EQUALS^) rel_exp)*;
-rel_exp: add_exp (options {greedy=true;}:(LT^ | GT^ | LTE^ | GTE^) add_exp)*;
-add_exp: mul_exp (options {greedy=true;}:(PLUS^|MINUS^) mul_exp)*;
-mul_exp: base_expr (options {greedy=true;}:(TIMES^|DIVIDE^|MOD^) base_expr)*;
+eq_exp:  rel_exp (options {greedy=true;}:eq_op rel_exp)*;
+rel_exp: add_exp (options {greedy=true;}:rel_op add_exp)*;
+add_exp: mul_exp (options {greedy=true;}:(PLUS|MINUS) mul_exp)*;
+mul_exp: base_expr (options {greedy=true;}:(TIMES|DIVIDE|MOD) base_expr)*;
 
 base_expr: location
 	     | method_call
 	     | literal
-	     | AT^ ID
-	     | MINUS^ expr
-	     | BANG^ expr
-	     | LPAREN! expr RPAREN!;
+	     | AT ID
+	     | MINUS expr
+	     | BANG expr
+	     | LPAREN expr RPAREN;
 
 callout_arg: expr | STRING_LITERAL;
 
