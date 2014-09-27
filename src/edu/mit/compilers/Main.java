@@ -90,7 +90,7 @@ class Main {
           System.exit(1);
         }
         //System.out.println(parser.getAST().toStringTree());
-        printAst(parser.getAST(),0);
+//        printAst(parser.getAST(),0);
       }
     } catch(Exception e) {
       // print the error:
