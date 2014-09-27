@@ -2,18 +2,20 @@ package edu.mit.compilers;
 
 import java.io.*;
 
+import antlr.ASTFactory;
 import antlr.Token;
 import antlr.collections.AST;
 import edu.mit.compilers.grammar.*;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
+import edu.mit.compilers.ast.CommonASTWithLines;
 
 class Main {
   public static void printAst(AST node, int indent){
 	  for(int ii = 0;ii<indent;ii++){
 		  System.out.print("  ");
 	  }
-	  System.out.println(node.getText());
+	  System.out.println(node.getText()+" " + node.getLine() + " " + node.getColumn());
 	  int nChildren =node.getNumberOfChildren();
 	  if(nChildren==0){
 		  return;
@@ -78,12 +80,17 @@ class Main {
             new DecafScanner(new DataInputStream(inputStream));
         DecafParser parser = new DecafParser(scanner);
         parser.setTrace(CLI.debug);
+        
+        ASTFactory factory = new ASTFactory();                         
+        factory.setASTNodeClass(CommonASTWithLines.class);
+        parser.setASTFactory(factory);
+        
         parser.program();
         if(parser.getError()) {
           System.exit(1);
         }
         //System.out.println(parser.getAST().toStringTree());
-//        printAst(parser.getAST(),0);
+        printAst(parser.getAST(),0);
       }
     } catch(Exception e) {
       // print the error:
