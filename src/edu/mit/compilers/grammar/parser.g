@@ -1,6 +1,5 @@
 header {
 package edu.mit.compilers.grammar;
-
 }
 
 options
