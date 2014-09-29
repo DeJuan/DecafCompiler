@@ -9,7 +9,6 @@ import edu.mit.compilers.ir.IR_Node;
  * descriptors that inherit from it, but since many descriptors don't need all of these fields, the fields not needed
  * will throw UnsupportedOperationExceptions for each unused method if it is called.
  * 
- * IR methods have yet to be implemented; these will be added after Monday. 
  * @author DeJuan
  *
  */

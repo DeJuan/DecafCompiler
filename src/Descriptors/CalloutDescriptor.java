@@ -22,19 +22,19 @@ public class CalloutDescriptor extends Descriptor{
 	@Override
 	public int getLength(){
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 
 	@Override
 	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 
 	@Override
 	public String getReturnType() {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 
 	@Override
@@ -45,13 +45,13 @@ public class CalloutDescriptor extends Descriptor{
 	@Override
 	public int getValue() throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 	
 	@Override
 	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 	
 	public String getName(){
@@ -61,19 +61,19 @@ public class CalloutDescriptor extends Descriptor{
 	@Override
 	public void setValue(int index, int newValue) throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();		
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");		
 	}
 	
 	@Override
 	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 	
 	@Override
 	public IR_Node getIR() throws UnsupportedOperationException {
 		System.err.println("A CalloutDescriptor does not locally store its IR node.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("A CalloutDescriptor does not locally store its IR node.");
 	}
 	
 }

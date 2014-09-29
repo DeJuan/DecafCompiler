@@ -26,8 +26,8 @@ public class MethodDescriptor extends Descriptor {
 	 * If the supplied type string does not match a valid type, a runtime exception is thrown. 
 	 * 
 	 * @param type : A string indicating return type of method
-	 * @param argTypes: ArrayList<Boolean> that indicates whether each arg is a bool or int
-	 * @param methodNode: an IR_Node representation of the method. 
+	 * @param argTypes : ArrayList<Boolean> that indicates whether each arg is a bool or int
+	 * @param methodNode : an IR_Node representation of the method. 
 	 * @throws Exception
 	 */
 	public MethodDescriptor(String type, ArrayList<Boolean> argTypes, IR_Node methodNode) throws Exception
@@ -53,8 +53,7 @@ public class MethodDescriptor extends Descriptor {
 		
 		default:
 		System.err.print("Invalid string  supplied for method type.");
-			Exception RuntimeException = null;
-			throw RuntimeException;
+			throw new RuntimeException("Invalid string  supplied for method type.");
 		}
 		
 		
@@ -75,38 +74,38 @@ public class MethodDescriptor extends Descriptor {
 	public Type getType() throws UnsupportedOperationException {
 		System.err.println("Methods do not have a type, but they have a returnType.");
 		System.err.println("These are seperate types because they are based on different enums.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Methods do not have a type, but they have a returnType. Use getReturnType().");
 	}
 
 
 	@Override
 	public int getLength() throws UnsupportedOperationException {
 		System.err.println("Methods do not have a length in that sense.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Methods do not have a length for this operation.");
 	}
 
 	@Override
 	public int getValue() throws UnsupportedOperationException {
 		System.err.println("Methods do not have a value field like an integer.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Methods do not have a value field like an integer.");
 	}
 
 	@Override
 	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("Methods do not have a truth value.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Methods do not have a truth value.");
 	}
 
 	@Override
 	public void setValue(int index, int newValue) throws UnsupportedOperationException {
 		System.err.println("Methods do not have a value that can be set.");
-		throw new UnsupportedOperationException();	
+		throw new UnsupportedOperationException("Methods do not have a value that can be set.");	
 	}
 
 	@Override
 	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
 		System.err.println("Methods do not have a value that can be set.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Methods do not have a value that can be set.");
 	}
 
 	@Override

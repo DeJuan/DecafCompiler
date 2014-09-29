@@ -35,18 +35,28 @@ public class IntArrayDescriptor extends Descriptor{
 	 * This is the second constructor for an IntArrayDescriptor.
 	 * This constructor assumes that the array has been declared, but not initialized; only the length of the array has been finalized.
 	 * It takes in this desired length as its lone parameter, and zero-initializes the array.
+	 * If the length is non-positive, it throws a RuntimeException.
 	 * 
 	 * This is the constructor you should call for something like int[10] x; .
 	 * 
 	 * @param length : int representing how long this array should be
+	 * @throws RuntimeException if given non-positive length
 	 */
-	public IntArrayDescriptor(int length)
+	public IntArrayDescriptor(int length) throws RuntimeException
 	{
-		this.arrayLength = length;
-		this.type = Type.INT_ARRAY;
-		for (int i = 0; i < length; i++) //For each argument in the integer array
-		{
-			memberVariables.add(new IntDescriptor(0)); //Create a new integer descriptor initialized to 0 and put it in the local array list
+		try{
+			assert length > 0;
+			this.arrayLength = length;
+			this.type = Type.INT_ARRAY;
+			for (int i = 0; i < length; i++){ //For each argument in the integer array
+				memberVariables.add(new IntDescriptor(0)); //Create a new integer descriptor initialized to 0 and put it in the local array list
+			}
+		}
+		catch(AssertionError a){
+			System.err.println("You just tried to initialize an int array descriptor with a negative length.");
+			System.err.println("This is a critical error and one I cannot correct automatically.");
+			throw new RuntimeException("You have tried to initialize an int array descriptor with a non-positive length.");
+			
 		}
 	}
 	
@@ -58,13 +68,13 @@ public class IntArrayDescriptor extends Descriptor{
 	@Override
 	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("An integer array does not take arguments like a method.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An integer array does not take arguments like a method.");
 	}
 
 	@Override
 	public String getReturnType() throws UnsupportedOperationException {
 		System.err.println("An integer array does not have a return type.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An integer array does not have a return type.");
 	}
 
 	@Override
@@ -75,7 +85,7 @@ public class IntArrayDescriptor extends Descriptor{
 	@Override
 	public int getValue() throws UnsupportedOperationException {
 		System.err.println("You cannot getValue on an int array as a whole without an index. Specify an index.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("You cannot getValue on an int array as a whole without an index. Specify an index.");
 	}
 	
 	public int getValue(int index) throws UnsupportedOperationException{	
@@ -87,7 +97,7 @@ public class IntArrayDescriptor extends Descriptor{
 		catch(AssertionError a){
 			System.err.println("You are attempting to access an invalid array index, which was " + index + ".");
 			System.err.println("The size of the array you tried to access is " + arrayLength + ".");
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Invalid index passed into access function. Action aborted.");
 		}
 		
 	}
@@ -95,7 +105,7 @@ public class IntArrayDescriptor extends Descriptor{
 	@Override
 	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("An integer array does not have a truth value, nor is one contained within.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An integer array does not have a truth value, nor is one contained within.");
 	}
 	
 	public void setValue(int index, int newValue) throws UnsupportedOperationException{ //Arrays are mutable, so we need this. 
@@ -107,21 +117,21 @@ public class IntArrayDescriptor extends Descriptor{
 		catch(AssertionError a){ //Catch if the index is invalid
 			System.err.println("You are attempting to change an invalid array index, which is " + index + ".");
 			System.err.println("The size of the array you tried to change is " + arrayLength + ".");
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("Invalid index passed into access function. Action aborted.");
 		}
 	}
 
 	@Override
 	public void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException {
 		System.err.println("You may not override an integer array value with a boolean.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("You may not override an integer array value with a boolean.");
 		
 	}
 
 	@Override
 	public IR_Node getIR() throws UnsupportedOperationException {
 		System.err.println("A integer array does not keep a record of its IR_Node.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("A integer array does not keep a record of its IR_Node.");
 	}
 	
 
