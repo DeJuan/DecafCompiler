@@ -2,12 +2,10 @@ package edu.mit.compilers.ir;
 
 public class IR_STA extends IR_Node {
     private IR_Var array;
-    private IR_Node index_expr;
     private IR_Node value;
     
     public IR_STA(IR_Var array, IR_Node index_expr, IR_Node value) {
         this.array = array;
-        this.index_expr = index_expr;
         this.value = value;
     }
     
@@ -16,7 +14,7 @@ public class IR_STA extends IR_Node {
     }
     
     public IR_Node getIndexExpr() {
-        return index_expr;
+        return array.getIndex();
     }
     
     public IR_Node getValue() {
@@ -38,7 +36,7 @@ public class IR_STA extends IR_Node {
     @Override
     public boolean isValid() {
         // TODO Auto-generated method stub
-        return index_expr.evaluateType() == Type.INT 
+        return array.getIndex().evaluateType() == Type.INT 
                 && ((array.evaluateType() == Type.INTARR && value.evaluateType() == Type.INT) 
                         || (array.evaluateType() == Type.BOOLARR && value.evaluateType() == Type.BOOL));
     }

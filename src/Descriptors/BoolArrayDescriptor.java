@@ -71,7 +71,7 @@ public class BoolArrayDescriptor extends Descriptor{
 	}
 
 	@Override
-	public Type getType() throws InvalidActivityException {
+	public Type getType() {
 		return type;
 	}
 

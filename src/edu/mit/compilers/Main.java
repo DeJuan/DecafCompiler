@@ -1,14 +1,19 @@
 package edu.mit.compilers;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
 
 import antlr.ASTFactory;
 import antlr.Token;
 import antlr.collections.AST;
-import edu.mit.compilers.grammar.*;
+import edu.mit.compilers.ast.CommonASTWithLines;
+import edu.mit.compilers.grammar.DecafParser;
+import edu.mit.compilers.grammar.DecafParserTokenTypes;
+import edu.mit.compilers.grammar.DecafScanner;
+import edu.mit.compilers.grammar.DecafScannerTokenTypes;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
-import edu.mit.compilers.ast.CommonASTWithLines;
 
 class Main {
   public static void printAst(AST node, int indent){

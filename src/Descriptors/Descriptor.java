@@ -83,7 +83,7 @@ public abstract class Descriptor {
 	 * @return Type instance which describes what kind of descriptor is being used.
 	 * @throws InvalidActivityException
 	 */
-	public abstract Type getType() throws InvalidActivityException;
+	public abstract Type getType();
 	
 	/**
 	 * This is used for int and int array descriptors. It allows you to get the value

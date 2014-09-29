@@ -34,29 +34,16 @@ public class MethodDescriptor extends Descriptor {
 	{
 		//TODO NOT SURE IF THIS IS THE BEST WAY TO HANDLE THIS, ASK GROUP
 		this.returnType = type;
-		switch(type)
-		{
-		
-		case "bool": //Fall though, just here for safety
-		case "boolean":
-		this.type = ReturnType.BOOL;
-		break;
-		
-		case "int":
-		this.type = ReturnType.INT;
-		break;
-		
-		case "void":
-		this.type = ReturnType.VOID;
-		break;
-		
-		default:
-		System.err.print("Invalid string  supplied for method type.");
-			Exception RuntimeException = null;
-			throw RuntimeException;
-		}
-		
-		
+		if (returnType.equals("bool") || returnType.equals("boolean")) {
+		    this.type = ReturnType.BOOL;
+		} else if (returnType.equals("int")) {
+		    this.type = ReturnType.INT;
+		} else if (returnType.equals("void")) {
+		    this.type = ReturnType.VOID;
+		} else {
+		    System.err.print("Invalid string  supplied for method type.");
+		    throw new RuntimeException();
+		}	
 		this.argumentTypes = argTypes;
 	}
 	
@@ -71,10 +58,8 @@ public class MethodDescriptor extends Descriptor {
 	}
 
 	@Override
-	public Type getType() throws InvalidActivityException {
-		System.err.println("Methods do not have a type, but they have a returnType.");
-		System.err.println("These are seperate types because they are based on different enums.");
-		throw new InvalidActivityException();
+	public Type getType() {
+		return Type.METHOD;
 	}
 
 
