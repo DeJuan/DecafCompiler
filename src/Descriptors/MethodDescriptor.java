@@ -11,9 +11,9 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 public class MethodDescriptor extends Descriptor {
 
 	private String methodType;
-	private String returnType;
 	private ArrayList<Boolean> argumentTypes;
-	private ReturnType type;
+	private ReturnType returnType;
+	private Type type;
 	private IR_Node methodIRNode;
 	
 	
@@ -30,25 +30,25 @@ public class MethodDescriptor extends Descriptor {
 	 * @param methodNode : an IR_Node representation of the method. 
 	 * @throws Exception
 	 */
-	public MethodDescriptor(String type, ArrayList<Boolean> argTypes, IR_Node methodNode) throws Exception
+	public MethodDescriptor(String retType, ArrayList<Boolean> argTypes, IR_Node methodNode) throws Exception
 	{
 		//TODO NOT SURE IF THIS IS THE BEST WAY TO HANDLE THIS, ASK GROUP
+		this.type = Type.METHOD;
 		this.methodIRNode = methodNode;
-		this.returnType = type;
-		switch(type)
+		switch(retType)
 		{
 		
 		case "bool": //Fall though, just here for safety
 		case "boolean":
-		this.type = ReturnType.BOOL;
+		this.returnType = ReturnType.BOOL;
 		break;
 		
 		case "int":
-		this.type = ReturnType.INT;
+		this.returnType = ReturnType.INT;
 		break;
 		
 		case "void":
-		this.type = ReturnType.VOID;
+		this.returnType = ReturnType.VOID;
 		break;
 		
 		default:
@@ -67,14 +67,12 @@ public class MethodDescriptor extends Descriptor {
 
 	@Override
 	public String getReturnType() {
-		return this.returnType;
+		return this.returnType.toString();
 	}
 
 	@Override
-	public Type getType() throws UnsupportedOperationException {
-		System.err.println("Methods do not have a type, but they have a returnType.");
-		System.err.println("These are seperate types because they are based on different enums.");
-		throw new UnsupportedOperationException("Methods do not have a type, but they have a returnType. Use getReturnType().");
+	public Type getType(){
+		return this.type;
 	}
 
 
