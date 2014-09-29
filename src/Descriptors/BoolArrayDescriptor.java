@@ -2,8 +2,7 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
-
+import edu.mit.compilers.ir.IR_Node;
 import Descriptors.Descriptor.Type;
 
 public class BoolArrayDescriptor extends Descriptor{
@@ -54,75 +53,78 @@ public class BoolArrayDescriptor extends Descriptor{
 	}
 	
 	@Override
-	public int getLength() throws InvalidActivityException {
+	public int getLength() throws UnsupportedOperationException {
 		return len;
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("An boolean array does not take arguments like a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException {
+	public String getReturnType() throws UnsupportedOperationException {
 		System.err.println("An boolean array does not have a return type, unlike a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Type getType() throws InvalidActivityException {
+	public Type getType() throws UnsupportedOperationException {
 		return type;
 	}
 
 	@Override
-	public int getValue() throws InvalidActivityException {
+	public int getValue() throws UnsupportedOperationException {
 		System.err.println("An boolean array does not hold values, it holds truth values.");
 		System.err.println("Please use getTruthValue(int index) to access a truth value in this array.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
+	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("An boolean array does not have a truth value as a whole, but its entries do. Specify an entry.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 	
-	public boolean getTruthValue(int index) throws InvalidActivityException {
+	public boolean getTruthValue(int index) throws UnsupportedOperationException {
 		try{
 			assert index < len;
 			assert index >= 0;
 			return contents.get(index).getTruthValue();
-			}
+		}
 		catch(AssertionError a){
 			System.err.println("You are attempting to access an invalid array index, which is " + index + ".");
 			System.err.println("The size of the boolean array you tried to access is " + len + ".");
-			throw new InvalidActivityException();
-			}
+			throw new UnsupportedOperationException();
+		}
 	}
 
-	public void setValue(int index, boolean newTruthValue) throws InvalidActivityException
-	{
+	public void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException{
 		try{
 			assert index < len;
 			assert index >= 0;
 			contents.set(index, new BoolDescriptor(newTruthValue));
 		}
-		catch(AssertionError a) //Catch if the index is invalid 
-		{
+		catch(AssertionError a){ //Catch if the index is invalid 
 			System.err.println("You are attempting to set an invalid array index, which is " + index + ".");
 			System.err.println("The size of the boolean array you tried to change is " + len + ".");
-			throw new InvalidActivityException();
+			throw new UnsupportedOperationException();
 		}
 	}
 
 	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
+	public void setValue(int index, int newValue) throws UnsupportedOperationException {
 		System.err.println("You may not set a boolean array value to an integer.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 		
 	}
+
+	@Override
+	public IR_Node getIR() throws java.lang.UnsupportedOperationException {
+		System.err.println("A boolean array does not keep a record of its IR_Node.");
+		throw new UnsupportedOperationException();
+	}
 	
-	//TODO INSERT IR METHODS
 
 }

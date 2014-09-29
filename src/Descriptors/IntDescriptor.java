@@ -2,7 +2,7 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
+import edu.mit.compilers.ir.IR_Node;
 
 public class IntDescriptor extends Descriptor{
 
@@ -20,21 +20,21 @@ public class IntDescriptor extends Descriptor{
 	}
 	
 	@Override
-	public int getLength() throws InvalidActivityException{
+	public int getLength() throws UnsupportedOperationException{
 		System.err.println("An int is 8 bytes, but does not have a length field.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("An int doesn't have arguments.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException{
+	public String getReturnType() throws UnsupportedOperationException{
 		System.err.println("An int doesn't have a returnType.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -43,27 +43,33 @@ public class IntDescriptor extends Descriptor{
 	}
 
 	@Override
-	public int getValue() throws InvalidActivityException {
+	public int getValue(){
 		return this.value;
 	}
 
 	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
+	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("An int doesn't have a truth value.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
+	public void setValue(int index, int newValue) throws UnsupportedOperationException {
 		System.err.println("An integer is immutable, and cannot have its value changed.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void setValue(int index, boolean newValue) throws InvalidActivityException {
+	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
 		System.err.println("An integer is immutable, and cannot have its value changed, especially not to a boolean!");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 		
+	}
+
+	@Override
+	public IR_Node getIR() throws UnsupportedOperationException {
+		System.err.println("An int doesn't keep its IR_Node.");
+		throw new UnsupportedOperationException();
 	}
 
 

@@ -2,8 +2,7 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
-
+import edu.mit.compilers.ir.IR_Node;
 
 public class CalloutDescriptor extends Descriptor{
 	private Type type;
@@ -19,9 +18,9 @@ public class CalloutDescriptor extends Descriptor{
 		this.type = Type.CALLOUT;
 		this.name = name;
 	}
+	
 	@Override
-	public int getLength()
-	{
+	public int getLength(){
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException();
 	}
@@ -42,13 +41,15 @@ public class CalloutDescriptor extends Descriptor{
 	public Type getType() {
 		return this.type;
 	}
+	
 	@Override
-	public int getValue() throws InvalidActivityException {
+	public int getValue() throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException();
 	}
+	
 	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
+	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException();
 	}
@@ -56,25 +57,26 @@ public class CalloutDescriptor extends Descriptor{
 	public String getName(){
 		return this.name;
 	}
+	
 	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
+	public void setValue(int index, int newValue) throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException();		
 	}
+	
 	@Override
-	public void setValue(int index, boolean newValue) throws InvalidActivityException {
+	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
 		System.err.println("Callouts are handled by C, not our code.");
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public IR_Node getIR() throws UnsupportedOperationException {
+		System.err.println("A CalloutDescriptor does not locally store its IR node.");
 		throw new UnsupportedOperationException();
 	}
 	
 }
 
 
-/*
-	@Override
-	IRNode getIR() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-*/
 

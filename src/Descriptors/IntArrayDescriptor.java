@@ -2,7 +2,8 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
+import edu.mit.compilers.ir.IR_Node;
+
 
 public class IntArrayDescriptor extends Descriptor{
 
@@ -50,20 +51,20 @@ public class IntArrayDescriptor extends Descriptor{
 	}
 	
 	@Override
-	public int getLength() throws InvalidActivityException {
+	public int getLength() throws UnsupportedOperationException {
 		return this.arrayLength;
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("An integer array does not take arguments like a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException {
+	public String getReturnType() throws UnsupportedOperationException {
 		System.err.println("An integer array does not have a return type.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -72,50 +73,56 @@ public class IntArrayDescriptor extends Descriptor{
 	}
 
 	@Override
-	public int getValue() throws InvalidActivityException {
+	public int getValue() throws UnsupportedOperationException {
 		System.err.println("You cannot getValue on an int array as a whole without an index. Specify an index.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 	
-	public int getValue(int index) throws InvalidActivityException{	
+	public int getValue(int index) throws UnsupportedOperationException{	
 		try{
-		assert index < arrayLength;
-		assert index >= 0;
-		return memberVariables.get(index).getValue();
+			assert index < arrayLength;
+			assert index >= 0;
+			return memberVariables.get(index).getValue();
 		}
 		catch(AssertionError a){
 			System.err.println("You are attempting to access an invalid array index, which was " + index + ".");
 			System.err.println("The size of the array you tried to access is " + arrayLength + ".");
-			throw new InvalidActivityException();
+			throw new UnsupportedOperationException();
 		}
 		
 	}
 
 	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
+	public boolean getTruthValue() throws UnsupportedOperationException {
 		System.err.println("An integer array does not have a truth value, nor is one contained within.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 	
-	public void setValue(int index, int newValue){ //Arrays are mutable, so we need this. 
+	public void setValue(int index, int newValue) throws UnsupportedOperationException{ //Arrays are mutable, so we need this. 
 		try{
-		assert index < arrayLength;
-		assert index >= 0;
-		memberVariables.set(index, new IntDescriptor(newValue)); //Ints, however, are not mutable, so we need to make a new descriptor.
+			assert index < arrayLength;
+			assert index >= 0;
+			memberVariables.set(index, new IntDescriptor(newValue)); //Ints, however, are not mutable, so we need to make a new descriptor.
 		}
 		catch(AssertionError a){ //Catch if the index is invalid
 			System.err.println("You are attempting to change an invalid array index, which is " + index + ".");
 			System.err.println("The size of the array you tried to change is " + arrayLength + ".");
+			throw new UnsupportedOperationException();
 		}
 	}
 
 	@Override
-	public void setValue(int index, boolean newTruthValue) throws InvalidActivityException {
+	public void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException {
 		System.err.println("You may not override an integer array value with a boolean.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 		
 	}
+
+	@Override
+	public IR_Node getIR() throws UnsupportedOperationException {
+		System.err.println("A integer array does not keep a record of its IR_Node.");
+		throw new UnsupportedOperationException();
+	}
 	
-	//TODO INSERT IR METHODS
 
 }

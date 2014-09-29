@@ -2,12 +2,12 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
+import edu.mit.compilers.ir.IR_Node;
 
 /**
  * THis class is an abstract representation of a Descriptor. It contains almost all of the methods that will be use in the 
  * descriptors that inherit from it, but since many descriptors don't need all of these fields, the fields not needed
- * will throw InvalidActivityExceptions for each unused method if it is called.
+ * will throw UnsupportedOperationExceptions for each unused method if it is called.
  * 
  * IR methods have yet to be implemented; these will be added after Monday. 
  * @author DeJuan
@@ -49,49 +49,48 @@ public abstract class Descriptor {
 	
 	private ArrayList<Boolean> argTypes;
 	private int length;
-	//TODO UNCOMMENT THIS WHEN THE IR IS READY
-	//private IRNode IR;
-	//TODO Insert enum RETURNTYPE and TYPE?
+	private IR_Node IR;
+	
 	/**
 	 * This method gets the length of the object represented by the descriptor. 
 	 * This is only used by Array descriptors.
 	 * 
 	 * @return integer : represents length of array
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract int getLength() throws InvalidActivityException;
+	public abstract int getLength() throws UnsupportedOperationException;
 	
 	/**
 	 * This may not actually be needed, but is here due to the group discussion we had about passing around
 	 * types as a boolean array list. If needed, this will be used in MethodDescriptor.
 	 * @return ArrayList<Boolean> : each entry is true for a boolean argument and false for an integer argument. 
-	 * @throws InvalidActivityException for non methods.
+	 * @throws UnsupportedOperationException for non methods.
 	 */
-	public abstract ArrayList<Boolean> getArgTypes() throws InvalidActivityException;
+	public abstract ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException;
 	
 	/**
 	 * This is also another action really only useful for MethodDescriptors. 
 	 * It gives you a string representing the expected return type of the method. 
 	 * @return "bool", "boolean", "int", or "void".
-	 * @throws InvalidActivityException 
+	 * @throws UnsupportedOperationException 
 	 */
-	public abstract String getReturnType() throws InvalidActivityException;
+	public abstract String getReturnType() throws UnsupportedOperationException;
 	
 	/**
 	 * This gives you the Type of the descriptor. This is used by the enums so that we have a set
 	 * type that anything could be; if it is not one of these types, we have an error. 
 	 * @return Type instance which describes what kind of descriptor is being used.
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract Type getType() throws InvalidActivityException;
+	public abstract Type getType() throws UnsupportedOperationException;
 	
 	/**
 	 * This is used for int and int array descriptors. It allows you to get the value
 	 * of the integer and use it as you need, while keeping a final version locally stored inside the descriptor.
 	 * @return integer equal to the value of the integer the descriptor represents
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract int getValue() throws InvalidActivityException;
+	public abstract int getValue() throws UnsupportedOperationException;
 	
 	
 	/**
@@ -100,9 +99,9 @@ public abstract class Descriptor {
 	 * we don't confuse methods. It's also not possible to call both of these methods the same name,
 	 * so this is a good name that specifies we're dealing with booleans.
 	 * @return boolean true or false : the value of the boolean stored within the descriptor
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract boolean getTruthValue() throws InvalidActivityException;
+	public abstract boolean getTruthValue() throws UnsupportedOperationException;
 	
 	/**
 	 * This method is used only in the integer array descriptors. 
@@ -115,9 +114,9 @@ public abstract class Descriptor {
 	 * the desired value. 
 	 * @param index : The index in the array you wish to update
 	 * @param newValue : The integer you want to set the index to 
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract void setValue(int index, int newValue) throws InvalidActivityException;
+	public abstract void setValue(int index, int newValue) throws UnsupportedOperationException;
 	
 	
 	/**
@@ -129,12 +128,19 @@ public abstract class Descriptor {
 	 * The replacement actually makes a new BoolDescriptor and replaces the old one with the updated, newly created one. 
 	 * @param index : The index in the array you wish to update
 	 * @param newValue : the new truth value you wish to input
-	 * @throws InvalidActivityException
+	 * @throws UnsupportedOperationException
 	 */
-	public abstract void setValue(int index, boolean newTruthValue) throws InvalidActivityException;
+	public abstract void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException;
 	
-	//TODO UNCOMMENT THIS WHEN THE IR IS READY
-	//public abstract IRNode getIR();
+	/**
+	 * This method is only used for MethodDescriptors. 
+	 * It returns the IR_Node that was used when the method descriptor was initialized.
+	 * 
+	 * Any other descriptor will throw an exception if this is used. 
+	 * @return IR_Node passed when the MethodDescriptor was initialized
+	 * @throws UnsupportedOperationException if not a MethodDescriptor
+	 */
+	public abstract IR_Node getIR() throws UnsupportedOperationException;
 	
 	
 
