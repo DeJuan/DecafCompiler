@@ -9,6 +9,7 @@ public class BoolArrayDescriptor extends Descriptor{
 
 	private Type type;
 	private int len;
+	///@TODO: remove this and related code//
 	private ArrayList<BoolDescriptor> contents;
 	
 	/**

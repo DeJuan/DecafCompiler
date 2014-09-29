@@ -83,6 +83,7 @@ public abstract class Descriptor {
 	 */
 	public abstract Type getType() throws UnsupportedOperationException;
 	
+	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.
 	/**
 	 * This is used for int and int array descriptors. It allows you to get the value
 	 * of the integer and use it as you need, while keeping a final version locally stored inside the descriptor.
@@ -91,7 +92,7 @@ public abstract class Descriptor {
 	 */
 	public abstract int getValue() throws UnsupportedOperationException;
 	
-	
+	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.	
 	/**
 	 * This is the equivalent of the getValue() method, but for booleans.
 	 * These are seperate methods to make sure everything is very explicit, and so that later on,
@@ -101,7 +102,8 @@ public abstract class Descriptor {
 	 * @throws UnsupportedOperationException
 	 */
 	public abstract boolean getTruthValue() throws UnsupportedOperationException;
-	
+
+	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.
 	/**
 	 * This method is used only in the integer array descriptors. 
 	 * Even though the primitive type int is immutable, an array of integers is certainly mutable. 
@@ -117,7 +119,7 @@ public abstract class Descriptor {
 	 */
 	public abstract void setValue(int index, int newValue) throws UnsupportedOperationException;
 	
-	
+	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.	
 	/**
 	 * This method is only used in boolean array descriptors, and is the counterpart to the integer version.
 	 * Booleans by themselves are immutable, but an array of them is certainly mutable. 

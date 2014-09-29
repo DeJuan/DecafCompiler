@@ -9,6 +9,7 @@ public class IntArrayDescriptor extends Descriptor{
 
 	private final int arrayLength;
 	private final Type type;
+	///@TODO: remove this and related code//
 	private ArrayList<IntDescriptor> memberVariables;
 	
 	/**
