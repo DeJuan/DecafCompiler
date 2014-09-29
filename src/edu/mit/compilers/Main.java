@@ -89,8 +89,24 @@ class Main {
         if(parser.getError()) {
           System.exit(1);
         }
-        //System.out.println(parser.getAST().toStringTree());
-//        printAst(parser.getAST(),0);
+      } else if (CLI.target == Action.INTER) {
+    	  DecafScanner scanner =
+    	            new DecafScanner(new DataInputStream(inputStream));
+    	  DecafParser parser = new DecafParser(scanner);
+    	  parser.setTrace(CLI.debug);
+    	        
+    	  ASTFactory factory = new ASTFactory();                         
+    	  factory.setASTNodeClass(CommonASTWithLines.class);
+    	  parser.setASTFactory(factory);
+    	        
+    	  parser.program();
+    	  if(parser.getError()) {
+    		  System.exit(1);
+    	  }
+    	  
+    	  AST ast = parser.getAST();
+    	  System.out.println(ast.toStringTree());
+          printAst(ast,0);
       }
     } catch(Exception e) {
       // print the error:
