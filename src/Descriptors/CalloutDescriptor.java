@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import javax.activity.InvalidActivityException;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class CalloutDescriptor extends Descriptor{
 	private Type type;
@@ -24,19 +23,19 @@ public class CalloutDescriptor extends Descriptor{
 	public int getLength()
 	{
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getReturnType() {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -46,12 +45,12 @@ public class CalloutDescriptor extends Descriptor{
 	@Override
 	public int getValue() throws InvalidActivityException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 	@Override
 	public boolean getTruthValue() throws InvalidActivityException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 	
 	public String getName(){
@@ -60,12 +59,12 @@ public class CalloutDescriptor extends Descriptor{
 	@Override
 	public void setValue(int index, int newValue) throws InvalidActivityException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();		
+		throw new UnsupportedOperationException();		
 	}
 	@Override
 	public void setValue(int index, boolean newValue) throws InvalidActivityException {
 		System.err.println("Callouts are handled by C, not our code.");
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 	
 }
