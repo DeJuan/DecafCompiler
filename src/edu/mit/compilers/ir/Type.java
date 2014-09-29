@@ -1,5 +1,5 @@
 package edu.mit.compilers.ir;
 
 public enum Type {
-	INT, BOOL, INTARR, BOOLARR, VOID
+	INT, BOOL, INTARR, BOOLARR, NONE, STRING
 }
