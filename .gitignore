@@ -3,3 +3,6 @@ classes
 autogen
 dist
 .DS_Store
+.classpath
+.project
+/bin/
