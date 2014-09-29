@@ -11,10 +11,10 @@ import antlr.collections.AST;
  */
 abstract class IR_Literal extends IR_Node {
 	
-	public class IntLiteral extends IR_Literal {
+	public class IR_IntLiteral extends IR_Literal {
 		private int value;
 		
-		public IntLiteral(AST node) {
+		public IR_IntLiteral(AST node) {
 			value = Integer.parseInt(node.getText());
 		}
 		
@@ -31,10 +31,10 @@ abstract class IR_Literal extends IR_Node {
 		}
 	}
 	
-	public class BoolLiteral extends IR_Literal {
+	public class IR_BoolLiteral extends IR_Literal {
 		private boolean value;
 		
-		public BoolLiteral(AST node) {
+		public IR_BoolLiteral(AST node) {
 			if (node.getText().equals("true"))
 				value = true;
 			else if (node.getText().equals("false"))

@@ -14,7 +14,7 @@ abstract class IR_ArithOp extends IR_Node {
 	abstract IR_Node getLeft();
 	abstract IR_Node getRight();
 	
-	public class IR_ArithOp_Plus extends IR_ArithOp {
+	public static class IR_ArithOp_Plus extends IR_ArithOp {
 		
 		public IR_ArithOp_Plus(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
@@ -42,7 +42,7 @@ abstract class IR_ArithOp extends IR_Node {
 		}
 	}
 	
-	public class IR_ArithOp_Sub extends IR_ArithOp {
+	public static class IR_ArithOp_Sub extends IR_ArithOp {
 		
 		public IR_ArithOp_Sub(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
@@ -70,7 +70,7 @@ abstract class IR_ArithOp extends IR_Node {
 		}
 	}
 	
-	public class IR_ArithOp_Mult extends IR_ArithOp {
+	public static class IR_ArithOp_Mult extends IR_ArithOp {
 		
 		public IR_ArithOp_Mult(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
@@ -98,7 +98,7 @@ abstract class IR_ArithOp extends IR_Node {
 		}
 	}
 	
-	public class IR_ArithOp_Div extends IR_ArithOp {
+	public static class IR_ArithOp_Div extends IR_ArithOp {
 		
 		public IR_ArithOp_Div(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
@@ -123,6 +123,34 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		public String toString() {
 			return "/" + left.toString() + right.toString();
+		}
+	}
+	
+	public static class IR_ArithOp_Mod extends IR_ArithOp {
+		
+		public IR_ArithOp_Mod(IR_Node left_child, IR_Node right_child) {
+			left = left_child;
+			right = right_child;
+		}
+		
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		public IR_Node getLeft() {
+			return this.left;
+		}
+		
+		public IR_Node getRight() {
+			return this.right;
+		}
+		
+		public boolean isValid() {
+			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
+		}
+		
+		public String toString() {
+			return "%" + left.toString() + right.toString();
 		}
 	}
 }

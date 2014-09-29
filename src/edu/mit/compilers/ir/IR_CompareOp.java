@@ -15,7 +15,7 @@ abstract class IR_CompareOp extends IR_Node {
 	abstract IR_Node getLeft();
 	abstract IR_Node getRight();
 	
-	public class IR_CompareOp_LT extends IR_CompareOp {
+	public static class IR_CompareOp_LT extends IR_CompareOp {
 		public IR_CompareOp_LT(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
 			right = right_child;
@@ -42,7 +42,7 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 	}
 	
-	public class IR_CompareOp_GT extends IR_CompareOp {
+	public static class IR_CompareOp_GT extends IR_CompareOp {
 		public IR_CompareOp_GT(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
 			right = right_child;
@@ -68,7 +68,7 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 	}
 	
-	public class IR_CompareOp_LTE extends IR_CompareOp {
+	public static class IR_CompareOp_LTE extends IR_CompareOp {
 		public IR_CompareOp_LTE(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
 			right = right_child;
@@ -94,7 +94,7 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 	}
 	
-	public class IR_CompareOp_GTE extends IR_CompareOp {
+	public static class IR_CompareOp_GTE extends IR_CompareOp {
 		public IR_CompareOp_GTE(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
 			right = right_child;
