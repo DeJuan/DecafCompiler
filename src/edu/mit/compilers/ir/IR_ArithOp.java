@@ -21,22 +21,27 @@ abstract class IR_ArithOp extends IR_Node {
 			right = right_child;
 		}
 		
-		public Type evaluateType() {
-			return Type.INT;
-		}
-		
+		@Override
 		public IR_Node getLeft() {
 			return this.left;
 		}
 		
+		@Override
 		public IR_Node getRight() {
 			return this.right;
 		}
 		
+		@Override
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		@Override
 		public boolean isValid() {
 			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
 		}
 		
+		@Override
 		public String toString() {
 			return "+" + left.toString() + right.toString();
 		}
@@ -49,22 +54,27 @@ abstract class IR_ArithOp extends IR_Node {
 			right = right_child;
 		}
 		
-		public Type evaluateType() {
-			return Type.INT;
-		}
-		
+		@Override
 		public IR_Node getLeft() {
 			return this.left;
 		}
 		
+		@Override
 		public IR_Node getRight() {
 			return this.right;
 		}
 		
+		@Override
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		@Override
 		public boolean isValid() {
 			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
 		}
 		
+		@Override
 		public String toString() {
 			return "-" + left.toString() + right.toString();
 		}
@@ -77,22 +87,27 @@ abstract class IR_ArithOp extends IR_Node {
 			right = right_child;
 		}
 		
-		public Type evaluateType() {
-			return Type.INT;
-		}
-		
+		@Override
 		public IR_Node getLeft() {
 			return this.left;
 		}
 		
+		@Override
 		public IR_Node getRight() {
 			return this.right;
 		}
 		
+		@Override
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		@Override
 		public boolean isValid() {
 			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
 		}
 		
+		@Override
 		public String toString() {
 			return "*" + left.toString() + right.toString();
 		}
@@ -105,22 +120,27 @@ abstract class IR_ArithOp extends IR_Node {
 			right = right_child;
 		}
 		
-		public Type evaluateType() {
-			return Type.INT;
-		}
-		
+		@Override
 		public IR_Node getLeft() {
 			return this.left;
 		}
 		
+		@Override
 		public IR_Node getRight() {
 			return this.right;
 		}
 		
+		@Override
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		@Override
 		public boolean isValid() {
 			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
 		}
 		
+		@Override
 		public String toString() {
 			return "/" + left.toString() + right.toString();
 		}
@@ -133,22 +153,27 @@ abstract class IR_ArithOp extends IR_Node {
 			right = right_child;
 		}
 		
-		public Type evaluateType() {
-			return Type.INT;
-		}
-		
+		@Override
 		public IR_Node getLeft() {
 			return this.left;
 		}
 		
+		@Override
 		public IR_Node getRight() {
 			return this.right;
 		}
 		
+		@Override
+		public Type evaluateType() {
+			return Type.INT;
+		}
+		
+		@Override
 		public boolean isValid() {
 			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
 		}
 		
+		@Override
 		public String toString() {
 			return "%" + left.toString() + right.toString();
 		}

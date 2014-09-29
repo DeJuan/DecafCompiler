@@ -41,14 +41,17 @@ public class IR_For extends IR_Node {
 		return this.block;
 	}
 	
+	@Override
 	public Type evaluateType() {
 		return Type.NONE;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return preLoop.isValid() && lt.isValid() && block.isValid();
 	}
 	
+	@Override
 	public String toString() {
 		return "for(" + preLoop.toString() + ", " + lt.toString() + ")" + "{" + block.toString() + "}";
 	}

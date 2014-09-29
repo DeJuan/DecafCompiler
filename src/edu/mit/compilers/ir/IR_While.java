@@ -32,15 +32,18 @@ public class IR_While extends IR_Node {
 		return this.block;
 	}
 	
+	@Override
 	public Type evaluateType() {
 		return Type.NONE;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return expr_cond.isValid() && expr_cond.evaluateType() == Type.BOOL 
 				&& maxLoops.isValid() && block.isValid();
 	}
 	
+	@Override
 	public String toString() {
 		return "while(" + expr_cond.toString() + ")" + "{" + block.toString() + "}";
 	}

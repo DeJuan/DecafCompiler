@@ -14,14 +14,17 @@ public class IR_Return extends IR_Node {
 		expr = expression;
 	}
 	
+	@Override
 	public Type evaluateType() {
 		return Type.NONE;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return expr.isValid();
 	}
 	
+	@Override
 	public String toString() {
 		return "return" + expr.toString();
 	}
