@@ -83,56 +83,6 @@ public abstract class Descriptor {
 	 */
 	public abstract Type getType() throws UnsupportedOperationException;
 	
-	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.
-	/**
-	 * This is used for int and int array descriptors. It allows you to get the value
-	 * of the integer and use it as you need, while keeping a final version locally stored inside the descriptor.
-	 * @return integer equal to the value of the integer the descriptor represents
-	 * @throws UnsupportedOperationException
-	 */
-	public abstract int getValue() throws UnsupportedOperationException;
-	
-	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.	
-	/**
-	 * This is the equivalent of the getValue() method, but for booleans.
-	 * These are seperate methods to make sure everything is very explicit, and so that later on,
-	 * we don't confuse methods. It's also not possible to call both of these methods the same name,
-	 * so this is a good name that specifies we're dealing with booleans.
-	 * @return boolean true or false : the value of the boolean stored within the descriptor
-	 * @throws UnsupportedOperationException
-	 */
-	public abstract boolean getTruthValue() throws UnsupportedOperationException;
-
-	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.
-	/**
-	 * This method is used only in the integer array descriptors. 
-	 * Even though the primitive type int is immutable, an array of integers is certainly mutable. 
-	 * This method allows you to set a new value for any index in an int array.
-	 * 
-	 * 
-	 * There is validity checking built in for the index, and an exception will be thrown if the index is invalid.
-	 * It actually works by making a new IntDescriptor and replacing the previous one with the new one containing
-	 * the desired value. 
-	 * @param index : The index in the array you wish to update
-	 * @param newValue : The integer you want to set the index to 
-	 * @throws UnsupportedOperationException
-	 */
-	public abstract void setValue(int index, int newValue) throws UnsupportedOperationException;
-	
-	//@TODO: remove. Since the only things that have values are literals and they are already stored in IR nodes.	
-	/**
-	 * This method is only used in boolean array descriptors, and is the counterpart to the integer version.
-	 * Booleans by themselves are immutable, but an array of them is certainly mutable. 
-	 * This allows you to override a boolean in an array with a new truth value. 
-	 * 
-	 * There is validity checking built in for the index, and an exception will be thrown if an invalid index is received.
-	 * The replacement actually makes a new BoolDescriptor and replaces the old one with the updated, newly created one. 
-	 * @param index : The index in the array you wish to update
-	 * @param newValue : the new truth value you wish to input
-	 * @throws UnsupportedOperationException
-	 */
-	public abstract void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException;
-	
 	/**
 	 * This method is only used for MethodDescriptors. 
 	 * It returns the IR_Node that was used when the method descriptor was initialized.

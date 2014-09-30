@@ -43,30 +43,6 @@ public class IntDescriptor extends Descriptor{
 	}
 
 	@Override
-	public int getValue(){
-		return this.value;
-	}
-
-	@Override
-	public boolean getTruthValue() throws UnsupportedOperationException {
-		System.err.println("An int doesn't have a truth value.");
-		throw new UnsupportedOperationException("An int doesn't have a truth value.");
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws UnsupportedOperationException {
-		System.err.println("An integer is immutable, and cannot have its value changed.");
-		throw new UnsupportedOperationException("An integer is immutable, and cannot have its value changed.");
-	}
-
-	@Override
-	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
-		System.err.println("An integer is immutable, and cannot have its value changed, especially not to a boolean!");
-		throw new UnsupportedOperationException("An integer is immutable, and cannot have its value changed, especially not to a boolean!");
-		
-	}
-
-	@Override
 	public IR_Node getIR() throws UnsupportedOperationException {
 		System.err.println("An int doesn't keep its IR_Node.");
 		throw new UnsupportedOperationException("An int doesn't keep its IR_Node.");

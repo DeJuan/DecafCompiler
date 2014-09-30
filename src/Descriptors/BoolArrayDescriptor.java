@@ -83,52 +83,6 @@ public class BoolArrayDescriptor extends Descriptor{
 	}
 
 	@Override
-	public int getValue() throws UnsupportedOperationException {
-		System.err.println("An boolean array does not hold values, it holds truth values.");
-		System.err.println("Please use getTruthValue(int index) to access a truth value in this array.");
-		throw new UnsupportedOperationException("Please use getTruthValue(int index) to access a truth value in this array.");
-	}
-
-	@Override
-	public boolean getTruthValue() throws UnsupportedOperationException {
-		System.err.println("An boolean array does not have a truth value as a whole, but its entries do. Specify an entry.");
-		throw new UnsupportedOperationException("An boolean array does not have a truth value as a whole, but its entries do. Specify an entry.");
-	}
-	
-	public boolean getTruthValue(int index) throws UnsupportedOperationException {
-		try{
-			assert index < len;
-			assert index >= 0;
-			return contents.get(index).getTruthValue();
-		}
-		catch(AssertionError a){
-			System.err.println("You are attempting to access an invalid array index, which is " + index + ".");
-			System.err.println("The size of the boolean array you tried to access is " + len + ".");
-			throw new UnsupportedOperationException("Invalid index passed into access function. Action aborted.");
-		}
-	}
-
-	public void setValue(int index, boolean newTruthValue) throws UnsupportedOperationException{
-		try{
-			assert index < len;
-			assert index >= 0;
-			contents.set(index, new BoolDescriptor(newTruthValue));
-		}
-		catch(AssertionError a){ //Catch if the index is invalid 
-			System.err.println("You are attempting to set an invalid array index, which is " + index + ".");
-			System.err.println("The size of the boolean array you tried to change is " + len + ".");
-			throw new UnsupportedOperationException("Invalid index passed into access function. Action aborted.");
-		}
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws UnsupportedOperationException {
-		System.err.println("You may not set a boolean array value to an integer.");
-		throw new UnsupportedOperationException("You may not set a boolean array value to an integer.");
-		
-	}
-
-	@Override
 	public IR_Node getIR() throws java.lang.UnsupportedOperationException {
 		System.err.println("A boolean array does not keep a record of its IR_Node.");
 		throw new UnsupportedOperationException("A boolean array does not keep a record of its IR_Node.");

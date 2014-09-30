@@ -43,30 +43,6 @@ public class BoolDescriptor extends Descriptor{
 	}
 
 	@Override
-	public int getValue() throws UnsupportedOperationException {
-		System.err.println("A boolean does not have a numerical value in this context.");
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean getTruthValue(){
-		return this.truthValue;
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws UnsupportedOperationException {
-		System.err.println("A boolean is immutable, and definitely should not be getting changed to an int!");
-		throw new UnsupportedOperationException("A boolean is immutable, and definitely should not be getting changed to an int!");
-		
-	}
-
-	@Override
-	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
-		System.err.println("A boolean is immutable, so you may not set a new value for it. Make a new boolean instead.");
-		throw new UnsupportedOperationException("A boolean is immutable, so you may not set a new value for it. Make a new boolean instead.");
-	}
-
-	@Override
 	public IR_Node getIR() throws UnsupportedOperationException {
 		System.err.println("A boolean does not keep a record of its IR_Node.");
 		throw new UnsupportedOperationException("A boolean does not keep a record of its IR_Node.");

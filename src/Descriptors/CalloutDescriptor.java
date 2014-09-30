@@ -42,32 +42,8 @@ public class CalloutDescriptor extends Descriptor{
 		return this.type;
 	}
 	
-	@Override
-	public int getValue() throws UnsupportedOperationException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
-	}
-	
-	@Override
-	public boolean getTruthValue() throws UnsupportedOperationException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
-	}
-	
 	public String getName(){
 		return this.name;
-	}
-	
-	@Override
-	public void setValue(int index, int newValue) throws UnsupportedOperationException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");		
-	}
-	
-	@Override
-	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
 	
 	@Override

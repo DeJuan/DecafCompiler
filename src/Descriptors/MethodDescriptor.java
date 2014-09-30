@@ -6,8 +6,6 @@ import edu.mit.compilers.ir.IR_Node;
 import Descriptors.Descriptor.ReturnType;
 import Descriptors.Descriptor.Type;
 
-///@TODO: switch to UnsupportedOperationException//
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 public class MethodDescriptor extends Descriptor {
@@ -82,30 +80,6 @@ public class MethodDescriptor extends Descriptor {
 	public int getLength() throws UnsupportedOperationException {
 		System.err.println("Methods do not have a length in that sense.");
 		throw new UnsupportedOperationException("Methods do not have a length for this operation.");
-	}
-
-	@Override
-	public int getValue() throws UnsupportedOperationException {
-		System.err.println("Methods do not have a value field like an integer.");
-		throw new UnsupportedOperationException("Methods do not have a value field like an integer.");
-	}
-
-	@Override
-	public boolean getTruthValue() throws UnsupportedOperationException {
-		System.err.println("Methods do not have a truth value.");
-		throw new UnsupportedOperationException("Methods do not have a truth value.");
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws UnsupportedOperationException {
-		System.err.println("Methods do not have a value that can be set.");
-		throw new UnsupportedOperationException("Methods do not have a value that can be set.");	
-	}
-
-	@Override
-	public void setValue(int index, boolean newValue) throws UnsupportedOperationException {
-		System.err.println("Methods do not have a value that can be set.");
-		throw new UnsupportedOperationException("Methods do not have a value that can be set.");
 	}
 
 	@Override
