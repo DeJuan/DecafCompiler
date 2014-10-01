@@ -11,6 +11,7 @@ import Descriptors.Descriptor;
 import antlr.collections.AST;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
+import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 
 public class IRMaker {
     private static Map<Descriptor.Type, Type> MapMaker() {
@@ -487,8 +488,40 @@ public class IRMaker {
 
     private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
-        // TODO Auto-generated method stub
-        return false;
+        if (root.getType() != DecafParserTokenTypes.TK_while) {
+            System.err.println("IRMaker error - while token not present");
+            return false;
+        } if (root.getNumberOfChildren() != 2 && root.getNumberOfChildren() != 3) {
+            System.err.println("Parser error - program should have been rejected");
+            return false;
+        }
+        AST expr_node = root.getNextSibling();
+        AST limit_node;
+        AST block_node;
+        if (root.getNumberOfChildren() == 3) {
+            limit_node = root.getFirstChild().getNextSibling();
+            block_node = limit_node.getNextSibling();
+        } else {
+            limit_node = null;
+            block_node = expr_node.getNextSibling();
+        }
+        boolean valid = true;
+        if (limit_node != null) {
+            valid = ValidateLiteral(limit_node, globals, locals) && limit_node.getType() == DecafParserTokenTypes.INT_LITERAL;
+        }
+        valid = valid && ValidateExpr(expr_node, globals, locals); 
+        if (valid) {
+            if (!(GenerateExpr(expr_node, globals, locals).evaluateType() == Type.BOOL)) {
+                System.err.println("while experession must evaluate to boolean - at " + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+        }
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        Collections.copy(fake_locals, locals);
+        Map<String, Type> fake_while = new HashMap<String, Type>();
+        fake_while.put("while", Type.NONE);
+        fake_locals.add(fake_while);
+        return valid && ValidateBlock(block_node, globals, fake_locals);
     }
 
     private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
@@ -864,10 +897,23 @@ public class IRMaker {
         return new IR_Return(value);
     }
 
-    private IR_Node GenerateWhile(AST root, Map<String, Descriptor> globals,
+    private IR_While GenerateWhile(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
-        // TODO Auto-generated method stub
-        return null;
+        if (!ValidateWhile(root, globals, locals)) {
+            return null;
+        }
+        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals);
+        IR_Literal limit = null;
+        AST block_root = root.getFirstChild().getNextSibling();
+        if (root.getNumberOfChildren() == 3) {
+            limit = GenerateLiteral(root.getFirstChild().getNextSibling(), globals, locals);
+            block_root = block_root.getNextSibling();
+        }
+        Map<String, Type> while_block = new HashMap<String, Type>();
+        while_block.put("while", Type.NONE);
+        locals.add(while_block);
+        IR_Seq block = GenerateBlock(block_root, globals, locals);
+        return new IR_While(condition, (IR_IntLiteral) limit, block);
     }
 
     private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
@@ -885,7 +931,7 @@ public class IRMaker {
             false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals);
             locals.remove(locals.size() - 1);
         } else {
-            false_block = new IR_Seq(Collections.EMPTY_LIST);
+            false_block = new IR_Seq(new ArrayList<IR_Node>());
         }
         return new IR_If(condition, true_block, false_block);
     }
