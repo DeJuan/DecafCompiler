@@ -4,7 +4,7 @@ public class IR_STA extends IR_Node {
     private IR_Var array;
     private IR_Node value;
     
-    public IR_STA(IR_Var array, IR_Node index_expr, IR_Node value) {
+    public IR_STA(IR_Var array, IR_Node value) {
         this.array = array;
         this.value = value;
     }

@@ -29,6 +29,12 @@ public class IR_For extends IR_Node {
 		this.block = block;
 	}
 	
+	public IR_For(IR_Seq preloop, IR_CompareOp_LT cond, IR_Seq block) {
+	    this.preLoop = preloop;
+	    this.lt = cond;
+	    this.block = block;
+	}
+	
 	public IR_Node getPreLoop() {
 		return this.preLoop;
 	}

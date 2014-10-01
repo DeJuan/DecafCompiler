@@ -17,9 +17,6 @@ public class IR_Var extends IR_Node {
     }
     
     public IR_Node getIndex() {
-        if (index == null) {
-            throw new UnsupportedOperationException("tried to get the index into a variable when no index exists");
-        }
         return index;
     }
 

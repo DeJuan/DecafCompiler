@@ -25,15 +25,15 @@ public class BoolDescriptor extends Descriptor{
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("A boolean does not have arguments.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException {
+	public String getReturnType() {
 		System.err.println("A boolean does not have a return value.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

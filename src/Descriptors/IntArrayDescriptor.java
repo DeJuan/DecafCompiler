@@ -55,15 +55,15 @@ public class IntArrayDescriptor extends Descriptor{
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("An integer array does not take arguments like a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException {
+	public String getReturnType() {
 		System.err.println("An integer array does not have a return type.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

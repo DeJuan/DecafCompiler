@@ -15,7 +15,7 @@ abstract class IR_CondOp extends IR_Node {
 	abstract IR_Node getLeft();
 	abstract IR_Node getRight();
 	
-	public static class IR_CondOp_And extends IR_EqOp {
+	public static class IR_CondOp_And extends IR_CondOp {
 		
 		public IR_CondOp_And(IR_Node left_child, IR_Node right_child) {
 			left = left_child;
@@ -48,7 +48,7 @@ abstract class IR_CondOp extends IR_Node {
 		}
 	}
 	
-	public static class IR_CondOp_Or extends IR_EqOp {
+	public static class IR_CondOp_Or extends IR_CondOp {
 		
 		public IR_CondOp_Or(IR_Node left_child, IR_Node right_child) {
 			left = left_child;

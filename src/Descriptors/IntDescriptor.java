@@ -26,15 +26,15 @@ public class IntDescriptor extends Descriptor{
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("An int doesn't have arguments.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException{
+	public String getReturnType() {
 		System.err.println("An int doesn't have a returnType.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

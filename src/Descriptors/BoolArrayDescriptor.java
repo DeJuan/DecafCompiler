@@ -4,8 +4,6 @@ import java.util.ArrayList;
 
 import javax.activity.InvalidActivityException;
 
-import Descriptors.Descriptor.Type;
-
 public class BoolArrayDescriptor extends Descriptor{
 
 	private Type type;
@@ -59,15 +57,15 @@ public class BoolArrayDescriptor extends Descriptor{
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() throws InvalidActivityException {
+	public ArrayList<Boolean> getArgTypes() {
 		System.err.println("An boolean array does not take arguments like a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public String getReturnType() throws InvalidActivityException {
+	public String getReturnType() {
 		System.err.println("An boolean array does not have a return type, unlike a method.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

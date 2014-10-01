@@ -67,7 +67,7 @@ public abstract class Descriptor {
 	 * @return ArrayList<Boolean> : each entry is true for a boolean argument and false for an integer argument. 
 	 * @throws InvalidActivityException for non methods.
 	 */
-	public abstract ArrayList<Boolean> getArgTypes() throws InvalidActivityException;
+	public abstract ArrayList<Boolean> getArgTypes();
 	
 	/**
 	 * This is also another action really only useful for MethodDescriptors. 
@@ -75,7 +75,7 @@ public abstract class Descriptor {
 	 * @return "bool", "boolean", "int", or "void".
 	 * @throws InvalidActivityException 
 	 */
-	public abstract String getReturnType() throws InvalidActivityException;
+	public abstract String getReturnType();
 	
 	/**
 	 * This gives you the Type of the descriptor. This is used by the enums so that we have a set
