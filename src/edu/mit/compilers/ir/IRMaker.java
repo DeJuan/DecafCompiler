@@ -12,6 +12,24 @@ import antlr.collections.AST;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
 
+/**
+ * This class is the factory which actually makes all the IR_nodes. 
+ * It has many methods for validation of expressions. 
+ * The types of validation expressions are var, arithOp, 
+ * call, compareOp, condOp, EqOp, load, store, literal,
+ * break, continue, for, block, statement, return, while, if,
+ * and expr.
+ * 
+ * To call a validate method, append validate followed by the 
+ * type in CamelCase; i.e. validateVar, validateCondOp.
+ * 
+ * There are also generate methods, which all follow the same patterns.
+ * 
+ * Lastly, there is a checkIntSize method to ensure that
+ * no integer specified exceeds the limit for integer storage.
+ *  
+ *
+ */
 public class IRMaker {
     private static Map<Descriptor.Type, Type> MapMaker() {
         Map<Descriptor.Type, Type> map = new HashMap<Descriptor.Type, Type>();
@@ -21,7 +39,14 @@ public class IRMaker {
         map.put(Descriptor.Type.INT_ARRAY, Type.INTARR);
         return map;
     }
-
+    /**
+     * This method allows you to validate any variable by passing in the AST root alongside the global and local symbol tables. 
+     * 
+     * @param root - the root of the AST 
+     * @param globals - the global symbol table, a Map<String, Descriptor>
+     * @param locals - the local symbol table for the scope of this variable, a Map<String, Type>
+     * @return boolean : True or False, answering whether or not the variable is valid.
+     */
     private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getType() != DecafParserTokenTypes.ID) {
             System.err.println("Parser error must have occured - expected ID at " + root.getLine() + ":" + root.getColumn());
@@ -60,7 +85,14 @@ public class IRMaker {
         return false;
     }
 
-
+    /**
+     * This method allows you to check the validity of an arithmetic operation.
+     * 
+     * @param root : the root of the AST for the operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope of this variable, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the given root
+     */
     private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - arith op with other than two children at " + root.getLine() + ":" + root.getColumn());
@@ -89,6 +121,15 @@ public class IRMaker {
         return false;
     }
 
+    /**
+     * 
+     * This method allows you to validate method calls.
+     * 
+     * @param root : the ast root for the method call
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of method call
+     */
     private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getType() != DecafScannerTokenTypes.METHOD_CALL) {
             System.err.println("IRMaker error - tried method call without method call at route at " + root.getLine() + ":" + root.getColumn());
@@ -131,6 +172,14 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method allows you to check the validity of a compare operation.
+     *  
+     * @param root : the ast root for the compare operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the comparison 
+     */
     private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - compare op with other than two children at " + root.getLine() + ":" + root.getColumn());
@@ -158,6 +207,14 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method allows you to check the validity of a conditional operation.
+     * 
+     * @param root : the ast root for the conditional operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the conditional
+     */
     private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - cond op with other than two children at " + root.getLine() + ":" + root.getColumn());
@@ -184,6 +241,14 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method allows you to check the validity of an equivalence operation.
+     * 
+     * @param root : the ast root for the equivalence operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the equivalence operation
+     */
     private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - eq op with other than two children at " + root.getLine() + ":" + root.getColumn());
@@ -205,10 +270,26 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method checks the validity of a load operation.
+     * 
+     * @param root : the ast root for the load operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the load
+     */
     private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         return ValidateVar(root, globals, locals);
     }
     
+    /**
+     * This method checks the validity of a store operation.
+     * 
+     * @param root : the ast root for the store operation.
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the store
+     */
     private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getType() != DecafParserTokenTypes.ASSIGN 
                 && root.getType() != DecafParserTokenTypes.ASSIGN_MINUS 
@@ -235,6 +316,14 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method allows you to check the validity of a literal.
+     * 
+     * @param root : the ast root for the literal
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the literal
+     */
     private boolean ValidateLiteral(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1 
                 && root.getFirstChild().getType() == DecafParserTokenTypes.INT_LITERAL) {
@@ -256,6 +345,16 @@ public class IRMaker {
         return false;
     }
 
+    /**
+     * This method allows you to check to make sure that an integer lies within Integer.MIN_VALUE and Integer_MAX value.
+     * It takes a string, text, which represents the integer (which may be in hex!), and applies checking first.
+     * 
+     * It turns the string into a BigInteger, then checks the bounds on it. 
+     * 
+     * @param text : A string that represents the value of the integer before we try type casting.
+     * @param flip_sign : A boolean that indicates whether or not we should flip the positive or negative sign on the BigInt after we make it.
+     * @return boolean : True or False depending on whether or not the BigInt falls within the valid boundaries of a normal integer
+     */
     private boolean CheckIntSize(String text, boolean flip_sign) {
         BigInteger largest_allowed = new BigInteger(Integer.toString(Integer.MAX_VALUE));
         BigInteger smallest_allowed = new BigInteger(Integer.toString(Integer.MIN_VALUE));
@@ -271,6 +370,15 @@ public class IRMaker {
         return checking.compareTo(largest_allowed) < 0 && checking.compareTo(smallest_allowed) > 0;
     }
     
+    /**
+     * This method allows you to check for the validity of break statements.
+     * It makes sure the break is in a loop.
+     * 
+     * @param root : the ast root for the break statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the break
+     */
     private boolean ValidateBreak(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         boolean inside_loop = false;
         for (Map<String, Type> local_table : locals) {
@@ -285,6 +393,15 @@ public class IRMaker {
         return root.getType() == DecafParserTokenTypes.TK_break && root.getNumberOfChildren() == 0; 
     }
     
+    /**
+     * This method allows you to check the validity of a continue statement.
+     * It makes sure that the the continue is inside of a loop.
+     * 
+     * @param root : the ast root for the continue statment
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the continue statement
+     */
     private boolean ValidateContinue(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         boolean inside_loop = false;
         for (Map<String, Type> local_table : locals) {
@@ -299,6 +416,15 @@ public class IRMaker {
         return root.getType() == DecafParserTokenTypes.TK_continue && root.getNumberOfChildren() == 0;
     }
     
+    /**
+     * This method allows you to check the validity of a for statement.
+     * It checks for the proper number of children and that the loop variable is declared correctly.
+     * 
+     * @param root : the ast root for the "for" statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the "for" statement
+     */
     private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (! (root.getType() == DecafParserTokenTypes.TK_for)) {
             return false;
@@ -360,6 +486,16 @@ public class IRMaker {
         return false;
     }
 
+    /**
+     * This lets you check the validity of a BLOCK. 
+     * It checks to make sure that the token type of the root of the AST is a BLOCK, then
+     * parses through the parts in the method to make sure they are valid. 
+     * 
+     * @param root : the ast root for the block
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the code block
+     */
     private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!(root.getType() == DecafParserTokenTypes.BLOCK)) {
             System.err.println("block expected but not present - IRMaker error");
@@ -430,6 +566,15 @@ public class IRMaker {
         return true;
     }
     
+    /**
+     * This method allows you to check for the validity of a statement.
+     * It is a dispatch method; it checks the root for its type and calls the proper verifier for it.
+     * 
+     * @param root : the ast root for the statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the statement
+     */
     private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (root.getType() == DecafParserTokenTypes.ASSIGN || root.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
             || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
@@ -453,6 +598,15 @@ public class IRMaker {
         return false;
     }
 
+    /**
+     * This allows you to check the validity of a return statement. 
+     * It checks the root's type, checks for non-void method, and any missing returns/improper type returns
+     * 
+     * @param root : the ast root for the return statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the return statement
+     */
     private boolean ValidateReturn(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         if (root.getType() != DecafParserTokenTypes.TK_return) {
@@ -485,12 +639,31 @@ public class IRMaker {
         return false;
     }
 
+    /**
+     * This allows you to check the validity of a while statement.
+     * It currently returns false and does not seem to be fully implemented; thus, any "while" will fail.
+     * 
+     * @param root : the ast root for the while statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of while - currently always False
+     */
     private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    /**
+     * This allows for checking the validity of an if statement.
+     * It checks that the expression in the if is valid,  that the if expression is a boolean,
+     * and if the block inside the if is valid.
+     * 
+     * @param root : the ast root for the if statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of the if statement
+     */
     private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         if (!(ValidateExpr(root.getFirstChild(), globals, locals))) {
@@ -515,11 +688,29 @@ public class IRMaker {
         return true;
     }
 
+    /**
+     * This allows for checking the validity of an expression.
+     * It is currently unimplemented and returns false.
+     * 
+     * @param root : the ast root for the expression
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return boolean : True or False depending on validity of expression - currently always False
+     */
     private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    /**
+     * This method actually generates and returns an IR_Node specified for variables; i.e. an IR_Var.
+     * If does some checking to make sure the var is valid, actually initialized, and recorded in the symbol tables. 
+     * 
+     * @param root : the ast root for the var
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Var : IR_Node specialized for variables
+     */
     private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateVar(root, globals, locals)) {
             return null;
@@ -541,6 +732,16 @@ public class IRMaker {
         return new IR_Var(root.getText(), declaredType, index);
     }
 
+    /**
+     * This method generates and returns an IR_Node specialized for arithmetic operations, i.e. an IR_ArithOp.
+     * It checks the validity of the operation then instantiates a special version of an IR_ArithOp node 
+     * specialized for the equation that was found from the given AST root.
+     * 
+     * @param root : the ast root for the arithmetic operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_ArithOp : IR_Node specialized for arithmetic operations - actually a subclass instance, specialized for specific equations
+     */
     private IR_ArithOp GenerateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateArithOp(root, globals, locals)) {
             return null;
@@ -563,6 +764,15 @@ public class IRMaker {
         }
     }
 
+    /**
+     * This method generates method calls. 
+     * It checks the validity of the calls and differentiates handling between callouts and normal methods.
+     * 
+     * @param root : the ast root for the method call or callout
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Call : IR_Node specialized for either type of method call
+     */
     private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateCall(root, globals, locals)) {
             return null;
@@ -600,6 +810,17 @@ public class IRMaker {
         return new IR_Call(name, ret, args);
     }
     
+    /**
+     * This method generates comparison operations.
+     * It generates expressions for the left and right hand sides of the given root node,
+     * checks which comparison operation this is, and returns a specific instance of IR_CompareOp
+     * specialized for that particular comparison type.
+     *  
+     * @param root : the ast root for the comparison operator
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_CompareOp : IR_Node specialized for comparison ops - actually a subclass specialized for a particular operation
+     */
     private IR_CompareOp GenerateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateCompareOp(root, globals, locals)) {
             return null;
@@ -620,6 +841,17 @@ public class IRMaker {
         }
     }
     
+    /**
+     * This method generates conditional operations. 
+     * It generates expressions for the left and right children of the given AST root, and returns a specialized
+     * instance of IR_CondOp for AND or OR. 
+     * Validity checks are included.
+     * 
+     * @param root : the ast root for the conditional operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_CondOp : IR_Node specialized for comparison operations - actually a subclass specialized for AND or OR
+     */
     private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateCondOp(root, globals, locals)) {
             return null;
@@ -636,6 +868,16 @@ public class IRMaker {
         }
     }
     
+    /**
+     * This method generates equivalence operations.
+     * It validates the conditional operator, then makes expressions for the left and right hand side of the given
+     * AST root node, then uses those to create a specialized version of IR_EqOp for either Equals or NotEquals.  
+     * 
+     * @param root : the ast root for the equivalence operation
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_EqOp : IR_Node specialized for equivalence ops; specifically, a subclass specialzed for Equals and NotEquals
+     */
     private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateCondOp(root, globals, locals)) {
             return null;
@@ -652,6 +894,18 @@ public class IRMaker {
         }
     }
     
+    /**
+     * This method generates a load statement.
+     * It makes sure the load is valid, then looks up the variable it needs to load in the local table. 
+     * If it's not in the local table, it looks in the global table.
+     * Returns null if the variable is  not found.
+     * For the successful return specified below, L = Local, P = Parameter, F = Field.
+     * 
+     * @param root : the ast root for the load
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Node : Either an IR_LDL, IR_LDP, or IR_LDF, depending on where the var was found. 
+     */
     private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateLoad(root, globals, locals)) {
             return null;
@@ -678,6 +932,19 @@ public class IRMaker {
         return null;
     }
     
+    /**
+     * This method generates a store statement.
+     * It makes sure the store is valid, then looks up the variable it needs to store in the local table. 
+     * If it's not in the local table, it looks in the global table.
+     * Once it's found, it makes a new IR_Node with the stored data. 
+     * Returns null if the variable is  not found.
+     * For the successful return specified below, L = Local, P = Parameter, F = Field.
+     * 
+     * @param root : the ast root for the store
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Node : Either an IR_STL, IR_STP, or IR_STF, depending on where the var was found.
+     */
     private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!ValidateStore(root, globals, locals)) {
             return null;
@@ -705,6 +972,16 @@ public class IRMaker {
         return null;
     }
     
+    /**
+     * This method generates literals. 
+     * It checks the type of the given AST root, and from there does additional inference to determine which specific subclass to return.
+     * Returns null if no literal is possible.
+     * 
+     * @param root : the ast root for the literal
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Literal : IR_Node specialized for literals; specifically, a subclass specialzed for IntLiteral or BoolLiteral
+     */
     private IR_Literal GenerateLiteral(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!(ValidateLiteral(root, globals, locals))) {
             return null;
@@ -731,6 +1008,16 @@ public class IRMaker {
         return null;
     }
     
+    /**
+     * This method generates break statements.
+     * It checks whether or not the break is valid. 
+     * If it is not, it returns null. 
+     * 
+     * @param root : the ast root for the break statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Break : IR_Node specialized for break statements
+     */
     private IR_Break GenerateBreak(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!(ValidateBreak(root, globals, locals))) {
             System.err.println("IRMaker error -called GenerateBreak when no break possible");
@@ -739,6 +1026,15 @@ public class IRMaker {
         return new IR_Break();
     }
     
+    /**
+     * This method generates continue statements.
+     * It checks for the validity of said statement, and returns null if it would be invalid.
+     * 
+     * @param root : the ast root for the continue statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Continue : IR_Node specialized for continue statements
+     */
     private IR_Continue GenerateContinue(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!(ValidateContinue(root, globals, locals))) {
             System.err.println("IRMaker error - called GenerateContinue when no continue possible");
@@ -747,6 +1043,17 @@ public class IRMaker {
         return new IR_Continue();
     }
     
+    /**
+     * This method generates for statements.
+     * It checks the validity of the for statement, then performs further checks to decide what the operation in the for is,
+     * and uses these to generate an expression before using that to generate a block.
+     * An IR_For is then returned containing the preloop data, the condition on which the for is predicated, and the block.
+     * 
+     * @param root : the ast root for the for statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_For : IR_Node specialized for "for" statements: Contains preloop info, conditional, and block
+     */
     private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         if (!(ValidateFor(root, globals, locals))) {
             System.err.println("IRMaker error - called GenerateFor when invalid");
@@ -790,6 +1097,16 @@ public class IRMaker {
         return new IR_For(preloop, cond, block);
     }
 
+    /**
+     * This method generates blocks used inside other codes, like the body of for loops.
+     * It checks the validity of the block, and if it is valid, steps through it and sets up the information needed
+     * to form an IR_Node with a sequence of statements that makes up the block. Hence, an IR_Seq.
+     * 
+     * @param root : the ast root for the block
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Seq : IR_Node specialized for blocks : It contains a sequence of statements representing the code in the block. 
+     */
     private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         // TODO Auto-generated method stub
         if (!(ValidateBlock(root, globals, locals))) {
@@ -851,7 +1168,17 @@ public class IRMaker {
         }
         return new IR_Seq(statements);
     }
-
+    
+    /**
+     *This method generates return statements.
+     *It checks the validity of the return statement, and the number of children of the provided root.
+     *If the number of children is 0, the IR_Return has a null value. Else, it will have an expression value.
+     * 
+     * @param root : the ast root for the return statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Return : IR_Node specialized for return statements : contains either an expression or null
+     */
     private IR_Return GenerateReturn(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         if (!ValidateReturn(root, globals, locals)) {
@@ -864,12 +1191,32 @@ public class IRMaker {
         return new IR_Return(value);
     }
 
+    /**
+     * This method generates while statements. 
+     * It is currently unimplemented.
+     * 
+     * @param root : the ast root for the while statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Node : IR_Node specialized for while statements; however, currently is always null
+     */
     private IR_Node GenerateWhile(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         // TODO Auto-generated method stub
         return null;
     }
 
+    /**
+     * This method generates if statements.
+     * It checks the validity of the if statement, and if that statement is valid, it adds a new hashmap to the local table,
+     * generates an expression descripbing the if condition, generates a block for the true and false aspects of the if,
+     * and returns an IR_Node that holds all three of the above fields; an IR_If. 
+     * 
+     * @param root : the ast root for the if statement
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_If : IR_Node specialized for If statements. Contains the condition for the if, and the true/false blocks for that condition.
+     */
     private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals) {
         if (!(ValidateIf(root, globals, locals))) {
@@ -890,6 +1237,15 @@ public class IRMaker {
         return new IR_If(condition, true_block, false_block);
     }
 
+    /**
+     * This method generates Expressions.
+     * It is currently unimplemented.
+     * 
+     * @param root : the ast root for the expression
+     * @param globals : the global symbol table, a Map<String, Descriptor>
+     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @return IR_Node : IR_Node specialized for expressions; however, currently always null.
+     */
     private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
         return null;
     }
