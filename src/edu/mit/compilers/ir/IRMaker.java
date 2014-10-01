@@ -2,6 +2,7 @@ package edu.mit.compilers.ir;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -347,20 +348,171 @@ public class IRMaker {
         } else {
             return false;
         }
-        if (ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, locals)) {
+        int num_elem = root.getNumberOfChildren() - 4;
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        Collections.copy(fake_locals, locals);
+        Map<String, Type> fake_for = new HashMap<String, Type>();
+        fake_for.put("for", Type.NONE);
+        fake_locals.add(fake_for);
+        if (ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals)) {
             return true;
         }
         return false;
     }
 
     private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        //TODO 
-        return false;
+        if (!(root.getType() == DecafParserTokenTypes.BLOCK)) {
+            System.err.println("block expected but not present - IRMaker error");
+            return false;
+        }
+        List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>();
+        Collections.copy(locals_copy, locals);
+        Map<String, Type> declared = locals.get(locals.size() - 1);
+        boolean finished_fields = false;
+        Type declaring = Type.NONE;
+        int i = 0;
+        AST block_start = root.getFirstChild();
+        int num_elem = root.getNumberOfChildren();
+        while (i < num_elem) {
+            if (!finished_fields) {
+                if (block_start.getType() == DecafParserTokenTypes.FIELD_DECL) {
+                    int num_in_decl = block_start.getNumberOfChildren() - 1;
+                    AST var = block_start.getFirstChild().getNextSibling();
+                    if (block_start.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
+                        declaring = Type.INT;
+                    } else if (block_start.getType() == DecafParserTokenTypes.TK_boolean) {
+                        declaring = Type.BOOL;
+                    } else {
+                        System.err.println("Parser error - program should have been rejected");
+                        return false;
+                    }
+                    int j = 0;
+                    while (j < num_in_decl) {
+                        if (var.getType() == DecafParserTokenTypes.ID) {
+                            if (declared.containsKey(var.getText())) {
+                                System.err.println("variable already declared in same scope - at " + var.getLine() + ":" + var.getColumn());
+                                return false;
+                            }
+                            if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                                if (declaring == Type.INT) {
+                                    declared.put(var.getText(), Type.INTARR);
+                                    j++; j++;
+                                    var = var.getNextSibling().getNextSibling();
+                                } else if (declaring == Type.BOOL) {
+                                    declared.put(var.getText(), Type.BOOLARR);
+                                    j++; j++;
+                                    var = var.getNextSibling().getNextSibling();
+                                } else {
+                                    System.err.println("Parser error - program should have been rejected");
+                                    return false;
+                                }
+                            } 
+                            declared.put(root.getText(), declaring);
+                            i++;
+                            root = root.getNextSibling();
+                        }  else {
+                            System.err.println("Parser error - program should have been rejected");
+                        }
+                    }
+                    i++;
+                    block_start = block_start.getNextSibling();
+                } else {
+                    finished_fields = true;
+                }
+            } else {
+                if (!ValidateStatement(block_start, globals, locals_copy)) {
+                    return false;
+                }
+                i++;
+                block_start = block_start.getNextSibling();
+            }
+        }
+        return true;
     }
     
     private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        //TODO 
+        if (root.getType() == DecafParserTokenTypes.ASSIGN || root.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
+            || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+            return ValidateStore(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.METHOD_CALL) {
+            return ValidateCall(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_if) {
+            return ValidateIf(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_for) {
+            return ValidateFor(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_while) {
+            return ValidateWhile(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_return) {
+            return ValidateReturn(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_break) {
+            return ValidateBreak(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.TK_continue) {
+            return ValidateContinue(root, globals, locals);
+        }
+        System.err.println("Parser error - no statement possible - program should have been rejected");
         return false;
+    }
+
+    private boolean ValidateReturn(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
+        if (root.getType() != DecafParserTokenTypes.TK_return) {
+            System.err.println("IRMaker error - called validate return without return token");
+            return false;
+        }
+        Type retType = locals.get(0).get("return");
+        if (retType == Type.NONE) {
+            if (root.getNumberOfChildren() != 0) {
+                System.err.println("Can't return a value from a void-type function - at" + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+            return true;
+        } else if (retType == Type.BOOL) {
+            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals) 
+                || !(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.BOOL)) {
+                System.err.println("Must return a boolean from a boolean-type function - at" + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+            return true;
+        } else if (retType == Type.INT) {
+            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals) 
+                || !(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.INT)) {
+                System.err.println("Must return an int from an int-type function - at" + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+            return false;
+        } 
+        System.err.println("IRMaker error - return type not present");
+        return false;
+    }
+
+    private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
+        if (!(ValidateExpr(root.getFirstChild(), globals, locals))) {
+            return false;
+        } if (!(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.BOOL)) {
+            System.err.println("If expressions must be booleans - at" + root.getLine() +":" + root.getColumn());
+            return false;
+        }
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        Collections.copy(fake_locals, locals);
+        fake_locals.add(new HashMap<String, Type>());
+        if (!(ValidateBlock(root.getFirstChild().getNextSibling(), globals, fake_locals))) {
+            return false;
+        }
+        fake_locals.remove(fake_locals.size() - 1);
+        if (root.getNumberOfChildren() == 4) {
+            fake_locals.add(new HashMap<String, Type>());
+            if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -632,14 +784,110 @@ public class IRMaker {
         Map<String, Type> for_block = new HashMap<String, Type>();
         for_block.put("for", Type.NONE);
         locals.add(for_block);
-        IR_Seq block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, locals);
+        IR_Seq block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), 
+                                     globals, locals);
         locals.remove(for_block);
         return new IR_For(preloop, cond, block);
     }
 
-    private IR_Seq GenerateBlock(AST nextSibling, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+        // TODO Auto-generated method stub
+        if (!(ValidateBlock(root, globals, locals))) {
+            return null;
+        }
+        List<IR_Node> statements = new ArrayList<IR_Node>();
+        int i = 0;
+        int num_elem = root.getNumberOfChildren();
+        AST cur_elem = root.getFirstChild();
+        while (i < num_elem) {
+            if (cur_elem.getType() == DecafParserTokenTypes.FIELD_DECL) {
+                Type declaring;
+                AST var = cur_elem.getFirstChild().getNextSibling();
+                int j = cur_elem.getNumberOfChildren() - 1;
+                if (cur_elem.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
+                    declaring = Type.INT;
+                } else if (cur_elem.getFirstChild().getType() == DecafParserTokenTypes.TK_boolean) {
+                    declaring = Type.BOOL;
+                } else {
+                    System.err.println("IRMaker error - should not have tried to generate block");
+                    return null;
+                }
+                while (j >= 0 ) {
+                    if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                        if (declaring == Type.INT) {
+                            locals.get(locals.size()-1).put(var.getText(), Type.INTARR);
+                        } else if (declaring == Type.BOOL) {
+                            locals.get(locals.size()-1).put(var.getText(), Type.BOOLARR);
+                        }
+                        j++; j++;
+                        var = var.getNextSibling().getNextSibling();
+                    } else {
+                        locals.get(locals.size()-1).put(var.getText(), declaring);
+                    }
+                }
+            } else if (cur_elem.getType() == DecafParserTokenTypes.ASSIGN || cur_elem.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
+                       || cur_elem.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                statements.add(GenerateStore(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.METHOD_CALL) {
+                statements.add(GenerateCall(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_if) {
+                statements.add(GenerateIf(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_for) {
+                statements.add(GenerateFor(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_while) {
+                statements.add(GenerateWhile(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_return) {
+                statements.add(GenerateReturn(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_break) {
+                statements.add(GenerateBreak(cur_elem, globals, locals));
+            } else if (cur_elem.getType() == DecafParserTokenTypes.TK_continue) {
+                statements.add(GenerateContinue(cur_elem, globals, locals));
+            } else {
+                System.err.println("IRMaker error - invalid statement in block");
+                return null;
+            }
+            i++;
+            cur_elem = cur_elem.getNextSibling();
+        }
+        return new IR_Seq(statements);
+    }
+
+    private IR_Return GenerateReturn(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
+        if (!ValidateReturn(root, globals, locals)) {
+            return null;
+        }
+        IR_Node value = null;
+        if (root.getNumberOfChildren() != 0) {
+            value = GenerateExpr(root.getFirstChild(), globals, locals);
+        }
+        return new IR_Return(value);
+    }
+
+    private IR_Node GenerateWhile(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
+            List<Map<String, Type>> locals) {
+        if (!(ValidateIf(root, globals, locals))) {
+            return null;
+        }
+        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals);
+        locals.add(new HashMap<String, Type>());
+        IR_Seq true_block = GenerateBlock(root.getFirstChild().getNextSibling(), globals, locals);
+        locals.remove(locals.size() - 1);
+        IR_Seq false_block;
+        if (root.getNumberOfChildren() == 4) {
+            locals.add(new HashMap<String, Type>());
+            false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals);
+            locals.remove(locals.size() - 1);
+        } else {
+            false_block = new IR_Seq(Collections.EMPTY_LIST);
+        }
+        return new IR_If(condition, true_block, false_block);
     }
 
     private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {

@@ -74,7 +74,8 @@ field_decl: type (ID | ID LBRACKET! INT_LITERAL RBRACKET!) (COMMA! (ID | ID LBRA
 method_decl: (type | TK_void) ID LPAREN! ((type ID) (COMMA! type ID)*)? RPAREN! block
 {#method_decl = #([METHOD_DECL,"method_decl"],#method_decl);};
 
-block: LCURLY! (field_decl)* (statement)* RCURLY!;
+block: LCURLY! (field_decl)* (statement)* RCURLY!
+{#block = #([BLOCK,"block"],#block);};
 type: TK_int | TK_boolean;
 
 statement: location (ASSIGN^ | ASSIGN_MINUS^ | ASSIGN_PLUS^) expr SEMICOLON!
