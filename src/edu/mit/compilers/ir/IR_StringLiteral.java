@@ -20,14 +20,17 @@ public class IR_StringLiteral extends IR_Node {
 		return this.value;
 	}
 	
+	@Override
 	public Type evaluateType() {
 		return Type.STRING;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return true;
 	}
 	
+	@Override
 	public String toString() {
 		return value;
 	}

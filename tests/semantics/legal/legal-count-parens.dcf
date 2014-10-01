@@ -1,0 +1,27 @@
+callout printf;
+// Count the number of ways to balance n pairs of parenthesis.
+// This generates the Catalan numbers.
+
+void count_paren(int n) {
+	int sum;
+	sum = 0;
+	if (n == 0 || n == 1) {
+		return 1;
+	}
+	else {
+		int i;
+		for (i=0; i<n) {
+			sum += count_paren(i) * count_paren(n-i-1)
+		}
+	}
+	return sum;
+}
+
+void main() {
+	int n;
+	n = 20;
+
+	int ways;
+	ways = count_paren(n);
+	printf("There are %d ways to balance %d sets of parenthesis", ways, n)
+}
