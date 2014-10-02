@@ -1,0 +1,13 @@
+void main ( ) {
+  int x, i;
+  for (i=0, 10) {
+  	int x[10];
+  	x[0] = 5;
+  	if (x[0] < 2) {
+  		while (x > 5):10 {
+  			// x is an int arr
+  			continue;
+  		}
+  	}
+  }
+}

@@ -1,0 +1,9 @@
+void main ( ) {
+  int x;
+  boolean y, z;
+  x = 5;
+  z = true;
+
+  y = x != z;
+  // both operants must be of the same type
+}

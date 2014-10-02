@@ -1,0 +1,52 @@
+// Bunch of nonsense, but legal, code.
+
+int a[10];
+int A[10];
+boolean x;
+
+int bar(int a, boolean b) {
+	return a + 4 * -@A;
+}
+
+boolean foo(int a, int b, boolean c) {
+	boolean x[20];
+	int blah;
+	x[0] = !(1 > 4);
+	if (a == 0xABC) {
+		int blah[1];
+		// This breaks the parsing: blah[1] = 4;
+		boolean A[200];
+		boolean x[1];
+		x[0] = @x == 1;
+		A[@x+0x1*3%1] = x[0] ? -42 < 2 && 0x4F2 != 8 : !(x[0] || x[0]);
+		return !((A[2]) && @A <= 10);
+	} else {
+		boolean blah[25];
+		blah[24] = true;
+		while (true):10 {
+			int A[10];
+			A[4] = -4221424 * 4 + 1242 / 241 * (3 + 2 % 1);
+			A[5] = bar(A[4], bar(5, x[0]));
+			if (false == A[4] > 2) {
+				continue;
+			} else {
+			    if (false) {
+			    	int A;
+			    	A = 4;
+			    	A -= @x;
+			    	break;
+			    }
+			}
+			return A[4] == 5;
+		}
+	}
+	return !c || blah != 2;
+}
+
+void main() {
+	int a, b;
+	boolean c;
+	boolean d;
+	A[5] = a;
+  	d = foo(a, b, c);
+}

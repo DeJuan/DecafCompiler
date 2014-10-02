@@ -34,6 +34,7 @@ int slice_array(int start_index, int end_index) {
 // Given an index or a pair of neighboring indices, 
 // find the longest palindrome centered there.
 void expand_from_center(int index_l, int index_r, int n) {
+	int len;
 	while ((index_l >= 0) && (index_r < n) && 
 		(Arr[index_l] == Arr[index_r])) {
 		index_l -= 1;
@@ -41,7 +42,6 @@ void expand_from_center(int index_l, int index_r, int n) {
 	}
 	index_l += 1;
 	index_r -= 1;
-	int len;
 	len = index_r - index_l + 1;
 	if (len > 0 && len > max_len) {
 		max_len = len;
@@ -73,7 +73,8 @@ void initialize_array(int n) {
 }
 
 void main() {
-	int n = 100;
+	int n;
+	n = 100;
 	initialize_array(n);
 
 	max_len = 0;

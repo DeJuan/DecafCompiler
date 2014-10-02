@@ -2,10 +2,10 @@ callout printf;
 
 int A[100];
 
-// Reads ’len’ elements from input file to the array ’A’ and sorts the array 
-void read_and_sort(int len) { }
+// Reads \'len\' elements from input file to the array \'A\' and sorts the array 
+void read_and_sort(int len) {}
 
-// Binary search for the element ’value’
+// Binary search for the element \'value\'
 
 int bins(int value, int len) {
 	int left;

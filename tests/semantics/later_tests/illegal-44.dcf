@@ -1,0 +1,7 @@
+void main () {
+  	boolean i;
+  	if (i) {
+  	// boolean has not be declared
+  		int x;
+  	}
+}

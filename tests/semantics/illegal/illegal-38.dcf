@@ -1,0 +1,9 @@
+boolean foo() {
+	return true;
+}
+
+void main () {
+  int a;
+  a = foo();
+  // method returns wrong type
+}

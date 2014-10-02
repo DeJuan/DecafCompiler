@@ -1,0 +1,10 @@
+int a;
+
+void foo() {
+	return;
+}
+
+void main () {
+  a = foo();
+  // method doesn't return anything
+}

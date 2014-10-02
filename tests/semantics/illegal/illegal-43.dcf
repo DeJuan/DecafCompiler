@@ -1,0 +1,8 @@
+void main () {
+  	int i;
+  	i = 5;
+  	if (i) {
+  	// expr must be an boolean
+  		int x;
+  	}
+}

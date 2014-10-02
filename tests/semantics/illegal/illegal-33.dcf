@@ -1,0 +1,4 @@
+void main (int a) {
+  // main must have no parameters
+  int i;
+}

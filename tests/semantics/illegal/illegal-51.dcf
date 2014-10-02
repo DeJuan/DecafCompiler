@@ -1,0 +1,8 @@
+void main ( ) {
+  int x;
+  boolean z;
+  z = true;
+  x = 1;
+  x -= z;
+  // rhs must be an int
+}

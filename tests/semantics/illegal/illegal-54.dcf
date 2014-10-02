@@ -1,0 +1,8 @@
+void main ( ) {
+  int x;
+  x = 0;
+  while (x<4):0 {
+    // upper bound of while must be positive
+  	x += 1;
+  }
+}

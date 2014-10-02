@@ -1,0 +1,9 @@
+int foo() {
+	int i[20];
+	return i;
+	// need to return an int
+}
+
+void main ( ) {
+  foo();
+}

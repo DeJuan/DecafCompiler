@@ -1,0 +1,6 @@
+void main ( ) {
+  int x;
+  for ( x = 0, true ) {
+    // 2nd expr must also be an int
+  }
+}
