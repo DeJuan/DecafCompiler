@@ -900,7 +900,7 @@ public class IRMaker {
                         if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                             if (!ValidateLiteral(var.getNextSibling(), fake_globals, fake_locals) 
                                     || ((IR_Literal.IR_IntLiteral) GenerateLiteral(var.getNextSibling(), fake_globals, fake_locals)).getValue() <= 0) {
-                                
+                                return false;
                             }
                             if (declaring == Type.INT) {
                                 fake_globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
