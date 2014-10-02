@@ -1,5 +1,4 @@
 int foo() {
-	int i;
 	return i;
 	// return var is undeclared
 }

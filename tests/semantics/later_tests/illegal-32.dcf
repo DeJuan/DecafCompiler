@@ -1,4 +1,0 @@
-int main ( ) {
-   // main method must return void
-   int i;
-}
