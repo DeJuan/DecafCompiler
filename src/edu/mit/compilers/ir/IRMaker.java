@@ -316,6 +316,11 @@ public class IRMaker {
                && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens))) {
             IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals, array_lens);
             IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
+            if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                if (rhs.evaluateType() != Type.INT) {
+                    System.err.println("+= and -= can only be applied to integers - at " + root.getLine() + ":" + root.getColumn());
+                }
+            }
             if (lhs.getIndex() != null) {
                 if ((lhs.evaluateType() == Type.INTARR && rhs.evaluateType() == Type.INT) 
                         || (lhs.evaluateType() == Type.BOOLARR && rhs.evaluateType() == Type.BOOL)) {
@@ -1209,6 +1214,11 @@ public class IRMaker {
         IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals, array_lens);
         IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (lhs.getIndex() != null) {
+            if (root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Plus(new IR_LDA(lhs), rhs);
+            } else if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Sub(new IR_LDA(lhs), rhs);
+            }
             return new IR_STA(lhs, rhs);
         }
         int table_index = locals.size() - 1;
@@ -1219,10 +1229,25 @@ public class IRMaker {
             table_index--;
         }
         if (table_index > 0) {
+            if (root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Plus(new IR_LDL(lhs), rhs);
+            } else if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Sub(new IR_LDL(lhs), rhs);
+            }
             return new IR_STL(lhs, rhs);
         } else if (table_index == 0) {
+            if (root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Plus(new IR_LDP(lhs), rhs);
+            } else if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Sub(new IR_LDP(lhs), rhs);
+            }
             return new IR_STP(lhs, rhs);
         } else if (globals.containsKey(lhs.getName())) {
+            if (root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Plus(new IR_LDF(lhs), rhs);
+            } else if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS) {
+                rhs = new IR_ArithOp.IR_ArithOp_Sub(new IR_LDF(lhs), rhs);
+            }
             return new IR_STF(lhs, rhs);
         }
         System.err.println("IRMaker error - called GenerateStore with uninitialized variable at " + root.getLine() + ":" + root.getColumn());
