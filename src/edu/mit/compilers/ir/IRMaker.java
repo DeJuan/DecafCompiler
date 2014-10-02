@@ -567,6 +567,9 @@ public class IRMaker {
                                 if (!(ValidateLiteral(var.getNextSibling(), globals, locals))) {
                                     return false;
                                 }
+                                if (((IR_Literal.IR_IntLiteral) GenerateLiteral(var.getNextSibling(), globals, locals)).getValue() <= 0 ) {
+                                    System.err.println("arrays must be of positive length - at " + var.getLine() + ":" + var.getColumn());
+                                }
                                 if (declaring == Type.INT) {
                                     declared.put(var.getText(), Type.INTARR);
                                     new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
@@ -895,6 +898,10 @@ public class IRMaker {
                             return false;
                         }
                         if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                            if (!ValidateLiteral(var.getNextSibling(), fake_globals, fake_locals) 
+                                    || ((IR_Literal.IR_IntLiteral) GenerateLiteral(var.getNextSibling(), fake_globals, fake_locals)).getValue() <= 0) {
+                                
+                            }
                             if (declaring == Type.INT) {
                                 fake_globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
@@ -1686,7 +1693,11 @@ public class IRMaker {
                 globals.get(name).setIR(method_IR);
             }
         }
-        return globals.containsKey("main") ? globals : null;
+        if (!globals.containsKey("main")) {
+            System.err.println("all decaf programs need a main function");
+            return null;
+        }
+        return globals;
     }
 
 }

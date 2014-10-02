@@ -18,6 +18,10 @@ abstract class IR_Literal extends IR_Node {
 			this.value = value;
 		}
 		
+		public long getValue() {
+		    return value;
+		}
+		
 		@Override
 		public Type evaluateType() {
 			return Type.INT;
@@ -41,6 +45,10 @@ abstract class IR_Literal extends IR_Node {
 			this.value = value;
 		}
 		
+		public boolean getValue() {
+		    return value;
+		}
+		
 		@Override
 		public Type evaluateType() {
 			return Type.BOOL;
@@ -62,6 +70,10 @@ abstract class IR_Literal extends IR_Node {
 	    
 	    public IR_StringLiteral(String text) {
 	        value = text.substring(1, text.length() - 1);
+	    }
+	    
+	    public String getValue() {
+	        return value;
 	    }
 	    
 	    @Override
