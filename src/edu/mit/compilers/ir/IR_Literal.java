@@ -3,19 +3,19 @@
  */
 package edu.mit.compilers.ir;
 
-import antlr.collections.AST;
 
 /**
  * @author yygu
+ * @author madmott
  *
  */
 abstract class IR_Literal extends IR_Node {
 	
 	public static class IR_IntLiteral extends IR_Literal {
-		private int value;
+		private Long value;
 		
-		public IR_IntLiteral(AST node) {
-			value = Integer.parseInt(node.getText());
+		public IR_IntLiteral(Long value) {
+			this.value = value;
 		}
 		
 		@Override
@@ -30,18 +30,15 @@ abstract class IR_Literal extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return Integer.toString(value);
+			return Long.toString(value);
 		}
 	}
 	
 	public static class IR_BoolLiteral extends IR_Literal {
 		private boolean value;
 		
-		public IR_BoolLiteral(AST node) {
-			if (node.getText().equals("true"))
-				value = true;
-			else if (node.getText().equals("false"))
-				value = false;
+		public IR_BoolLiteral(boolean value) {
+			this.value = value;
 		}
 		
 		@Override
@@ -58,6 +55,29 @@ abstract class IR_Literal extends IR_Node {
 		public String toString() {
 			return Boolean.toString(value);
 		}
+	}
+	
+	public static class IR_StringLiteral extends IR_Literal {
+	    private String value;
+	    
+	    public IR_StringLiteral(String text) {
+	        value = text.substring(1, text.length() - 1);
+	    }
+	    
+	    @Override
+	    public Type evaluateType() {
+	        return Type.STRING;
+	    }
+	    
+	    @Override
+	    public boolean isValid() {
+	        return true;
+	    }
+	    
+	    @Override
+	    public String toString() {
+	        return value;
+	    }
 	}
 	
 }

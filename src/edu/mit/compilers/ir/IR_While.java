@@ -40,7 +40,7 @@ public class IR_While extends IR_Node {
 	@Override
 	public boolean isValid() {
 		return expr_cond.isValid() && expr_cond.evaluateType() == Type.BOOL 
-				&& maxLoops.isValid() && block.isValid();
+				&& (maxLoops == null || maxLoops.isValid()) && block.isValid();
 	}
 	
 	@Override

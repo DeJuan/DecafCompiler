@@ -1,6 +1,6 @@
 package Descriptors;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import edu.mit.compilers.ir.IR_Node;
 
@@ -46,10 +46,11 @@ public abstract class Descriptor {
 	}
 	
 	
-	private ArrayList<Boolean> argTypes;
-	private int length;
-	private IR_Node IR;
-	
+	private List<Boolean> argTypes;
+	private long length;
+	//TODO UNCOMMENT THIS WHEN THE IR IS READY
+	private IR_Node methodIRNode;
+	//TODO Insert enum RETURNTYPE and TYPE?
 	/**
 	 * This method gets the length of the object represented by the descriptor. 
 	 * This is only used by Array descriptors.
@@ -57,15 +58,15 @@ public abstract class Descriptor {
 	 * @return integer : represents length of array
 	 * @throws UnsupportedOperationException
 	 */
-	public abstract int getLength() throws UnsupportedOperationException;
+	public abstract long getLength();
 	
 	/**
-	 * This may not actually be needed, but is here due to the group discussion we had about passing around
-	 * types as a boolean array list. If needed, this will be used in MethodDescriptor.
+	 * This will be used in MethodDescriptor.
 	 * @return ArrayList<Boolean> : each entry is true for a boolean argument and false for an integer argument. 
 	 * @throws UnsupportedOperationException for non methods.
 	 */
-	public abstract ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException;
+	
+	public abstract List<Boolean> getArgTypes();
 	
 	/**
 	 * This is also another action really only useful for MethodDescriptors. 
@@ -73,15 +74,17 @@ public abstract class Descriptor {
 	 * @return "bool", "boolean", "int", or "void".
 	 * @throws UnsupportedOperationException 
 	 */
-	public abstract String getReturnType() throws UnsupportedOperationException;
+
+	public abstract String getReturnType();
 	
 	/**
 	 * This gives you the Type of the descriptor. This is used by the enums so that we have a set
 	 * type that anything could be; if it is not one of these types, we have an error. 
 	 * @return Type instance which describes what kind of descriptor is being used.
-	 * @throws UnsupportedOperationException
 	 */
-	public abstract Type getType() throws UnsupportedOperationException;
+	public abstract Type getType();
+	
+	public abstract void setIR(IR_Node IR);
 	
 	/**
 	 * This method is only used for MethodDescriptors. 

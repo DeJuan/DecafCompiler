@@ -1,21 +1,16 @@
 package Descriptors;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import edu.mit.compilers.ir.IR_Node;
-import Descriptors.Descriptor.ReturnType;
-import Descriptors.Descriptor.Type;
-
 
 
 public class MethodDescriptor extends Descriptor {
 
-	private String methodType;
-	private ArrayList<Boolean> argumentTypes;
-	private ReturnType returnType;
+	private List<Boolean> argumentTypes;
 	private Type type;
+	private ReturnType returnType;
 	private IR_Node methodIRNode;
-	
 	
 	/**
 	 * This is the constructor for a new MethodDescriptor. 
@@ -30,38 +25,25 @@ public class MethodDescriptor extends Descriptor {
 	 * @param methodNode : an IR_Node representation of the method. 
 	 * @throws Exception
 	 */
-	public MethodDescriptor(String retType, ArrayList<Boolean> argTypes, IR_Node methodNode) throws Exception
+	public MethodDescriptor(String type, List<Boolean> argTypes)
 	{
 		//TODO NOT SURE IF THIS IS THE BEST WAY TO HANDLE THIS, ASK GROUP
-		this.type = Type.METHOD;
-		this.methodIRNode = methodNode;
-		switch(retType)
-		{
-		
-		case "bool": //Fall though, just here for safety
-		case "boolean":
-		this.returnType = ReturnType.BOOL;
-		break;
-		
-		case "int":
-		this.returnType = ReturnType.INT;
-		break;
-		
-		case "void":
-		this.returnType = ReturnType.VOID;
-		break;
-		
-		default:
-		System.err.print("Invalid string  supplied for method type.");
-			throw new RuntimeException("Invalid string  supplied for method type.");
+        this.type = Type.METHOD;
+		if (type.equals("bool") || type.equals("boolean")) {
+		    this.returnType = ReturnType.BOOL;
+		} else if (type.equals("int")) {
+		    this.returnType = ReturnType.INT;
+		} else if (type.equals("void")) {
+		    this.returnType = ReturnType.VOID;
+		} else {
+		    System.err.print("Invalid string  supplied for method type.");
+		    throw new RuntimeException("Invalid string  supplied for method type.");
 		}
-		
-		
 		this.argumentTypes = argTypes;
 	}
 	
 	@Override
-	public ArrayList<Boolean> getArgTypes() {
+	public List<Boolean> getArgTypes() {
 		return argumentTypes;
 	}
 
@@ -71,20 +53,26 @@ public class MethodDescriptor extends Descriptor {
 	}
 
 	@Override
-	public Type getType(){
+	public Type getType() {
 		return this.type;
 	}
 
 
 	@Override
-	public int getLength() throws UnsupportedOperationException {
+	public long getLength() {
 		System.err.println("Methods do not have a length in that sense.");
-		throw new UnsupportedOperationException("Methods do not have a length for this operation.");
+		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	public IR_Node getIR(){
-		return this.methodIRNode;
-	}
+    @Override
+    public IR_Node getIR() {
+        return this.methodIRNode;
+    }
+
+    @Override
+    public void setIR(IR_Node IR) {
+        this.methodIRNode = IR;
+        
+    }
 
 }

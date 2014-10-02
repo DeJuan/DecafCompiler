@@ -43,7 +43,7 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return "+" + left.toString() + right.toString();
+			return left.toString() + " + " + right.toString();
 		}
 	}
 	
@@ -76,7 +76,7 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return "-" + left.toString() + right.toString();
+			return left.toString() + " - " + right.toString();
 		}
 	}
 	
@@ -109,7 +109,7 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return "*" + left.toString() + right.toString();
+			return left.toString() + " * "+ right.toString();
 		}
 	}
 	
@@ -142,7 +142,7 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return "/" + left.toString() + right.toString();
+			return left.toString() + " / " + right.toString();
 		}
 	}
 	
@@ -175,7 +175,7 @@ abstract class IR_ArithOp extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return "%" + left.toString() + right.toString();
+			return left.toString() + " % " + right.toString();
 		}
 	}
 }

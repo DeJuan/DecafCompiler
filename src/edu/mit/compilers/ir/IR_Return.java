@@ -21,11 +21,14 @@ public class IR_Return extends IR_Node {
 	
 	@Override
 	public boolean isValid() {
-		return expr.isValid();
+		return expr == null || expr.isValid();
 	}
 	
 	@Override
 	public String toString() {
+	    if (expr == null) {
+	        return "return";
+	    }
 		return "return" + expr.toString();
 	}
 }

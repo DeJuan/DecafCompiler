@@ -3,8 +3,10 @@
  */
 package edu.mit.compilers.ir;
 
+
 /**
  * @author yygu
+ * @author madmott
  *
  */
 public abstract class IR_Node {

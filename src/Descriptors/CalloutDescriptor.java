@@ -6,7 +6,6 @@ import edu.mit.compilers.ir.IR_Node;
 
 public class CalloutDescriptor extends Descriptor{
 	private Type type;
-	private String name;
 	
 	/**
 	 * This is the constructor for a CalloutDescriptor.
@@ -16,11 +15,10 @@ public class CalloutDescriptor extends Descriptor{
 	public CalloutDescriptor(String name)
 	{
 		this.type = Type.CALLOUT;
-		this.name = name;
 	}
 	
 	@Override
-	public int getLength(){
+	public long getLength(){
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException("Callouts are handled by C, not our code.");
 	}
@@ -42,9 +40,10 @@ public class CalloutDescriptor extends Descriptor{
 		return this.type;
 	}
 	
-	public String getName(){
-		return this.name;
-	}
+    @Override
+    public void setIR(IR_Node IR) {
+        throw new UnsupportedOperationException();
+    }
 	
 	@Override
 	public IR_Node getIR() throws UnsupportedOperationException {

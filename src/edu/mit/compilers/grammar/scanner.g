@@ -32,6 +32,7 @@ tokens
   "true";
   "void";
   "while";
+  BLOCK;
   FIELD_DECL;
   METHOD_CALL;
   METHOD_DECL;
