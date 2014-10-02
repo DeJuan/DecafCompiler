@@ -2,23 +2,15 @@ callout rand;
 callout printf;
 // Check if an array of integers is a palindrome.
 
+int A[100];
+
 int get_random() {
 	return rand("hi");
 }
 
-void main() {
-	int i, temp, length, index;
-	int A[100];
-	boolean is_palindrome;
-
-	length = 50;
-	for (i=0, length) {
-		temp = get_random();
-		A[i] = temp;
-	}
-	printf("Hi");
-
-    index = 0;
+boolean check_if_palindrome(int length) {
+	int length, index;
+	index = 0;
     is_palindrome = true;
 
     while (is_palindrome && index < length / 2):100 {
@@ -28,6 +20,20 @@ void main() {
         }
         index += 1;
 	}
+	return is_palindrome;
+	
+}
+
+void main() {
+	int i, temp;
+	boolean is_palindrome;
+
+	length = 50;
+	for (i=0, length) {
+		temp = get_random();
+		A[i] = temp;
+	}
+	is_palindrome = check_if_palindrome(length);
 
 	printf("Is this a palindrome? %d", is_palindrome);
 }
