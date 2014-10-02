@@ -501,10 +501,8 @@ public class IRMaker {
         } else {
             return false;
         }
-        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Long>> fake_array_lens = new ArrayList<Map<String, Long>>();
-        Collections.copy(fake_locals, locals);
-        Collections.copy(fake_array_lens, array_lens);
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>(locals);
+        List<Map<String, Long>> fake_array_lens = new ArrayList<Map<String, Long>>(array_lens);
         Map<String, Type> fake_for = new HashMap<String, Type>();
         fake_for.put("for", Type.NONE);
         fake_locals.add(fake_for);
@@ -530,12 +528,8 @@ public class IRMaker {
             System.err.println("block expected but not present - IRMaker error");
             return false;
         }
-        List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>();
-        List<Map<String, Long>> lens_copy = new ArrayList<Map<String, Long>>();
-        Collections.copy(locals_copy, locals);
-        Collections.copy(lens_copy, array_lens);
-        Map<String, Type> declared = locals_copy.get(locals.size() - 1);
-        Map<String, Long> new_lens = lens_copy.get(lens_copy.size() - 1);
+        Map<String, Type> declared = new HashMap<String, Type>(locals.get(locals.size() - 1));
+        Map<String, Long> new_lens = new HashMap<String, Long>(array_lens.get(array_lens.size() - 1));
         boolean finished_fields = false;
         Type declaring = Type.NONE;
         int i = 0;
@@ -594,6 +588,12 @@ public class IRMaker {
                     finished_fields = true;
                 }
             } else {
+                List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>(locals);
+                locals_copy.remove(locals_copy.size() - 1);
+                locals_copy.add(declared);
+                List<Map<String, Long>> lens_copy = new ArrayList<Map<String, Long>>(array_lens);
+                lens_copy.remove(lens_copy.size() - 1);
+                lens_copy.add(new_lens);
                 if (!ValidateStatement(block_start, globals, locals_copy, lens_copy)) {
                     return false;
                 }
@@ -716,10 +716,8 @@ public class IRMaker {
                 return false;
             }
         }
-        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>();
-        Collections.copy(fake_locals, locals);
-        Collections.copy(fake_lens, array_lens);
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>(locals);
+        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>(array_lens);
         Map<String, Type> fake_while = new HashMap<String, Type>();
         fake_while.put("while", Type.NONE);
         fake_locals.add(fake_while);
@@ -745,10 +743,8 @@ public class IRMaker {
             System.err.println("If expressions must be booleans - at" + root.getLine() +":" + root.getColumn());
             return false;
         }
-        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>();
-        Collections.copy(fake_locals, locals);
-        Collections.copy(fake_lens, array_lens);
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>(locals);
+        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>(array_lens);
         fake_locals.add(new HashMap<String, Type>());
         fake_lens.add(new HashMap<String, Long>());
         if (!(ValidateBlock(root.getFirstChild().getNextSibling(), globals, fake_locals, fake_lens))) {
