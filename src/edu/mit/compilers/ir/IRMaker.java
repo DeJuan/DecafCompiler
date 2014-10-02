@@ -536,6 +536,10 @@ public class IRMaker {
         AST block_start = root.getFirstChild();
         int num_elem = root.getNumberOfChildren();
         while (i < num_elem) {
+            block_start = root.getFirstChild();
+            for (int k = 0; k < i; k++) {
+                block_start = block_start.getNextSibling();
+            }
             if (!finished_fields) {
                 if (block_start.getType() == DecafParserTokenTypes.FIELD_DECL) {
                     int num_in_decl = block_start.getNumberOfChildren() - 1;
@@ -550,6 +554,10 @@ public class IRMaker {
                     }
                     int j = 0;
                     while (j < num_in_decl) {
+                        var = block_start.getFirstChild().getNextSibling();
+                        for (int k = 0; k < j; k++) {
+                            var = var.getNextSibling();
+                        }
                         if (var.getType() == DecafParserTokenTypes.ID) {
                             if (declared.containsKey(var.getText())) {
                                 System.err.println("variable already declared in same scope - at " + var.getLine() + ":" + var.getColumn());
@@ -563,27 +571,24 @@ public class IRMaker {
                                     declared.put(var.getText(), Type.INTARR);
                                     new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                                     j++; j++;
-                                    var = var.getNextSibling().getNextSibling();
                                 } else if (declaring == Type.BOOL) {
                                     declared.put(var.getText(), Type.BOOLARR);
                                     new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                                     j++; j++;
-                                    var = var.getNextSibling().getNextSibling();
                                 } else {
                                     System.err.println("Parser error - program should have been rejected");
                                     return false;
                                 }
-                            } 
-                            declared.put(root.getText(), declaring);
-                            new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
-                            i++;
-                            root = root.getNextSibling();
+                            } else {
+                                declared.put(root.getText(), declaring);
+                                new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
+                                j++;
+                            }
                         }  else {
                             System.err.println("Parser error - program should have been rejected");
                         }
                     }
                     i++;
-                    block_start = block_start.getNextSibling();
                 } else {
                     finished_fields = true;
                 }
@@ -598,7 +603,6 @@ public class IRMaker {
                     return false;
                 }
                 i++;
-                block_start = block_start.getNextSibling();
             }
         }
         return true;
