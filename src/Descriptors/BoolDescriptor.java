@@ -17,7 +17,7 @@ public class BoolDescriptor extends Descriptor{
 	}
 	
 	@Override
-	public int getLength() {
+	public long getLength() {
 		System.err.println("A boolean does not have a length.");
 		throw new UnsupportedOperationException();
 	}

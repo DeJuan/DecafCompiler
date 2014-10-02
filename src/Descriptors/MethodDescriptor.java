@@ -59,7 +59,7 @@ public class MethodDescriptor extends Descriptor {
 
 
 	@Override
-	public int getLength() {
+	public long getLength() {
 		System.err.println("Methods do not have a length in that sense.");
 		throw new UnsupportedOperationException();
 	}

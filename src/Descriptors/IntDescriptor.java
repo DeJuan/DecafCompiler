@@ -18,7 +18,7 @@ public class IntDescriptor extends Descriptor{
 	}
 	
 	@Override
-	public int getLength() {
+	public long getLength() {
 		System.err.println("An int is 8 bytes, but does not have a length field.");
 		throw new UnsupportedOperationException();
 	}

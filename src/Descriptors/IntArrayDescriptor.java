@@ -6,7 +6,7 @@ import edu.mit.compilers.ir.IR_Node;
 
 public class IntArrayDescriptor extends Descriptor{
 
-	private final int arrayLength;
+	private final long arrayLength;
 	private final Type type;
 	
 	/**
@@ -18,14 +18,14 @@ public class IntArrayDescriptor extends Descriptor{
 	 * 
 	 * @param length : int representing how long this array should be
 	 */
-	public IntArrayDescriptor(int length)
+	public IntArrayDescriptor(long length)
 	{
 		this.arrayLength = length;
 		this.type = Type.INT_ARRAY;
 	}
 	
 	@Override
-	public int getLength() {
+	public long getLength() {
 		return this.arrayLength;
 	}
 

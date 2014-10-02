@@ -51,7 +51,7 @@ public abstract class Descriptor {
 	
 	
 	private List<Boolean> argTypes;
-	private int length;
+	private long length;
 	//TODO UNCOMMENT THIS WHEN THE IR IS READY
 	private IR_Node IR;
 	//TODO Insert enum RETURNTYPE and TYPE?
@@ -62,11 +62,10 @@ public abstract class Descriptor {
 	 * @return integer : represents length of array
 	 * @throws InvalidActivityException
 	 */
-	public abstract int getLength();
+	public abstract long getLength();
 	
 	/**
-	 * This may not actually be needed, but is here due to the group discussion we had about passing around
-	 * types as a boolean array list. If needed, this will be used in MethodDescriptor.
+	 * This will be used in MethodDescriptor.
 	 * @return ArrayList<Boolean> : each entry is true for a boolean argument and false for an integer argument. 
 	 * @throws InvalidActivityException for non methods.
 	 */

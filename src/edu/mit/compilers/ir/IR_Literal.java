@@ -6,14 +6,15 @@ package edu.mit.compilers.ir;
 
 /**
  * @author yygu
+ * @author madmott
  *
  */
 abstract class IR_Literal extends IR_Node {
 	
 	public static class IR_IntLiteral extends IR_Literal {
-		private Integer value;
+		private Long value;
 		
-		public IR_IntLiteral(Integer value) {
+		public IR_IntLiteral(Long value) {
 			this.value = value;
 		}
 		
@@ -29,7 +30,7 @@ abstract class IR_Literal extends IR_Node {
 		
 		@Override
 		public String toString() {
-			return Integer.toString(value);
+			return Long.toString(value);
 		}
 	}
 	

@@ -58,7 +58,7 @@ public class IRMaker {
      * @param locals - the local symbol table for the scope of this variable, a Map<String, Type>
      * @return boolean : True or False, answering whether or not the variable is valid.
      */
-    private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.ID) {
             System.err.println("Parser error must have occured - expected ID at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -105,7 +105,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope of this variable, a Map<String, Type>
      * @return boolean : True or False depending on validity of the given root
      */
-    private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - arith op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -143,7 +143,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of method call
      */
-    private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() != DecafScannerTokenTypes.METHOD_CALL) {
             System.err.println("IRMaker error - tried method call without method call at route at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -193,7 +193,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the comparison 
      */
-    private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - compare op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -229,7 +229,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the conditional
      */
-    private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - cond op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -264,7 +264,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the equivalence operation
      */
-    private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - eq op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -294,7 +294,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the load
      */
-    private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         return ValidateVar(root, globals, locals, array_lens);
     }
     
@@ -306,7 +306,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the store
      */
-    private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.ASSIGN 
                 && root.getType() != DecafParserTokenTypes.ASSIGN_MINUS 
                 && root.getType() != DecafParserTokenTypes.ASSIGN_PLUS) {
@@ -363,7 +363,7 @@ public class IRMaker {
     }
 
     /**
-     * This method allows you to check to make sure that an integer lies within Integer.MIN_VALUE and Integer_MAX value.
+     * This method allows you to check to make sure that an integer lies within Long.MIN_VALUE and Long.MAX_VALUE.
      * It takes a string, text, which represents the integer (which may be in hex!), and applies checking first.
      * 
      * It turns the string into a BigInteger, then checks the bounds on it. 
@@ -373,11 +373,16 @@ public class IRMaker {
      * @return boolean : True or False depending on whether or not the BigInt falls within the valid boundaries of a normal integer
      */
     private boolean CheckIntSize(String text, boolean flip_sign) {
-        BigInteger largest_allowed = new BigInteger(Integer.toString(Integer.MAX_VALUE));
-        BigInteger smallest_allowed = new BigInteger(Integer.toString(Integer.MIN_VALUE));
+        BigInteger largest_allowed = new BigInteger(Long.toString(Long.MAX_VALUE));
+        BigInteger smallest_allowed = new BigInteger(Long.toString(Long.MIN_VALUE));
         BigInteger checking;
         if (text.startsWith("0x")) {
+            if (text.length() > 18) {
+                // more than 16 hex digits long.
+                return false;
+            }
             checking = new BigInteger(text.substring(2), 16);
+            checking = checking.compareTo(largest_allowed) > 0 ? checking.subtract((new BigInteger("2").pow(64))) : checking;
         } else {
             checking = new BigInteger(text);
         }
@@ -442,7 +447,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the "for" statement
      */
-    private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (! (root.getType() == DecafParserTokenTypes.TK_for)) {
             return false;
         }
@@ -492,13 +497,13 @@ public class IRMaker {
             return false;
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> fake_array_lens = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> fake_array_lens = new ArrayList<Map<String, Long>>();
         Collections.copy(fake_locals, locals);
         Collections.copy(fake_array_lens, array_lens);
         Map<String, Type> fake_for = new HashMap<String, Type>();
         fake_for.put("for", Type.NONE);
         fake_locals.add(fake_for);
-        fake_array_lens.add(new HashMap<String, Integer>());
+        fake_array_lens.add(new HashMap<String, Long>());
         if (ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_array_lens)) {
             return true;
         }
@@ -515,17 +520,17 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the code block
      */
-    private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(root.getType() == DecafParserTokenTypes.BLOCK)) {
             System.err.println("block expected but not present - IRMaker error");
             return false;
         }
         List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> lens_copy = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> lens_copy = new ArrayList<Map<String, Long>>();
         Collections.copy(locals_copy, locals);
         Collections.copy(lens_copy, array_lens);
         Map<String, Type> declared = locals_copy.get(locals.size() - 1);
-        Map<String, Integer> new_lens = lens_copy.get(lens_copy.size() - 1);
+        Map<String, Long> new_lens = lens_copy.get(lens_copy.size() - 1);
         boolean finished_fields = false;
         Type declaring = Type.NONE;
         int i = 0;
@@ -552,14 +557,17 @@ public class IRMaker {
                                 return false;
                             }
                             if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                                if (!(ValidateLiteral(var.getNextSibling(), globals, locals))) {
+                                    return false;
+                                }
                                 if (declaring == Type.INT) {
                                     declared.put(var.getText(), Type.INTARR);
-                                    new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
+                                    new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                                     j++; j++;
                                     var = var.getNextSibling().getNextSibling();
                                 } else if (declaring == Type.BOOL) {
                                     declared.put(var.getText(), Type.BOOLARR);
-                                    new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
+                                    new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                                     j++; j++;
                                     var = var.getNextSibling().getNextSibling();
                                 } else {
@@ -568,7 +576,7 @@ public class IRMaker {
                                 }
                             } 
                             declared.put(root.getText(), declaring);
-                            new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
+                            new_lens.put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                             i++;
                             root = root.getNextSibling();
                         }  else {
@@ -600,7 +608,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the statement
      */
-    private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() == DecafParserTokenTypes.ASSIGN || root.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
             || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
             return ValidateStore(root, globals, locals, array_lens);
@@ -633,7 +641,7 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of the return statement
      */
     private boolean ValidateReturn(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.TK_return) {
             System.err.println("IRMaker error - called validate return without return token");
             return false;
@@ -674,7 +682,7 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of while - currently always False
      */
     private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.TK_while) {
             System.err.println("IRMaker error - while token not present");
             return false;
@@ -704,13 +712,13 @@ public class IRMaker {
             }
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>();
         Collections.copy(fake_locals, locals);
         Collections.copy(fake_lens, array_lens);
         Map<String, Type> fake_while = new HashMap<String, Type>();
         fake_while.put("while", Type.NONE);
         fake_locals.add(fake_while);
-        fake_lens.add(new HashMap<String, Integer>());
+        fake_lens.add(new HashMap<String, Long>());
         return valid && ValidateBlock(block_node, globals, fake_locals, fake_lens);
     }
 
@@ -725,7 +733,7 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of the if statement
      */
     private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(ValidateExpr(root.getFirstChild(), globals, locals, array_lens))) {
             return false;
         } if (!(GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.BOOL)) {
@@ -733,11 +741,11 @@ public class IRMaker {
             return false;
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>();
         Collections.copy(fake_locals, locals);
         Collections.copy(fake_lens, array_lens);
         fake_locals.add(new HashMap<String, Type>());
-        fake_lens.add(new HashMap<String, Integer>());
+        fake_lens.add(new HashMap<String, Long>());
         if (!(ValidateBlock(root.getFirstChild().getNextSibling(), globals, fake_locals, fake_lens))) {
             return false;
         }
@@ -745,7 +753,7 @@ public class IRMaker {
         fake_lens.remove(fake_lens.size() - 1);
         if (root.getNumberOfChildren() == 4) {
             fake_locals.add(new HashMap<String, Type>());
-            fake_lens.add(new HashMap<String, Integer>());
+            fake_lens.add(new HashMap<String, Long>());
             if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_lens))) {
                 return false;
             }
@@ -761,7 +769,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of expression - currently always False
      */
-    private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (root.getType() == DecafParserTokenTypes.QUESTION) {
             AST cond_root = root.getFirstChild();
             AST true_clause = cond_root.getNextSibling();
@@ -849,7 +857,7 @@ public class IRMaker {
     private boolean ValidateProgram(AST root) {
         Map<String, Descriptor> fake_globals = new HashMap<String, Descriptor>();
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>();
         AST elem = root.getFirstChild();
         for (int i = 0; i < root.getNumberOfChildren(); i++) {
             if (elem.getType() == DecafParserTokenTypes.TK_callout) {
@@ -938,7 +946,7 @@ public class IRMaker {
                 }
                 fake_locals.add(params);
                 fake_globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
-                fake_lens.add(new HashMap<String, Integer>());
+                fake_lens.add(new HashMap<String, Long>());
                 if (!(ValidateBlock(param, fake_globals, fake_locals, fake_lens))) {
                     return false;
                 }
@@ -957,7 +965,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Var : IR_Node specialized for variables
      */
-    private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateVar(root, globals, locals, array_lens)) {
             return null;
         }
@@ -990,7 +998,7 @@ public class IRMaker {
      * @return IR_ArithOp : IR_Node specialized for arithmetic operations - actually a subclass instance, specialized for specific equations
      */
     private IR_ArithOp GenerateArithOp(AST root, Map<String, Descriptor> globals, 
-                                       List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+                                       List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateArithOp(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1021,7 +1029,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Call : IR_Node specialized for either type of method call
      */
-    private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateCall(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1070,7 +1078,7 @@ public class IRMaker {
      * @return IR_CompareOp : IR_Node specialized for comparison ops - actually a subclass specialized for a particular operation
      */
     private IR_CompareOp GenerateCompareOp(AST root, Map<String, Descriptor> globals, 
-                                           List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+                                           List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateCompareOp(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1101,7 +1109,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_CondOp : IR_Node specialized for comparison operations - actually a subclass specialized for AND or OR
      */
-    private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateCondOp(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1127,7 +1135,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_EqOp : IR_Node specialized for equivalence ops; specifically, a subclass specialzed for Equals and NotEquals
      */
-    private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateEqOp(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1155,7 +1163,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : Either an IR_LDL, IR_LDP, or IR_LDF, depending on where the var was found. 
      */
-    private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateLoad(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1194,7 +1202,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : Either an IR_STL, IR_STP, or IR_STF, depending on where the var was found.
      */
-    private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateStore(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1238,15 +1246,15 @@ public class IRMaker {
         if (root.getType() == DecafParserTokenTypes.MINUS) {
             String text = root.getFirstChild().getText();
             if (text.startsWith("0x")) {
-                return new IR_Literal.IR_IntLiteral(Integer.parseInt("-" + text.substring(2), 16));
+                return new IR_Literal.IR_IntLiteral(Long.parseLong("-" + text.substring(2), 16));
             }
-            return new IR_Literal.IR_IntLiteral(Integer.parseInt("-" + text));
+            return new IR_Literal.IR_IntLiteral(Long.parseLong("-" + text));
         } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL) {
             String text = root.getText();
             if (text.startsWith("0x")) {
-                return new IR_Literal.IR_IntLiteral(Integer.parseInt(text.substring(2)));
+                return new IR_Literal.IR_IntLiteral(Long.parseLong(text.substring(2)));
             } else {
-                return new IR_Literal.IR_IntLiteral(Integer.parseInt(text));
+                return new IR_Literal.IR_IntLiteral(Long.parseLong(text));
             }
         } else if (root.getType() == DecafParserTokenTypes.TK_true) {
             return new IR_Literal.IR_BoolLiteral(true);
@@ -1303,7 +1311,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_For : IR_Node specialized for "for" statements: Contains preloop info, conditional, and block
      */
-    private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(ValidateFor(root, globals, locals, array_lens))) {
             System.err.println("IRMaker error - called GenerateFor when invalid");
             return null;
@@ -1340,7 +1348,7 @@ public class IRMaker {
         Map<String, Type> for_block = new HashMap<String, Type>();
         for_block.put("for", Type.NONE);
         locals.add(for_block);
-        array_lens.add(new HashMap<String, Integer>());
+        array_lens.add(new HashMap<String, Long>());
         IR_Seq block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), 
                                      globals, locals, array_lens);
         locals.remove(for_block);
@@ -1358,7 +1366,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Seq : IR_Node specialized for blocks : It contains a sequence of statements representing the code in the block. 
      */
-    private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(ValidateBlock(root, globals, locals, array_lens))) {
             return null;
         }
@@ -1383,10 +1391,10 @@ public class IRMaker {
                     if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                         if (declaring == Type.INT) {
                             locals.get(locals.size()-1).put(var.getText(), Type.INTARR);
-                            array_lens.get(array_lens.size()-1).put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
+                            array_lens.get(array_lens.size()-1).put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                         } else if (declaring == Type.BOOL) {
                             locals.get(locals.size()-1).put(var.getText(), Type.BOOLARR);
-                            array_lens.get(array_lens.size()-1).put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
+                            array_lens.get(array_lens.size()-1).put(var.getText(), Long.parseLong(var.getNextSibling().getText()));
                         }
                         j++; j++;
                         var = var.getNextSibling().getNextSibling();
@@ -1432,7 +1440,7 @@ public class IRMaker {
      * @return IR_Return : IR_Node specialized for return statements : contains either an expression or null
      */
     private IR_Return GenerateReturn(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateReturn(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1452,7 +1460,7 @@ public class IRMaker {
      * @return IR_Node : IR_Node specialized for while statements; however, currently is always null
      */
     private IR_While GenerateWhile(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateWhile(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1466,7 +1474,7 @@ public class IRMaker {
         Map<String, Type> while_block = new HashMap<String, Type>();
         while_block.put("while", Type.NONE);
         locals.add(while_block);
-        array_lens.add(new HashMap<String, Integer>());
+        array_lens.add(new HashMap<String, Long>());
         IR_Seq block = GenerateBlock(block_root, globals, locals, array_lens);
         locals.remove(locals.size()-1);
         array_lens.remove(array_lens.size()-1);
@@ -1485,20 +1493,20 @@ public class IRMaker {
      * @return IR_If : IR_Node specialized for If statements. Contains the condition for the if, and the true/false blocks for that condition.
      */
     private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+            List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(ValidateIf(root, globals, locals, array_lens))) {
             return null;
         }
         IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
         locals.add(new HashMap<String, Type>());
-        array_lens.add(new HashMap<String, Integer>());
+        array_lens.add(new HashMap<String, Long>());
         IR_Seq true_block = GenerateBlock(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         locals.remove(locals.size() - 1);
         array_lens.remove(array_lens.size() - 1);
         IR_Seq false_block;
         if (root.getNumberOfChildren() == 4) {
             locals.add(new HashMap<String, Type>());
-            array_lens.add(new HashMap<String, Integer>());
+            array_lens.add(new HashMap<String, Long>());
             false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens);
             locals.remove(locals.size() - 1);
             array_lens.remove(array_lens.size() - 1);
@@ -1516,7 +1524,7 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : IR_Node specialized for expressions; however, currently always null.
      */
-    private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+    private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!ValidateExpr(root, globals, locals, array_lens)) {
             return null;
         }
@@ -1565,7 +1573,7 @@ public class IRMaker {
     public Map<String, Descriptor> GenerateProgram(AST root) {
         Map<String, Descriptor> globals = new HashMap<String, Descriptor>();
         List<Map<String, Type>> locals = new ArrayList<Map<String, Type>>();
-        List<Map<String, Integer>> array_lens = new ArrayList<Map<String, Integer>>();
+        List<Map<String, Long>> array_lens = new ArrayList<Map<String, Long>>();
         if (!ValidateProgram(root)) {
             return null;
         }
@@ -1632,7 +1640,7 @@ public class IRMaker {
                 }
                 locals.add(params);
                 globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
-                array_lens.add(new HashMap<String, Integer>());
+                array_lens.add(new HashMap<String, Long>());
                 IR_Seq method_IR = GenerateBlock(param, globals, locals, array_lens);
                 globals.get(name).setIR(method_IR);
             }

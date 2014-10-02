@@ -20,7 +20,7 @@ public class CalloutDescriptor extends Descriptor{
 		this.name = name;
 	}
 	@Override
-	public int getLength()
+	public long getLength()
 	{
 		System.err.println("Callouts are handled by C, not our code.");
 		throw new UnsupportedOperationException();

@@ -7,7 +7,7 @@ import edu.mit.compilers.ir.IR_Node;
 public class BoolArrayDescriptor extends Descriptor{
 
 	private Type type;
-	private int len;
+	private long len;
 	
 /**
  * This is the second constructor for a boolean array descriptor.
@@ -19,14 +19,14 @@ public class BoolArrayDescriptor extends Descriptor{
  * @param length : int representing how long this array should be
  * 
  */
-	public BoolArrayDescriptor(int length)
+	public BoolArrayDescriptor(long length)
 	{
 		this.len = length;
 		this.type = Type.BOOL_ARRAY; //inherited from superclass Descriptor
 	}
 	
 	@Override
-	public int getLength() {
+	public long getLength() {
 		return len;
 	}
 
