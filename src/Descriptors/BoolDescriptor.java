@@ -15,23 +15,23 @@ public class BoolDescriptor extends Descriptor{
 	public BoolDescriptor(){
 		this.type = Type.BOOL;
 	}
-	
-	@Override
-	public long getLength() {
+    @Override
+	public long getLength() throws UnsupportedOperationException {
 		System.err.println("A boolean does not have a length.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("A boolean does not have a length.");
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() {
+	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("A boolean does not have arguments.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("A boolean does not have arguments.");
 	}
 
 	@Override
-	public String getReturnType() {
+	public String getReturnType() throws UnsupportedOperationException {
 		System.err.println("A boolean does not have a return value.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("A boolean does not have a return value.");
+
 	}
 
 	@Override
@@ -39,15 +39,16 @@ public class BoolDescriptor extends Descriptor{
 		return this.type;
 	}
 
-    @Override
-    public IR_Node getIR() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void setIR(IR_Node IR) {
         throw new UnsupportedOperationException();
     }
 	
-	//TODO INSERT IR METHODS
+	@Override
+	public IR_Node getIR() throws UnsupportedOperationException {
+		System.err.println("A boolean does not keep a record of its IR_Node.");
+		throw new UnsupportedOperationException("A boolean does not keep a record of its IR_Node.");
+	}
+
 }

@@ -1,0 +1,9 @@
+void main () {
+  int i;
+}
+
+void foo() {
+  boolean a;
+  a = 5;
+  // semantic errors after main
+}

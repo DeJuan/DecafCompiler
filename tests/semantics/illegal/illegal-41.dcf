@@ -1,0 +1,5 @@
+void main () {
+  	int A[10];
+  	A[i] = 5;
+  	// id in location must be declared
+}

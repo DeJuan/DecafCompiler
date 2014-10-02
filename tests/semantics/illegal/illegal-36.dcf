@@ -1,0 +1,11 @@
+int a;
+
+void foo(int a, int b) {
+	return;
+}
+
+void main () {
+  a = 5;
+  foo(a);
+  // passed too few arguments
+}

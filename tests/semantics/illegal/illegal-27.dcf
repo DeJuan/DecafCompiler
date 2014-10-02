@@ -1,0 +1,8 @@
+void main ( ) {
+  int x, i;
+  for (i=0, 10) {
+  	int x[10];
+  	x = 5;
+  	// x is now an int arr
+  }
+}

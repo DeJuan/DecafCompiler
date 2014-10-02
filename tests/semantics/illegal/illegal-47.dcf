@@ -1,0 +1,9 @@
+void main ( ) {
+  int x, y;
+  boolean z;
+  x = 5;
+  z = true;
+
+  y = x + z;
+  // both operants must be type int
+}

@@ -30,15 +30,18 @@ public class IR_If extends IR_Node {
 		return this.falseBlock;
 	}
 	
+	@Override
 	public Type evaluateType() {
 		return Type.NONE;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return expr.evaluateType() == Type.BOOL 
 				&& expr.isValid() && trueBlock.isValid() && falseBlock.isValid();
 	}
 	
+	@Override
 	public String toString() {
 		return "if(" + expr.toString() + ")" + "{" + trueBlock.toString() + "}" + 
 			   "else {" + falseBlock.toString() + "}";

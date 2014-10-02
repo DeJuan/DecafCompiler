@@ -7,38 +7,38 @@ import edu.mit.compilers.ir.IR_Node;
 
 public class MethodDescriptor extends Descriptor {
 
-	private String methodType;
-	private String returnType;
 	private List<Boolean> argumentTypes;
-	private ReturnType type;
-	private IR_Node IR;
-	
+	private Type type;
+	private ReturnType returnType;
+	private IR_Node methodIRNode;
 	
 	/**
 	 * This is the constructor for a new MethodDescriptor. 
 	 * It takes in a string which denotes the return type of the method,
-	 * and an arrayList of booleans that denote whether each argument is 
-	 * an integer or a boolean. 
+	 * an arrayList of booleans that denote whether each argument is 
+	 * an integer or a boolean,
+	 * and the IR_Node for the method. 
 	 * If the supplied type string does not match a valid type, a runtime exception is thrown. 
 	 * 
 	 * @param type : A string indicating return type of method
-	 * @param argTypes: ArrayList<Boolean> that indicates whether each arg is a bool or int
+	 * @param argTypes : ArrayList<Boolean> that indicates whether each arg is a bool or int
+	 * @param methodNode : an IR_Node representation of the method. 
 	 * @throws Exception
 	 */
 	public MethodDescriptor(String type, List<Boolean> argTypes)
 	{
 		//TODO NOT SURE IF THIS IS THE BEST WAY TO HANDLE THIS, ASK GROUP
-		this.returnType = type;
-		if (returnType.equals("bool") || returnType.equals("boolean")) {
-		    this.type = ReturnType.BOOL;
-		} else if (returnType.equals("int")) {
-		    this.type = ReturnType.INT;
-		} else if (returnType.equals("void")) {
-		    this.type = ReturnType.VOID;
+        this.type = Type.METHOD;
+		if (type.equals("bool") || type.equals("boolean")) {
+		    this.returnType = ReturnType.BOOL;
+		} else if (type.equals("int")) {
+		    this.returnType = ReturnType.INT;
+		} else if (type.equals("void")) {
+		    this.returnType = ReturnType.VOID;
 		} else {
 		    System.err.print("Invalid string  supplied for method type.");
-		    throw new RuntimeException();
-		}	
+		    throw new RuntimeException("Invalid string  supplied for method type.");
+		}
 		this.argumentTypes = argTypes;
 	}
 	
@@ -49,12 +49,12 @@ public class MethodDescriptor extends Descriptor {
 
 	@Override
 	public String getReturnType() {
-		return this.returnType;
+		return this.returnType.toString();
 	}
 
 	@Override
 	public Type getType() {
-		return Type.METHOD;
+		return this.type;
 	}
 
 
@@ -66,14 +66,13 @@ public class MethodDescriptor extends Descriptor {
 
     @Override
     public IR_Node getIR() {
-        return this.IR;
+        return this.methodIRNode;
     }
 
     @Override
     public void setIR(IR_Node IR) {
-        this.IR = IR;
+        this.methodIRNode = IR;
         
     }
-	
-	//TODO INSERT IR METHODS
+
 }

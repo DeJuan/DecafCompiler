@@ -1,0 +1,5 @@
+void main ( ) {
+  int x;
+  x = true ? 5 : false;
+  // both expr in ternary must be the same
+}

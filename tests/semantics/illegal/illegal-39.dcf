@@ -1,0 +1,9 @@
+void foo() {
+	return;
+}
+
+void main () {
+  	int A[10];
+  	foo(A);
+  	// cannot pass in array variable to method
+}

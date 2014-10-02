@@ -1,0 +1,7 @@
+void main () {
+  	int i;
+  	boolean x;
+  	i = 5;
+  	x = i ? true : false;
+  	// first term must be a boolean
+}

@@ -1,0 +1,9 @@
+void foo(int a) {
+	return;
+}
+
+void main () {
+  int a;
+  foo(a);
+  // passed in uninitialized var
+}

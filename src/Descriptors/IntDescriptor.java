@@ -16,23 +16,22 @@ public class IntDescriptor extends Descriptor{
 	{
 		this.type = Type.INT;
 	}
-	
-	@Override
-	public long getLength() {
+
+	public long getLength() throws UnsupportedOperationException{
 		System.err.println("An int is 8 bytes, but does not have a length field.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An int is 8 bytes, but does not have a length field.");
 	}
 
 	@Override
-	public ArrayList<Boolean> getArgTypes() {
+	public ArrayList<Boolean> getArgTypes() throws UnsupportedOperationException {
 		System.err.println("An int doesn't have arguments.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An int doesn't have arguments.");
 	}
 
 	@Override
-	public String getReturnType() {
+	public String getReturnType() throws UnsupportedOperationException{
 		System.err.println("An int doesn't have a returnType.");
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("An int doesn't have a returnType.");
 	}
 
 	@Override
@@ -40,15 +39,17 @@ public class IntDescriptor extends Descriptor{
 		return this.type;
 	}
 
-    @Override
-    public IR_Node getIR() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void setIR(IR_Node IR) {
         throw new UnsupportedOperationException();
     }
+    
+	@Override
+	public IR_Node getIR() throws UnsupportedOperationException {
+		System.err.println("An int doesn't keep its IR_Node.");
+		throw new UnsupportedOperationException("An int doesn't keep its IR_Node.");
+	}
 
 
 }

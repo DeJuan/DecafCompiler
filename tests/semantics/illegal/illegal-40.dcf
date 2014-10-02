@@ -1,0 +1,9 @@
+void foo() {
+	return;
+}
+
+void main () {
+  	int A[10];
+  	foo("hello");
+  	// cannot pass in string lieteral to method
+}

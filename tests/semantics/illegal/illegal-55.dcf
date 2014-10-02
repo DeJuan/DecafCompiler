@@ -1,0 +1,8 @@
+void main ( ) {
+  int x;
+  x = 0;
+  if (x>1) {
+	break;
+	// break not in a loop
+  }	
+}

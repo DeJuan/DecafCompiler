@@ -1,0 +1,41 @@
+callout printf;
+
+int A[100];
+
+// Reads \'len\' elements from input file to the array \'A\' and sorts the array 
+void read_and_sort(int len) {}
+
+// Binary search for the element \'value\'
+
+int bins(int value, int len) {
+	int left;
+	int right;
+	left = 0;
+	right = len - 1;
+	while (left < right) {
+		int mid;
+		mid = (left + right)/2;
+		if (value == A[mid]) { 
+			return mid; 
+		} else { 
+			if (value > A[mid]) { 
+				left = mid + 1; 
+			} else { 
+				right = mid - 1;
+			}
+		}
+	}
+	return -1;
+}
+
+void main () {
+	int l;
+	int res;
+
+	l = 100;
+	read_and_sort(l);
+	res = bins(42, l);
+	
+	if (res >= 0) { printf ("Yup!\n"); }
+	else { printf ("Nope!\n"); }
+}
