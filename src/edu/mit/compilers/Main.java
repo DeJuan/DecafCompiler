@@ -12,6 +12,7 @@ import edu.mit.compilers.grammar.DecafParser;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScanner;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
+import edu.mit.compilers.ir.IRMaker;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -110,8 +111,10 @@ class Main {
     	  }
     	  
     	  AST ast = parser.getAST();
-    	  System.out.println(ast.toStringTree());
-          printAst(ast,0);
+    	  IRMaker ir_maker = new IRMaker();
+    	  if (ir_maker.GenerateProgram(ast) == null) {
+    	      System.exit(1);
+    	  }
       }
     } catch(Exception e) {
       // print the error:

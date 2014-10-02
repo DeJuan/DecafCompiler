@@ -2,7 +2,7 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
+import edu.mit.compilers.ir.IR_Node;
 
 
 public class CalloutDescriptor extends Descriptor{
@@ -42,31 +42,17 @@ public class CalloutDescriptor extends Descriptor{
 	public Type getType() {
 		return this.type;
 	}
-	@Override
-	public int getValue() throws InvalidActivityException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
-	}
-	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
-	}
-	
 	public String getName(){
 		return this.name;
 	}
-	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();		
-	}
-	@Override
-	public void setValue(int index, boolean newValue) throws InvalidActivityException {
-		System.err.println("Callouts are handled by C, not our code.");
-		throw new UnsupportedOperationException();
-	}
-	
+    @Override
+    public IR_Node getIR() {
+        throw new UnsupportedOperationException();
+    }
+    @Override
+    public void setIR(IR_Node IR) {
+        throw new UnsupportedOperationException();
+    }
 }
 
 

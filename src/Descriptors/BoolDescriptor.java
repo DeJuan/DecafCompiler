@@ -2,26 +2,24 @@ package Descriptors;
 
 import java.util.ArrayList;
 
-import javax.activity.InvalidActivityException;
+import edu.mit.compilers.ir.IR_Node;
 
 public class BoolDescriptor extends Descriptor{
 	private final Type type;
-	private final boolean truthValue;
 	
 	/**
 	 * This is the constructor for a BoolDescriptor. 
 	 * It simply takes in the truth value of the boolean it will represent as its parameter.
 	 * @param value
 	 */
-	public BoolDescriptor(boolean truthValue){
+	public BoolDescriptor(){
 		this.type = Type.BOOL;
-		this.truthValue = truthValue;
 	}
 	
 	@Override
-	public int getLength() throws InvalidActivityException {
+	public int getLength() {
 		System.err.println("A boolean does not have a length.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -38,34 +36,18 @@ public class BoolDescriptor extends Descriptor{
 
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
 		return this.type;
 	}
 
-	@Override
-	public int getValue() throws InvalidActivityException {
-		System.err.println("A boolean does not have a numerical value in this context.");
-		throw new InvalidActivityException();
-	}
+    @Override
+    public IR_Node getIR() {
+        throw new UnsupportedOperationException();
+    }
 
-	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
-		// TODO Auto-generated method stub
-		return this.truthValue;
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
-		System.err.println("A boolean is immutable, and definitely should not be getting changed to an int!");
-		throw new InvalidActivityException();
-		
-	}
-
-	@Override
-	public void setValue(int index, boolean newValue) throws InvalidActivityException {
-		System.err.println("A boolean is immutable, so you may not set a new value for it. Make a new boolean instead.");
-		throw new InvalidActivityException();
-	}
+    @Override
+    public void setIR(IR_Node IR) {
+        throw new UnsupportedOperationException();
+    }
 	
 	//TODO INSERT IR METHODS
 }

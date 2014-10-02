@@ -1,22 +1,17 @@
 package Descriptors;
 
-import java.util.ArrayList;
+import java.util.List;
 
-import javax.activity.InvalidActivityException;
-
-
-
-import Descriptors.Descriptor.ReturnType;
-import Descriptors.Descriptor.Type;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import edu.mit.compilers.ir.IR_Node;
 
 
 public class MethodDescriptor extends Descriptor {
 
 	private String methodType;
 	private String returnType;
-	private ArrayList<Boolean> argumentTypes;
+	private List<Boolean> argumentTypes;
 	private ReturnType type;
+	private IR_Node IR;
 	
 	
 	/**
@@ -30,7 +25,7 @@ public class MethodDescriptor extends Descriptor {
 	 * @param argTypes: ArrayList<Boolean> that indicates whether each arg is a bool or int
 	 * @throws Exception
 	 */
-	public MethodDescriptor(String type, ArrayList<Boolean> argTypes) throws Exception
+	public MethodDescriptor(String type, List<Boolean> argTypes)
 	{
 		//TODO NOT SURE IF THIS IS THE BEST WAY TO HANDLE THIS, ASK GROUP
 		this.returnType = type;
@@ -48,7 +43,7 @@ public class MethodDescriptor extends Descriptor {
 	}
 	
 	@Override
-	public ArrayList<Boolean> getArgTypes() {
+	public List<Boolean> getArgTypes() {
 		return argumentTypes;
 	}
 
@@ -64,34 +59,21 @@ public class MethodDescriptor extends Descriptor {
 
 
 	@Override
-	public int getLength() throws InvalidActivityException {
+	public int getLength() {
 		System.err.println("Methods do not have a length in that sense.");
-		throw new InvalidActivityException();
+		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	public int getValue() throws InvalidActivityException {
-		System.err.println("Methods do not have a value field like an integer.");
-		throw new InvalidActivityException();
-	}
+    @Override
+    public IR_Node getIR() {
+        return this.IR;
+    }
 
-	@Override
-	public boolean getTruthValue() throws InvalidActivityException {
-		System.err.println("Methods do not have a truth value.");
-		throw new InvalidActivityException();
-	}
-
-	@Override
-	public void setValue(int index, int newValue) throws InvalidActivityException {
-		System.err.println("Methods do not have a value that can be set.");
-		throw new InvalidActivityException();	
-	}
-
-	@Override
-	public void setValue(int index, boolean newValue) throws InvalidActivityException {
-		System.err.println("Methods do not have a value that can be set.");
-		throw new InvalidActivityException();
-	}
+    @Override
+    public void setIR(IR_Node IR) {
+        this.IR = IR;
+        
+    }
 	
 	//TODO INSERT IR METHODS
 }

@@ -7,7 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import Descriptors.BoolArrayDescriptor;
+import Descriptors.BoolDescriptor;
+import Descriptors.CalloutDescriptor;
 import Descriptors.Descriptor;
+import Descriptors.IntArrayDescriptor;
+import Descriptors.IntDescriptor;
+import Descriptors.MethodDescriptor;
 import antlr.collections.AST;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
@@ -32,6 +38,10 @@ import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
  *
  */
 public class IRMaker {
+    
+    public IRMaker() {
+        
+    }
     private static Map<Descriptor.Type, Type> MapMaker() {
         Map<Descriptor.Type, Type> map = new HashMap<Descriptor.Type, Type>();
         map.put(Descriptor.Type.BOOL, Type.BOOL);
@@ -48,7 +58,7 @@ public class IRMaker {
      * @param locals - the local symbol table for the scope of this variable, a Map<String, Type>
      * @return boolean : True or False, answering whether or not the variable is valid.
      */
-    private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.ID) {
             System.err.println("Parser error must have occured - expected ID at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -74,9 +84,9 @@ public class IRMaker {
         // Is a int/bool or array referenced directly
         if (root.getNumberOfChildren() == 0) {
             return true;
-        } else if (root.getNumberOfChildren() == 1 && ValidateExpr(root.getFirstChild(), globals, locals) 
+        } else if (root.getNumberOfChildren() == 1 && ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
                 && (declaredType == Type.INTARR || declaredType == Type.BOOLARR)) {
-            boolean valid = GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.INT;
+            boolean valid = GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.INT;
             if (!valid) {
                 System.err.println("arrays take integer indices only - see " + root.getFirstChild().getLine() + ":" + root.getFirstChild().getColumn());
             }
@@ -94,7 +104,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope of this variable, a Map<String, Type>
      * @return boolean : True or False depending on validity of the given root
      */
-    private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - arith op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -102,13 +112,14 @@ public class IRMaker {
         if (root.getType() == DecafScannerTokenTypes.PLUS || root.getType() == DecafScannerTokenTypes.MINUS 
                 || root.getType() == DecafScannerTokenTypes.DIVIDE || root.getType() == DecafScannerTokenTypes.TIMES 
                 || root.getType() == DecafScannerTokenTypes.MOD) {
-            if (ValidateExpr(root.getFirstChild(), globals, locals) && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals)) {
+            if (ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)) {
                 boolean valid = true;
-                if (! ((GenerateExpr(root.getFirstChild(), globals, locals)).evaluateType() == Type.INT)) {
+                if (! ((GenerateExpr(root.getFirstChild(), globals, locals, array_lens)).evaluateType() == Type.INT)) {
                     System.err.println("Left child of arith op is not of int type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
-                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals)).evaluateType() == Type.INT)) {
+                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)).evaluateType() == Type.INT)) {
                     System.err.println("Right child of arith op is not of int type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
@@ -131,7 +142,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of method call
      */
-    private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() != DecafScannerTokenTypes.METHOD_CALL) {
             System.err.println("IRMaker error - tried method call without method call at route at " + root.getLine() + ":" + root.getColumn());
             return false;
@@ -149,7 +160,7 @@ public class IRMaker {
         if (desc.getType() == Descriptor.Type.CALLOUT) {
             for (int i = 0; i < num_args; i++ ) {
                 arg = arg.getNextSibling();
-                if (!(arg.getType() == DecafParserTokenTypes.STRING_LITERAL) || ValidateExpr(arg, globals, locals)) {
+                if (!(arg.getType() == DecafParserTokenTypes.STRING_LITERAL) || ValidateExpr(arg, globals, locals, array_lens)) {
                     System.err.println("arg passed to callout is neither String lit nor a valid exp at " + arg.getLine() + ":" + arg.getColumn());
                     return false;
                 }
@@ -159,8 +170,8 @@ public class IRMaker {
             List<Boolean> argTypes = desc.getArgTypes();
             for (int i = 0; i < num_args; i++ ) {
                 arg = arg.getNextSibling();
-                if (!((GenerateExpr(arg, globals, locals).evaluateType() == Type.BOOL && argTypes.get(i)) 
-                        || (GenerateExpr(arg, globals, locals).evaluateType() == Type.INT && !argTypes.get(i)))) {
+                if (!((GenerateExpr(arg, globals, locals, array_lens).evaluateType() == Type.BOOL && argTypes.get(i)) 
+                        || (GenerateExpr(arg, globals, locals, array_lens).evaluateType() == Type.INT && !argTypes.get(i)))) {
                     System.err.println("Passed args don't match declared types at " 
                             + root.getFirstChild().getLine() + ":" + root.getFirstChild().getColumn());
                     return false;
@@ -181,20 +192,21 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the comparison 
      */
-    private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occured - compare op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
         }
         if (root.getType() == DecafScannerTokenTypes.LT || root.getType() == DecafScannerTokenTypes.LTE 
                 || root.getType() == DecafScannerTokenTypes.GT || root.getType() == DecafScannerTokenTypes.GTE) {
-            if (ValidateExpr(root.getFirstChild(), globals, locals) && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals)) {
+            if (ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                 && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)) {
                 boolean valid = true;
-                if (! ((GenerateExpr(root.getFirstChild(), globals, locals)).evaluateType() == Type.INT)) {
+                if (! ((GenerateExpr(root.getFirstChild(), globals, locals, array_lens)).evaluateType() == Type.INT)) {
                     System.err.println("Left child of compare op is not of int type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
-                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals)).evaluateType() == Type.INT)) {
+                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)).evaluateType() == Type.INT)) {
                     System.err.println("Right child of compare op is not of int type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
@@ -216,19 +228,20 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the conditional
      */
-    private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - cond op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
         }
-        if (root.getType() == DecafScannerTokenTypes.AND || root.getType() == DecafScannerTokenTypes.OR) {
-            if (ValidateExpr(root.getFirstChild(), globals, locals) && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals)) {
+        if (root.getType() == DecafParserTokenTypes.AND || root.getType() == DecafParserTokenTypes.OR) {
+            if (ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)) {
                 boolean valid = true;
-                if (! ((GenerateExpr(root.getFirstChild(), globals, locals)).evaluateType() == Type.BOOL)) {
+                if (! ((GenerateExpr(root.getFirstChild(), globals, locals, array_lens)).evaluateType() == Type.BOOL)) {
                     System.err.println("Left child of cond op is not of bool type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
-                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals)).evaluateType() == Type.BOOL)) {
+                if (! ((GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)).evaluateType() == Type.BOOL)) {
                     System.err.println("Right child of cond op is not of bool type at" + root.getLine() + ":" + root.getColumn());
                     valid = false;
                 }
@@ -250,17 +263,18 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the equivalence operation
      */
-    private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getNumberOfChildren() != 2) {
             System.err.println("Parser error must have occurred - eq op with other than two children at " + root.getLine() + ":" + root.getColumn());
             return false;
         }
-        if (root.getType() == DecafScannerTokenTypes.EQUALS || root.getType() == DecafScannerTokenTypes.NOT_EQUALS) {
-            if (ValidateExpr(root.getFirstChild(), globals, locals) && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals)) {
-                if (! ((GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.INT 
-                        && GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals).evaluateType() == Type.INT) 
-                       || (GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.BOOL 
-                           && GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals).evaluateType() == Type.BOOL))) {
+        if (root.getType() == DecafParserTokenTypes.EQUALS || root.getType() == DecafParserTokenTypes.NOT_EQUALS) {
+            if (ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens)) {
+                if (! ((GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.INT 
+                        && GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens).evaluateType() == Type.INT) 
+                       || (GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.BOOL 
+                           && GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens).evaluateType() == Type.BOOL))) {
                     System.err.println("Equality can only be applied to two ints or two bools - at " + root.getLine() + ":" + root.getColumn());
                     return false;
                 }
@@ -279,8 +293,8 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the load
      */
-    private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        return ValidateVar(root, globals, locals);
+    private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        return ValidateVar(root, globals, locals, array_lens);
     }
     
     /**
@@ -291,15 +305,16 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the store
      */
-    private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.ASSIGN 
                 && root.getType() != DecafParserTokenTypes.ASSIGN_MINUS 
                 && root.getType() != DecafParserTokenTypes.ASSIGN_PLUS) {
             System.err.println("IRMaker error - tried store without an assign op root at " + root.getLine() + ":" + root.getColumn());
             return false;
-        } if ((ValidateVar(root.getFirstChild(), globals, locals) && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals))) {
-            IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals);
-            IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        } if ((ValidateVar(root.getFirstChild(), globals, locals, array_lens) 
+               && ValidateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens))) {
+            IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals, array_lens);
+            IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
             if (lhs.getIndex() != null) {
                 if ((lhs.evaluateType() == Type.INTARR && rhs.evaluateType() == Type.INT) 
                         || (lhs.evaluateType() == Type.BOOLARR && rhs.evaluateType() == Type.BOOL)) {
@@ -426,7 +441,7 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the "for" statement
      */
-    private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (! (root.getType() == DecafParserTokenTypes.TK_for)) {
             return false;
         }
@@ -459,16 +474,16 @@ public class IRMaker {
                 return false;
             }
         }
-        if (ValidateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals)) {
-            if (!(GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals).evaluateType() == Type.INT)) {
+        if (ValidateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens)) {
+            if (!(GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens).evaluateType() == Type.INT)) {
                 System.err.println("Can only assign ints to ints - at " + root.getLine() + ":" + root.getColumn());
                 return false;
             }
         } else {
             return false;
         }
-        if (ValidateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals)) {
-            if (!(GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals).evaluateType() == Type.INT)) {
+        if (ValidateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals, array_lens)) {
+            if (!(GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals, array_lens).evaluateType() == Type.INT)) {
                 System.err.println("end of for loop must be an integer type - at " + root.getLine() + ":" + root.getColumn());
                 return false;
             }
@@ -476,11 +491,14 @@ public class IRMaker {
             return false;
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> fake_array_lens = new ArrayList<Map<String, Integer>>();
         Collections.copy(fake_locals, locals);
+        Collections.copy(fake_array_lens, array_lens);
         Map<String, Type> fake_for = new HashMap<String, Type>();
         fake_for.put("for", Type.NONE);
         fake_locals.add(fake_for);
-        if (ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals)) {
+        fake_array_lens.add(new HashMap<String, Integer>());
+        if (ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_array_lens)) {
             return true;
         }
         return false;
@@ -496,14 +514,17 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the code block
      */
-    private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (!(root.getType() == DecafParserTokenTypes.BLOCK)) {
             System.err.println("block expected but not present - IRMaker error");
             return false;
         }
         List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> lens_copy = new ArrayList<Map<String, Integer>>();
         Collections.copy(locals_copy, locals);
-        Map<String, Type> declared = locals.get(locals.size() - 1);
+        Collections.copy(lens_copy, array_lens);
+        Map<String, Type> declared = locals_copy.get(locals.size() - 1);
+        Map<String, Integer> new_lens = lens_copy.get(lens_copy.size() - 1);
         boolean finished_fields = false;
         Type declaring = Type.NONE;
         int i = 0;
@@ -532,10 +553,12 @@ public class IRMaker {
                             if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                                 if (declaring == Type.INT) {
                                     declared.put(var.getText(), Type.INTARR);
+                                    new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
                                     j++; j++;
                                     var = var.getNextSibling().getNextSibling();
                                 } else if (declaring == Type.BOOL) {
                                     declared.put(var.getText(), Type.BOOLARR);
+                                    new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
                                     j++; j++;
                                     var = var.getNextSibling().getNextSibling();
                                 } else {
@@ -544,6 +567,7 @@ public class IRMaker {
                                 }
                             } 
                             declared.put(root.getText(), declaring);
+                            new_lens.put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
                             i++;
                             root = root.getNextSibling();
                         }  else {
@@ -556,7 +580,7 @@ public class IRMaker {
                     finished_fields = true;
                 }
             } else {
-                if (!ValidateStatement(block_start, globals, locals_copy)) {
+                if (!ValidateStatement(block_start, globals, locals_copy, lens_copy)) {
                     return false;
                 }
                 i++;
@@ -575,20 +599,20 @@ public class IRMaker {
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of the statement
      */
-    private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() == DecafParserTokenTypes.ASSIGN || root.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
             || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
-            return ValidateStore(root, globals, locals);
+            return ValidateStore(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.METHOD_CALL) {
-            return ValidateCall(root, globals, locals);
+            return ValidateCall(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.TK_if) {
-            return ValidateIf(root, globals, locals);
+            return ValidateIf(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.TK_for) {
-            return ValidateFor(root, globals, locals);
+            return ValidateFor(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.TK_while) {
-            return ValidateWhile(root, globals, locals);
+            return ValidateWhile(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.TK_return) {
-            return ValidateReturn(root, globals, locals);
+            return ValidateReturn(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.TK_break) {
             return ValidateBreak(root, globals, locals);
         } else if (root.getType() == DecafParserTokenTypes.TK_continue) {
@@ -608,7 +632,7 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of the return statement
      */
     private boolean ValidateReturn(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.TK_return) {
             System.err.println("IRMaker error - called validate return without return token");
             return false;
@@ -621,15 +645,15 @@ public class IRMaker {
             }
             return true;
         } else if (retType == Type.BOOL) {
-            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals) 
-                || !(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.BOOL)) {
+            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                || !(GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.BOOL)) {
                 System.err.println("Must return a boolean from a boolean-type function - at" + root.getLine() + ":" + root.getColumn());
                 return false;
             }
             return true;
         } else if (retType == Type.INT) {
-            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals) 
-                || !(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.INT)) {
+            if (root.getNumberOfChildren() != 1 || !ValidateExpr(root.getFirstChild(), globals, locals, array_lens) 
+                || !(GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.INT)) {
                 System.err.println("Must return an int from an int-type function - at" + root.getLine() + ":" + root.getColumn());
                 return false;
             }
@@ -649,7 +673,7 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of while - currently always False
      */
     private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
         if (root.getType() != DecafParserTokenTypes.TK_while) {
             System.err.println("IRMaker error - while token not present");
             return false;
@@ -671,19 +695,22 @@ public class IRMaker {
         if (limit_node != null) {
             valid = ValidateLiteral(limit_node, globals, locals) && limit_node.getType() == DecafParserTokenTypes.INT_LITERAL;
         }
-        valid = valid && ValidateExpr(expr_node, globals, locals); 
+        valid = valid && ValidateExpr(expr_node, globals, locals, array_lens); 
         if (valid) {
-            if (!(GenerateExpr(expr_node, globals, locals).evaluateType() == Type.BOOL)) {
+            if (!(GenerateExpr(expr_node, globals, locals, array_lens).evaluateType() == Type.BOOL)) {
                 System.err.println("while experession must evaluate to boolean - at " + root.getLine() + ":" + root.getColumn());
                 return false;
             }
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
         Collections.copy(fake_locals, locals);
+        Collections.copy(fake_lens, array_lens);
         Map<String, Type> fake_while = new HashMap<String, Type>();
         fake_while.put("while", Type.NONE);
         fake_locals.add(fake_while);
-        return valid && ValidateBlock(block_node, globals, fake_locals);
+        fake_lens.add(new HashMap<String, Integer>());
+        return valid && ValidateBlock(block_node, globals, fake_locals, fake_lens);
     }
 
     /**
@@ -697,23 +724,28 @@ public class IRMaker {
      * @return boolean : True or False depending on validity of the if statement
      */
     private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
-        if (!(ValidateExpr(root.getFirstChild(), globals, locals))) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!(ValidateExpr(root.getFirstChild(), globals, locals, array_lens))) {
             return false;
-        } if (!(GenerateExpr(root.getFirstChild(), globals, locals).evaluateType() == Type.BOOL)) {
+        } if (!(GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.BOOL)) {
             System.err.println("If expressions must be booleans - at" + root.getLine() +":" + root.getColumn());
             return false;
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
         Collections.copy(fake_locals, locals);
+        Collections.copy(fake_lens, array_lens);
         fake_locals.add(new HashMap<String, Type>());
-        if (!(ValidateBlock(root.getFirstChild().getNextSibling(), globals, fake_locals))) {
+        fake_lens.add(new HashMap<String, Integer>());
+        if (!(ValidateBlock(root.getFirstChild().getNextSibling(), globals, fake_locals, fake_lens))) {
             return false;
         }
         fake_locals.remove(fake_locals.size() - 1);
+        fake_lens.remove(fake_lens.size() - 1);
         if (root.getNumberOfChildren() == 4) {
             fake_locals.add(new HashMap<String, Type>());
-            if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals))) {
+            fake_lens.add(new HashMap<String, Integer>());
+            if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_lens))) {
                 return false;
             }
         }
@@ -722,16 +754,197 @@ public class IRMaker {
 
     /**
      * This allows for checking the validity of an expression.
-     * It is currently unimplemented and returns false.
      * 
      * @param root : the ast root for the expression
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return boolean : True or False depending on validity of expression - currently always False
      */
-    private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        // TODO Auto-generated method stub
+    private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (root.getType() == DecafParserTokenTypes.QUESTION) {
+            AST cond_root = root.getFirstChild();
+            AST true_clause = cond_root.getNextSibling();
+            AST false_clause = true_clause.getNextSibling();
+            if (ValidateExpr(cond_root, globals, locals, array_lens)) {
+                if (!(GenerateExpr(cond_root, globals, locals, array_lens).evaluateType() == Type.BOOL)) {
+                    System.err.println("first argument to a ternary must be a boolean expression");
+                    return false;
+                }
+                if (ValidateExpr(true_clause, globals, locals, array_lens) && ValidateExpr(false_clause, globals, locals, array_lens)) {
+                    IR_Node true_node = GenerateExpr(true_clause, globals, locals, array_lens);
+                    IR_Node false_node = GenerateExpr(false_clause, globals, locals, array_lens);
+                    if (!((true_node.evaluateType() == Type.BOOL && false_node.evaluateType() == Type.BOOL) 
+                           || (true_node.evaluateType() == Type.INT && true_node.evaluateType() == Type.INT))) {
+                        System.err.println("both clauses of a ternary must be of the same type - at " + root.getLine() + ":" + root.getColumn());
+                        return false;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        } else if (root.getType() == DecafParserTokenTypes.OR || root.getType() == DecafParserTokenTypes.AND) {
+            return ValidateCondOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.EQUALS || root.getType() == DecafParserTokenTypes.NOT_EQUALS) {
+            return ValidateEqOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.LT || root.getType() == DecafParserTokenTypes.GT 
+                   || root.getType() == DecafParserTokenTypes.LTE || root.getType() == DecafParserTokenTypes.GTE) {
+            return ValidateCompareOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.PLUS || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 2) 
+                   || root.getType() == DecafParserTokenTypes.TIMES || root.getType() == DecafParserTokenTypes.DIVIDE 
+                   || root.getType() == DecafParserTokenTypes.MOD) {
+            return ValidateArithOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.ID) {
+            return ValidateVar(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.METHOD_CALL) {
+            if (ValidateCall(root, globals, locals, array_lens)) {
+                Descriptor desc = globals.get(root.getFirstChild().getText());
+                if (desc.getType() == Descriptor.Type.CALLOUT) {
+                    return true;
+                } else if (desc.getType() == Descriptor.Type.METHOD) {
+                    return !desc.getReturnType().equals("void");
+                }
+            }
+            return false;
+        } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL 
+                   || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) 
+                   || root.getType() == DecafParserTokenTypes.TK_true || root.getType() == DecafParserTokenTypes.TK_false) {
+            return ValidateLiteral(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.AT) {
+            String var_name = root.getFirstChild().getText();
+            for (int i = locals.size() - 1; i >= 0; i--) {
+                Map<String, Type> local_table = locals.get(i);
+                if (local_table.containsKey(var_name)) {
+                    if (local_table.get(var_name) != Type.INTARR && local_table.get(var_name) != Type.BOOLARR) {
+                        System.err.println("Can only take the length of an array variable - at " + root.getLine() + ":" + root.getColumn());
+                        return false;
+                    }
+                    return true;
+                }
+            }
+            if (!globals.containsKey(var_name)) {
+                System.err.println("tried to take length of undeclared variable at " + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+            Descriptor desc = globals.get(var_name);
+            if (desc.getType() != Descriptor.Type.BOOL_ARRAY && desc.getType() != Descriptor.Type.INT_ARRAY) {
+                System.err.println("Can only take length of undeclared variable at " + root.getLine() + ":" + root.getColumn());
+                return false;
+            }
+            return true;
+        } else if (root.getType() == DecafParserTokenTypes.BANG) {
+            if (ValidateExpr(root.getFirstChild(), globals, locals, array_lens)) {
+                if (GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() != Type.BOOL) {
+                    System.err.println("Can only evaluate 'not' of booleans - at " + root.getLine() + ":" + root.getColumn());
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+        System.err.println("IRMaker error - no expression possible");
         return false;
+    }
+    
+    private boolean ValidateProgram(AST root) {
+        Map<String, Descriptor> fake_globals = new HashMap<String, Descriptor>();
+        List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> fake_lens = new ArrayList<Map<String, Integer>>();
+        AST elem = root.getFirstChild();
+        for (int i = 0; i < root.getNumberOfChildren(); i++) {
+            if (elem.getType() == DecafParserTokenTypes.TK_callout) {
+                if (fake_globals.containsKey(elem.getFirstChild().getText())) {
+                    System.err.println("variable already defined at this scope - at " + elem.getLine() + ":" + elem.getColumn());
+                    return false;
+                }
+                fake_globals.put(elem.getFirstChild().getText(), new CalloutDescriptor(elem.getFirstChild().getText()));
+            } else if (elem.getType() == DecafParserTokenTypes.FIELD_DECL) {
+                Type declaring = Type.NONE;
+                int num_in_decl = elem.getNumberOfChildren() - 1;
+                AST var = elem.getFirstChild().getNextSibling();
+                if (elem.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
+                    declaring = Type.INT;
+                } else if (elem.getType() == DecafParserTokenTypes.TK_boolean) {
+                    declaring = Type.BOOL;
+                } else {
+                    System.err.println("Parser error - program should have been rejected");
+                    return false;
+                }
+                int j = 0;
+                while (j < num_in_decl) {
+                    if (var.getType() == DecafParserTokenTypes.ID) {
+                        if (fake_globals.containsKey(var.getText())) {
+                            System.err.println("variable already declared in same scope - at " + var.getLine() + ":" + var.getColumn());
+                            return false;
+                        }
+                        if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                            if (declaring == Type.INT) {
+                                fake_globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
+                                j++; j++;
+                                var = var.getNextSibling().getNextSibling();
+                            } else if (declaring == Type.BOOL) {
+                                fake_globals.put(var.getText(), new BoolArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
+                                j++; j++;
+                                var = var.getNextSibling().getNextSibling();
+                            } else {
+                                System.err.println("Parser error - program should have been rejected");
+                                return false;
+                            }
+                        }
+                        if (declaring == Type.INT) {
+                            fake_globals.put(var.getText(), new IntDescriptor());
+                        } else if (declaring == Type.BOOL) {
+                            fake_globals.put(var.getText(), new BoolDescriptor());
+                        }
+                    }  else {
+                        System.err.println("Parser error - program should have been rejected");
+                    }
+                }
+            } else if (elem.getType() == DecafParserTokenTypes.METHOD_DECL) {
+                if (fake_globals.containsKey(elem.getFirstChild().getNextSibling().getText())) {
+                    System.err.println("variable already declared in same scope - at " + elem.getFirstChild().getLine() 
+                                       + ":" + elem.getFirstChild().getColumn());
+                    return false;
+                }
+                List<Boolean> argTypes = new ArrayList<Boolean>(); 
+                Map<String, Type> params = new HashMap<String, Type>();
+                AST retType = elem.getFirstChild();
+                String name = retType.getNextSibling().getText();
+                if (retType.getType() == DecafParserTokenTypes.TK_void) {
+                    params.put("return", Type.NONE);
+                } else if (retType.getType() == DecafParserTokenTypes.TK_int) {
+                    params.put("return", Type.INT);
+                } else if (retType.getType() == DecafParserTokenTypes.TK_boolean) {
+                    params.put("boolean", Type.BOOL);
+                } else {
+                    System.err.println("IRMaker error - can't find valid method return type");
+                }
+                int n_args = (elem.getNumberOfChildren() - 3) / 2;
+                AST param = retType.getNextSibling().getNextSibling();
+                for (int k = 0; k < n_args; k++) {
+                    if (params.containsKey(param.getNextSibling().getText())) {
+                        System.err.println("variable already declared in same scope - at " + param.getLine() + ":" + param.getColumn());
+                        return false;
+                    }
+                    if (param.getType() == DecafParserTokenTypes.TK_int) {
+                        argTypes.add(false);
+                        params.put(param.getNextSibling().getText(), Type.INT);
+                    } else if (param.getType() == DecafParserTokenTypes.TK_boolean) {
+                        argTypes.add(true);
+                        params.put(param.getNextSibling().getText(), Type.BOOL);
+                    } 
+                    param = param.getNextSibling().getNextSibling();
+
+                }
+                fake_locals.add(params);
+                fake_globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
+                fake_lens.add(new HashMap<String, Integer>());
+                if (!(ValidateBlock(param, fake_globals, fake_locals, fake_lens))) {
+                    return false;
+                }
+            }
+            elem = elem.getNextSibling();
+        }
+        return true;
     }
 
     /**
@@ -743,8 +956,8 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Var : IR_Node specialized for variables
      */
-    private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateVar(root, globals, locals)) {
+    private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateVar(root, globals, locals, array_lens)) {
             return null;
         }
         Type declaredType = Type.NONE;
@@ -760,7 +973,7 @@ public class IRMaker {
                 declaredType = mapping.get(globals.get(root.getText()).getType());
             }
         }
-        IR_Node index = root.getNumberOfChildren() == 1 ? GenerateExpr(root.getFirstChild(), globals, locals) : null;
+        IR_Node index = root.getNumberOfChildren() == 1 ? GenerateExpr(root.getFirstChild(), globals, locals, array_lens) : null;
         return new IR_Var(root.getText(), declaredType, index);
     }
 
@@ -774,12 +987,13 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_ArithOp : IR_Node specialized for arithmetic operations - actually a subclass instance, specialized for specific equations
      */
-    private IR_ArithOp GenerateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateArithOp(root, globals, locals)) {
+    private IR_ArithOp GenerateArithOp(AST root, Map<String, Descriptor> globals, 
+                                       List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateArithOp(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals);
-        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
+        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (root.getText().equals("+")) {
             return new IR_ArithOp.IR_ArithOp_Plus(lhs, rhs);
         } else if (root.getText().equals("-")) {
@@ -805,8 +1019,8 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Call : IR_Node specialized for either type of method call
      */
-    private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateCall(root, globals, locals)) {
+    private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateCall(root, globals, locals, array_lens)) {
             return null;
         }
         String name = root.getFirstChild().getText();
@@ -822,7 +1036,7 @@ public class IRMaker {
                 if (arg.getType() == DecafParserTokenTypes.STRING_LITERAL) {
                     args.add(new IR_Literal.IR_StringLiteral(arg.getText()));
                 } else {
-                    args.add(GenerateExpr(arg, globals, locals));
+                    args.add(GenerateExpr(arg, globals, locals, array_lens));
                 }
             }
         } else {
@@ -836,7 +1050,7 @@ public class IRMaker {
             }
             for (int i = 0; i < num_children; i++) {
                 arg = arg.getNextSibling();
-                args.add(GenerateExpr(arg, globals, locals));
+                args.add(GenerateExpr(arg, globals, locals, array_lens));
             }
         }
         return new IR_Call(name, ret, args);
@@ -853,12 +1067,13 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_CompareOp : IR_Node specialized for comparison ops - actually a subclass specialized for a particular operation
      */
-    private IR_CompareOp GenerateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateCompareOp(root, globals, locals)) {
+    private IR_CompareOp GenerateCompareOp(AST root, Map<String, Descriptor> globals, 
+                                           List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateCompareOp(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals);
-        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
+        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (root.getType() == DecafParserTokenTypes.GT) {
             return new IR_CompareOp.IR_CompareOp_GT(lhs, rhs);
         } else if (root.getType() == DecafParserTokenTypes.GTE) {
@@ -884,12 +1099,12 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_CondOp : IR_Node specialized for comparison operations - actually a subclass specialized for AND or OR
      */
-    private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateCondOp(root, globals, locals)) {
+    private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateCondOp(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals);
-        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
+        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (root.getType() == DecafParserTokenTypes.AND) {
             return new IR_CondOp.IR_CondOp_And(lhs, rhs);
         } else if (root.getType() == DecafParserTokenTypes.OR) {
@@ -910,12 +1125,12 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_EqOp : IR_Node specialized for equivalence ops; specifically, a subclass specialzed for Equals and NotEquals
      */
-    private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateEqOp(root, globals, locals)) {
+    private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateEqOp(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals);
-        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        IR_Node lhs = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
+        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (root.getType() == DecafParserTokenTypes.EQUALS) {
             return new IR_EqOp.IR_EqOp_Equals(lhs, rhs);
         } else if (root.getType() == DecafParserTokenTypes.NOT_EQUALS) {
@@ -938,11 +1153,11 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : Either an IR_LDL, IR_LDP, or IR_LDF, depending on where the var was found. 
      */
-    private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateLoad(root, globals, locals)) {
+    private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateLoad(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Var var = GenerateVar(root, globals, locals);
+        IR_Var var = GenerateVar(root, globals, locals, array_lens);
         if (var.getIndex() != null) {
             return new IR_LDA(var);
         }
@@ -977,12 +1192,12 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : Either an IR_STL, IR_STP, or IR_STF, depending on where the var was found.
      */
-    private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!ValidateStore(root, globals, locals)) {
+    private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateStore(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals);
-        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals);
+        IR_Var lhs = GenerateVar(root.getFirstChild(), globals, locals, array_lens);
+        IR_Node rhs = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         if (lhs.getIndex() != null) {
             return new IR_STA(lhs, rhs);
         }
@@ -1086,13 +1301,13 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_For : IR_Node specialized for "for" statements: Contains preloop info, conditional, and block
      */
-    private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        if (!(ValidateFor(root, globals, locals))) {
+    private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!(ValidateFor(root, globals, locals, array_lens))) {
             System.err.println("IRMaker error - called GenerateFor when invalid");
             return null;
         }
         String name = root.getFirstChild().getText();
-        IR_Node init_val = GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals);
+        IR_Node init_val = GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens);
         int table_ind = locals.size() - 1;
         while (table_ind >= 0) {
             if (locals.get(table_ind).containsKey(name)) {
@@ -1103,14 +1318,14 @@ public class IRMaker {
         IR_Node init_store;
         IR_Node init_check;
         if (table_ind > 0) {
-            init_store = new IR_STL(GenerateVar(root.getFirstChild(), globals, locals), init_val);
-            init_check = new IR_LDL(GenerateVar(root.getFirstChild(), globals, locals));
+            init_store = new IR_STL(GenerateVar(root.getFirstChild(), globals, locals, array_lens), init_val);
+            init_check = new IR_LDL(GenerateVar(root.getFirstChild(), globals, locals, array_lens));
         } else if (table_ind == 0) {
-            init_store = new IR_STP(GenerateVar(root.getFirstChild(), globals, locals), init_val);
-            init_check = new IR_LDP(GenerateVar(root.getFirstChild(), globals, locals));
+            init_store = new IR_STP(GenerateVar(root.getFirstChild(), globals, locals, array_lens), init_val);
+            init_check = new IR_LDP(GenerateVar(root.getFirstChild(), globals, locals, array_lens));
         } else if (globals.containsKey(name)) {
-            init_store = new IR_STF(GenerateVar(root.getFirstChild(), globals, locals), init_val);
-            init_check = new IR_LDF(GenerateVar(root.getFirstChild(), globals, locals));
+            init_store = new IR_STF(GenerateVar(root.getFirstChild(), globals, locals, array_lens), init_val);
+            init_check = new IR_LDF(GenerateVar(root.getFirstChild(), globals, locals, array_lens));
         } else {
             System.err.println("IRMaker error - undected, unitialized for loop index var");
             return null;
@@ -1119,13 +1334,15 @@ public class IRMaker {
         prelist.add(init_store);
         IR_Seq preloop = new IR_Seq(prelist);
         IR_CompareOp.IR_CompareOp_LT cond = new IR_CompareOp.IR_CompareOp_LT(init_check, 
-                GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals));
+                GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals, array_lens));
         Map<String, Type> for_block = new HashMap<String, Type>();
         for_block.put("for", Type.NONE);
         locals.add(for_block);
+        array_lens.add(new HashMap<String, Integer>());
         IR_Seq block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), 
-                                     globals, locals);
+                                     globals, locals, array_lens);
         locals.remove(for_block);
+        array_lens.remove(array_lens.size() - 1);
         return new IR_For(preloop, cond, block);
     }
 
@@ -1139,9 +1356,8 @@ public class IRMaker {
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Seq : IR_Node specialized for blocks : It contains a sequence of statements representing the code in the block. 
      */
-    private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
-        // TODO Auto-generated method stub
-        if (!(ValidateBlock(root, globals, locals))) {
+    private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!(ValidateBlock(root, globals, locals, array_lens))) {
             return null;
         }
         List<IR_Node> statements = new ArrayList<IR_Node>();
@@ -1165,8 +1381,10 @@ public class IRMaker {
                     if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                         if (declaring == Type.INT) {
                             locals.get(locals.size()-1).put(var.getText(), Type.INTARR);
+                            array_lens.get(array_lens.size()-1).put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
                         } else if (declaring == Type.BOOL) {
                             locals.get(locals.size()-1).put(var.getText(), Type.BOOLARR);
+                            array_lens.get(array_lens.size()-1).put(var.getText(), Integer.parseInt(var.getNextSibling().getText()));
                         }
                         j++; j++;
                         var = var.getNextSibling().getNextSibling();
@@ -1176,17 +1394,17 @@ public class IRMaker {
                 }
             } else if (cur_elem.getType() == DecafParserTokenTypes.ASSIGN || cur_elem.getType() == DecafParserTokenTypes.ASSIGN_MINUS 
                        || cur_elem.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
-                statements.add(GenerateStore(cur_elem, globals, locals));
+                statements.add(GenerateStore(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.METHOD_CALL) {
-                statements.add(GenerateCall(cur_elem, globals, locals));
+                statements.add(GenerateCall(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_if) {
-                statements.add(GenerateIf(cur_elem, globals, locals));
+                statements.add(GenerateIf(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_for) {
-                statements.add(GenerateFor(cur_elem, globals, locals));
+                statements.add(GenerateFor(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_while) {
-                statements.add(GenerateWhile(cur_elem, globals, locals));
+                statements.add(GenerateWhile(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_return) {
-                statements.add(GenerateReturn(cur_elem, globals, locals));
+                statements.add(GenerateReturn(cur_elem, globals, locals, array_lens));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_break) {
                 statements.add(GenerateBreak(cur_elem, globals, locals));
             } else if (cur_elem.getType() == DecafParserTokenTypes.TK_continue) {
@@ -1212,20 +1430,19 @@ public class IRMaker {
      * @return IR_Return : IR_Node specialized for return statements : contains either an expression or null
      */
     private IR_Return GenerateReturn(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
-        if (!ValidateReturn(root, globals, locals)) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateReturn(root, globals, locals, array_lens)) {
             return null;
         }
         IR_Node value = null;
         if (root.getNumberOfChildren() != 0) {
-            value = GenerateExpr(root.getFirstChild(), globals, locals);
+            value = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
         }
         return new IR_Return(value);
     }
 
     /**
-     * This method generates while statements. 
-     * It is currently unimplemented.
+     * This method generates while statements.
      * 
      * @param root : the ast root for the while statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
@@ -1233,11 +1450,11 @@ public class IRMaker {
      * @return IR_Node : IR_Node specialized for while statements; however, currently is always null
      */
     private IR_While GenerateWhile(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
-        if (!ValidateWhile(root, globals, locals)) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateWhile(root, globals, locals, array_lens)) {
             return null;
         }
-        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals);
+        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
         IR_Literal limit = null;
         AST block_root = root.getFirstChild().getNextSibling();
         if (root.getNumberOfChildren() == 3) {
@@ -1247,14 +1464,17 @@ public class IRMaker {
         Map<String, Type> while_block = new HashMap<String, Type>();
         while_block.put("while", Type.NONE);
         locals.add(while_block);
-        IR_Seq block = GenerateBlock(block_root, globals, locals);
+        array_lens.add(new HashMap<String, Integer>());
+        IR_Seq block = GenerateBlock(block_root, globals, locals, array_lens);
+        locals.remove(locals.size()-1);
+        array_lens.remove(array_lens.size()-1);
         return new IR_While(condition, (IR_IntLiteral) limit, block);
     }
 
     /**
      * This method generates if statements.
      * It checks the validity of the if statement, and if that statement is valid, it adds a new hashmap to the local table,
-     * generates an expression descripbing the if condition, generates a block for the true and false aspects of the if,
+     * generates an expression describing the if condition, generates a block for the true and false aspects of the if,
      * and returns an IR_Node that holds all three of the above fields; an IR_If. 
      * 
      * @param root : the ast root for the if statement
@@ -1263,19 +1483,23 @@ public class IRMaker {
      * @return IR_If : IR_Node specialized for If statements. Contains the condition for the if, and the true/false blocks for that condition.
      */
     private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
-            List<Map<String, Type>> locals) {
-        if (!(ValidateIf(root, globals, locals))) {
+            List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!(ValidateIf(root, globals, locals, array_lens))) {
             return null;
         }
-        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals);
+        IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
         locals.add(new HashMap<String, Type>());
-        IR_Seq true_block = GenerateBlock(root.getFirstChild().getNextSibling(), globals, locals);
+        array_lens.add(new HashMap<String, Integer>());
+        IR_Seq true_block = GenerateBlock(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
         locals.remove(locals.size() - 1);
+        array_lens.remove(array_lens.size() - 1);
         IR_Seq false_block;
         if (root.getNumberOfChildren() == 4) {
             locals.add(new HashMap<String, Type>());
-            false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals);
+            array_lens.add(new HashMap<String, Integer>());
+            false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens);
             locals.remove(locals.size() - 1);
+            array_lens.remove(array_lens.size() - 1);
         } else {
             false_block = new IR_Seq(new ArrayList<IR_Node>());
         }
@@ -1284,15 +1508,135 @@ public class IRMaker {
 
     /**
      * This method generates Expressions.
-     * It is currently unimplemented.
      * 
      * @param root : the ast root for the expression
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Node : IR_Node specialized for expressions; however, currently always null.
      */
-    private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
+    private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Integer>> array_lens) {
+        if (!ValidateExpr(root, globals, locals, array_lens)) {
+            return null;
+        }
+        if (root.getType() == DecafParserTokenTypes.QUESTION) {
+            IR_Node condition = GenerateExpr(root.getFirstChild(), globals, locals, array_lens);
+            IR_Node true_expr = GenerateExpr(root.getFirstChild().getNextSibling(), globals, locals, array_lens);
+            IR_Node false_expr = GenerateExpr(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens);
+            return new IR_Ternary(condition, true_expr, false_expr);
+        } else if (root.getType() == DecafParserTokenTypes.OR || root.getType() == DecafParserTokenTypes.AND) {
+            return GenerateCondOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.EQUALS || root.getType() == DecafParserTokenTypes.NOT_EQUALS) {
+            return GenerateEqOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.LT || root.getType() == DecafParserTokenTypes.GT 
+                || root.getType() == DecafParserTokenTypes.LTE || root.getType() == DecafParserTokenTypes.GTE) {
+            return GenerateCompareOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.PLUS || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 2) 
+                || root.getType() == DecafParserTokenTypes.TIMES || root.getType() == DecafParserTokenTypes.DIVIDE 
+                || root.getType() == DecafParserTokenTypes.MOD) {
+            return GenerateArithOp(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.ID) {
+            return GenerateLoad(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.AT) {
+            for (int i = locals.size() - 1; i >= 0; i--) {
+                Map<String, Type> local_table = locals.get(i);
+                if (local_table.containsKey(root.getFirstChild().getText())) {
+                    return new IR_IntLiteral(array_lens.get(i).get(root.getFirstChild().getText()));
+                }
+            }
+            Descriptor desc = globals.get(root.getFirstChild().getText());
+            return new IR_IntLiteral(desc.getLength());
+        } else if (root.getType() == DecafParserTokenTypes.ID) {
+            return GenerateLoad(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.METHOD_CALL) {
+            return GenerateCall(root, globals, locals, array_lens);
+        } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL 
+                   || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) 
+                   || root.getType() == DecafParserTokenTypes.TK_true || root.getType() == DecafParserTokenTypes.TK_false) {
+            return GenerateLiteral(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.BANG) {
+            return new IR_Not(GenerateExpr(root.getFirstChild(), globals, locals, array_lens));
+        }
+        System.err.println("IRMaker error - no expression possible");
         return null;
+    }
+    
+    public Map<String, Descriptor> GenerateProgram(AST root) {
+        Map<String, Descriptor> globals = new HashMap<String, Descriptor>();
+        List<Map<String, Type>> locals = new ArrayList<Map<String, Type>>();
+        List<Map<String, Integer>> array_lens = new ArrayList<Map<String, Integer>>();
+        if (!ValidateProgram(root)) {
+            return null;
+        }
+        AST elem = root.getFirstChild();
+        for (int i = 0; i < root.getNumberOfChildren(); i++) {
+            if (elem.getType() == DecafParserTokenTypes.TK_callout) {
+                globals.put(elem.getFirstChild().getText(), new CalloutDescriptor(elem.getFirstChild().getText()));
+            } else if (elem.getType() == DecafParserTokenTypes.FIELD_DECL) {
+                Type declaring = Type.NONE;
+                int num_in_decl = elem.getNumberOfChildren() - 1;
+                AST var = elem.getFirstChild().getNextSibling();
+                if (elem.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
+                    declaring = Type.INT;
+                } else if (elem.getType() == DecafParserTokenTypes.TK_boolean) {
+                    declaring = Type.BOOL;
+                }
+                int j = 0;
+                while (j < num_in_decl) {
+                    if (var.getType() == DecafParserTokenTypes.ID) {
+                        if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                            if (declaring == Type.INT) {
+                                globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
+                                j++; j++;
+                                var = var.getNextSibling().getNextSibling();
+                            } else if (declaring == Type.BOOL) {
+                                globals.put(var.getText(), new BoolArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
+                                j++; j++;
+                                var = var.getNextSibling().getNextSibling();
+                            }
+                        }
+                        if (declaring == Type.INT) {
+                            globals.put(var.getText(), new IntDescriptor());
+                        } else if (declaring == Type.BOOL) {
+                            globals.put(var.getText(), new BoolDescriptor());
+                        }
+                    }
+                }
+            } else if (elem.getType() == DecafParserTokenTypes.METHOD_DECL) {
+                List<Boolean> argTypes = new ArrayList<Boolean>(); 
+                Map<String, Type> params = new HashMap<String, Type>();
+                AST retType = elem.getFirstChild();
+                String name = retType.getNextSibling().getText();
+                if (retType.getType() == DecafParserTokenTypes.TK_void) {
+                    params.put("return", Type.NONE);
+                } else if (retType.getType() == DecafParserTokenTypes.TK_int) {
+                    params.put("return", Type.INT);
+                } else if (retType.getType() == DecafParserTokenTypes.TK_boolean) {
+                    params.put("boolean", Type.BOOL);
+                } else {
+                    System.err.println("IRMaker error - can't find valid method return type");
+                }
+                int n_args = (elem.getNumberOfChildren() - 3) / 2;
+                AST param = retType.getNextSibling().getNextSibling();
+                for (int k = 0; k < n_args; k++) {
+                    if (param.getType() == DecafParserTokenTypes.TK_int) {
+                        argTypes.add(false);
+                        params.put(param.getNextSibling().getText(), Type.INT);
+                    } else if (param.getType() == DecafParserTokenTypes.TK_boolean) {
+                        argTypes.add(true);
+                        params.put(param.getNextSibling().getText(), Type.BOOL);
+                    } 
+                    param = param.getNextSibling().getNextSibling();
+
+                }
+                locals.add(params);
+                globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
+                array_lens.add(new HashMap<String, Integer>());
+                IR_Seq method_IR = GenerateBlock(param, globals, locals, array_lens);
+                globals.get(name).setIR(method_IR);
+            }
+            elem = elem.getNextSibling();
+        }
+        return globals;
     }
 
 }
