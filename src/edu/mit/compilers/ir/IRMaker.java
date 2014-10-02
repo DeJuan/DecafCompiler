@@ -546,7 +546,7 @@ public class IRMaker {
                     AST var = block_start.getFirstChild().getNextSibling();
                     if (block_start.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
                         declaring = Type.INT;
-                    } else if (block_start.getType() == DecafParserTokenTypes.TK_boolean) {
+                    } else if (block_start.getFirstChild().getType() == DecafParserTokenTypes.TK_boolean) {
                         declaring = Type.BOOL;
                     } else {
                         System.err.println("Parser error - program should have been rejected");
@@ -585,6 +585,7 @@ public class IRMaker {
                             }
                         }  else {
                             System.err.println("Parser error - program should have been rejected");
+                            return false;
                         }
                     }
                     i++;
@@ -914,6 +915,7 @@ public class IRMaker {
                         }
                     }  else {
                         System.err.println("Parser error - program should have been rejected");
+                        return false;
                     }
                 }
             } else if (elem.getType() == DecafParserTokenTypes.METHOD_DECL) {
@@ -1684,7 +1686,7 @@ public class IRMaker {
                 globals.get(name).setIR(method_IR);
             }
         }
-        return globals;
+        return globals.containsKey("main") ? globals : null;
     }
 
 }
