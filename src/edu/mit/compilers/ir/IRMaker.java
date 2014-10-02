@@ -64,7 +64,8 @@ public class IRMaker {
             return false;
         }
         Type declaredType = Type.NONE;
-        for (Map<String, Type> local_var_map : locals) {
+        for (int i = locals.size() - 1; i >= 0; i--) {
+            Map<String, Type> local_var_map = locals.get(i);
             if (local_var_map.containsKey(root.getText())) {
                 declaredType = local_var_map.get(root.getText());
                 break;
@@ -961,7 +962,8 @@ public class IRMaker {
             return null;
         }
         Type declaredType = Type.NONE;
-        for (Map<String, Type> local_var_map : locals) {
+        for (int i = locals.size() - 1; i >= 0; i--) {
+            Map<String, Type> local_var_map = locals.get(i);
             if (local_var_map.containsKey(root.getText())) {
                 declaredType = local_var_map.get(root.getText());
                 break;
