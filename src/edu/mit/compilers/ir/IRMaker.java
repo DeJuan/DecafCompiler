@@ -1680,6 +1680,11 @@ public class IRMaker {
 
     /**
      * This method generates Expressions.
+     * It checks that the expression is valid, then does root.getType, checking for a ternary expression.
+     * If it's not ternary, then it proceeds through a series of checks, calling the GenerateX method if X is appropriate.
+     * For example, upon finding that the root is an OR, it will call GenerateCondOp. 
+     * In other words, it mainly dispatches work to the other generator methods unless dealing with a special case
+     * unique to expressions, like "!" and "@" applications.
      * 
      * @param root : the ast root for the expression
      * @param globals : the global symbol table, a Map<String, Descriptor>
