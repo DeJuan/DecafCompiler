@@ -1809,14 +1809,14 @@ public class IRMaker {
                 } else if (retType.getType() == DecafParserTokenTypes.TK_int) {
                     params.put("return", Type.INT);
                 } else if (retType.getType() == DecafParserTokenTypes.TK_boolean) {
-                    params.put("boolean", Type.BOOL);
+                    params.put("return", Type.BOOL);
                 } else {
                     System.err.println("IRMaker error - can't find valid method return type");
                 }
                 int n_args = (elem.getNumberOfChildren() - 3) / 2;
                 AST param = retType;
                 for (int k = 0; k < n_args; k++) {
-                    param = retType.getNextSibling().getNextSibling();
+                    param = param.getNextSibling().getNextSibling();
                     if (param.getType() == DecafParserTokenTypes.TK_int) {
                         argTypes.add(false);
                         params.put(param.getNextSibling().getText(), Type.INT);
