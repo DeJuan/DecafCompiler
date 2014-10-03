@@ -793,7 +793,7 @@ public class IRMaker {
                     IR_Node true_node = GenerateExpr(true_clause, globals, locals, array_lens);
                     IR_Node false_node = GenerateExpr(false_clause, globals, locals, array_lens);
                     if (!((true_node.evaluateType() == Type.BOOL && false_node.evaluateType() == Type.BOOL) 
-                           || (true_node.evaluateType() == Type.INT && true_node.evaluateType() == Type.INT))) {
+                           || (true_node.evaluateType() == Type.INT && false_node.evaluateType() == Type.INT))) {
                         System.err.println("both clauses of a ternary must be of the same type - at " + root.getLine() + ":" + root.getColumn());
                         return false;
                     }
