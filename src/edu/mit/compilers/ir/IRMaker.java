@@ -704,7 +704,7 @@ public class IRMaker {
             System.err.println("Parser error - program should have been rejected");
             return false;
         }
-        AST expr_node = root.getNextSibling();
+        AST expr_node = root.getFirstChild();
         AST limit_node;
         AST block_node;
         if (root.getNumberOfChildren() == 3) {
