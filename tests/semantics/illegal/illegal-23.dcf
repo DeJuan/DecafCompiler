@@ -1,9 +1,0 @@
-void foo(int length) {
-	int length;
-	// cannot declare a parameter name
-	return;
-}
-
-void main ( ) {
-  foo();
-}

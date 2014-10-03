@@ -521,6 +521,7 @@ public class IRMaker {
             if (local_table.containsKey(ind_name)) {
                 if (local_table.get(ind_name) == Type.INT) {
                     found = true;
+                    break;
                 }
                 System.err.println("index variable must be of integer type - at " + root.getLine() + ":" + root.getColumn());
                 return false;
@@ -586,6 +587,8 @@ public class IRMaker {
         }
         Map<String, Type> declared = new HashMap<String, Type>(locals.get(locals.size() - 1));
         Map<String, Long> new_lens = new HashMap<String, Long>(array_lens.get(array_lens.size() - 1));
+        List<Map<String, Type>> locals_copy = null;
+        List<Map<String, Long>> lens_copy = null;
         boolean finished_fields = false;
         Type declaring = Type.NONE;
         int i = 0;
@@ -650,14 +653,14 @@ public class IRMaker {
                     i++;
                 } else {
                     finished_fields = true;
+                    locals_copy = new ArrayList<Map<String, Type>>(locals);
+                    locals_copy.remove(locals_copy.size() - 1);
+                    locals_copy.add(declared);
+                    lens_copy = new ArrayList<Map<String, Long>>(array_lens);
+                    lens_copy.remove(lens_copy.size() - 1);
+                    lens_copy.add(new_lens);
                 }
             } else {
-                List<Map<String, Type>> locals_copy = new ArrayList<Map<String, Type>>(locals);
-                locals_copy.remove(locals_copy.size() - 1);
-                locals_copy.add(declared);
-                List<Map<String, Long>> lens_copy = new ArrayList<Map<String, Long>>(array_lens);
-                lens_copy.remove(lens_copy.size() - 1);
-                lens_copy.add(new_lens);
                 if (!ValidateStatement(block_start, globals, locals_copy, lens_copy)) {
                     return false;
                 }
@@ -897,9 +900,10 @@ public class IRMaker {
             }
             return false;
         } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL 
-                   || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) 
                    || root.getType() == DecafParserTokenTypes.TK_true || root.getType() == DecafParserTokenTypes.TK_false) {
             return ValidateLiteral(root, globals, locals);
+        } else if (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) {
+            return ValidateExpr(root.getFirstChild(), globals, locals, array_lens) && GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.INT;
         } else if (root.getType() == DecafParserTokenTypes.AT) {
             String var_name = root.getFirstChild().getText();
             for (int i = locals.size() - 1; i >= 0; i--) {
@@ -1031,7 +1035,7 @@ public class IRMaker {
                 } else if (retType.getType() == DecafParserTokenTypes.TK_int) {
                     params.put("return", Type.INT);
                 } else if (retType.getType() == DecafParserTokenTypes.TK_boolean) {
-                    params.put("boolean", Type.BOOL);
+                    params.put("return", Type.BOOL);
                 } else {
                     System.err.println("IRMaker error - can't find valid method return type");
                 }
@@ -1053,12 +1057,16 @@ public class IRMaker {
 
                 }
                 fake_locals.add(params);
+                fake_locals.add(new HashMap<String, Type>());
                 fake_globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
+                fake_lens.add(new HashMap<String, Long>());
                 fake_lens.add(new HashMap<String, Long>());
                 if (!(ValidateBlock(param.getNextSibling().getNextSibling(), fake_globals, fake_locals, fake_lens))) {
                     return false;
                 }
                 fake_locals.remove(0);
+                fake_locals.remove(0);
+                fake_lens.remove(0);
                 fake_lens.remove(0);
             }
         }
@@ -1203,7 +1211,7 @@ public class IRMaker {
             return new IR_CompareOp.IR_CompareOp_GTE(lhs, rhs);
         } else if (root.getType() == DecafParserTokenTypes.LT) {
             return new IR_CompareOp.IR_CompareOp_LT(lhs, rhs);
-        } else if (root.getText().equals("LTE")) {
+        } else if (root.getType() == DecafParserTokenTypes.LTE) {
             return new IR_CompareOp.IR_CompareOp_LTE(lhs, rhs);
         } else {
             System.err.println("IRMaker eror - called GenerateCompareOp with no compare op at " + root.getLine() + ":" + root.getColumn());
@@ -1389,7 +1397,7 @@ public class IRMaker {
         } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL) {
             String text = root.getText();
             if (text.startsWith("0x")) {
-                return new IR_Literal.IR_IntLiteral(Long.parseLong(text.substring(2)));
+                return new IR_Literal.IR_IntLiteral(Long.parseLong(text.substring(2), 16));
             } else {
                 return new IR_Literal.IR_IntLiteral(Long.parseLong(text));
             }
@@ -1714,8 +1722,9 @@ public class IRMaker {
             return GenerateLoad(root, globals, locals, array_lens);
         } else if (root.getType() == DecafParserTokenTypes.METHOD_CALL) {
             return GenerateCall(root, globals, locals, array_lens);
+        }  else if (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) {
+            return new IR_ArithOp.IR_ArithOp_Mult(new IR_Literal.IR_IntLiteral(-1L), GenerateExpr(root.getFirstChild(), globals, locals, array_lens));
         } else if (root.getType() == DecafParserTokenTypes.INT_LITERAL 
-                   || (root.getType() == DecafParserTokenTypes.MINUS && root.getNumberOfChildren() == 1) 
                    || root.getType() == DecafParserTokenTypes.TK_true || root.getType() == DecafParserTokenTypes.TK_false) {
             return GenerateLiteral(root, globals, locals);
         } else if (root.getType() == DecafParserTokenTypes.BANG) {
@@ -1766,7 +1775,7 @@ public class IRMaker {
                       var = var.getNextSibling().getNextSibling();
                     }
                     if (var.getType() == DecafParserTokenTypes.ID) {
-                        if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                        if (j < num_in_decl - 1 && var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                             if (declaring == Type.INT) {
                                 globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
