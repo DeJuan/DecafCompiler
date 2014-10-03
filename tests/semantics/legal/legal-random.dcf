@@ -4,7 +4,7 @@ int a[10];
 int A[10];
 boolean x;
 
-int bar(int a, boolean b) {
+int bar(int a, boolean b, int c) {
 	return a + -4 * @A;
 }
 
@@ -25,7 +25,7 @@ boolean foo(int a, int b, boolean c) {
 		while (true):10 {
 			int A[10];
 			A[4] = -4221424 * 4 + 1242 / 241 * (3 + 2 % 1);
-			A[5] = bar(A[4], bar(5, x[0]));
+			A[5] = bar(A[4], blah[10], bar(5, x[0], -2));
 			if (false == A[4] > 2) {
 				continue;
 			} else {
