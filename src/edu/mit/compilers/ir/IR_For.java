@@ -1,6 +1,3 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 import edu.mit.compilers.ir.IR_CompareOp.IR_CompareOp_LT;
@@ -10,24 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author yygu
+ * IR_Node for the 'for' statement.
+ * Grammar: for ( id = expr, expr ) block
+ * The constructor takes in a IR_Seq for a series of pre-loop processing statements.
+ * It also takes in a comparison IR node and a IR_Seq of statements.
  *
  */
 public class IR_For extends IR_Node {
 	protected IR_Seq preLoop;
 	protected IR_CompareOp_LT lt;
 	protected IR_Seq block;
-	
-	public IR_For(IR_Var id, IR_Node expr1, IR_Node expr2, IR_Seq block) {
-		// TODO: is id a ID_Var or a IR_LDX?
-		List<IR_Node> statements = new ArrayList<IR_Node>();
-		statements.add(new IR_STL(id, expr1));
-		this.preLoop = new IR_Seq(statements);
-		
-		this.lt = new IR_CompareOp_LT((IR_Node) id, expr2);
-		
-		this.block = block;
-	}
 	
 	public IR_For(IR_Seq preloop, IR_CompareOp_LT cond, IR_Seq block) {
 	    this.preLoop = preloop;

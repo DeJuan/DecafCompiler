@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to load a field variable.
+ * 
+ */
 public class IR_LDF extends IR_Node {
     private IR_Var field;
     
@@ -18,13 +22,11 @@ public class IR_LDF extends IR_Node {
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Loading " + field.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return evaluateType() == Type.BOOL || evaluateType() == Type.INT;
     }
 

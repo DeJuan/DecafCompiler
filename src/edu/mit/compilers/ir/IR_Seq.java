@@ -3,6 +3,11 @@ package edu.mit.compilers.ir;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * IR_Node that contains a list of statements to execute in a sequence.
+ * Commonly used in blocks or parameters where the number of statements is unknown ahead of time.
+ * 
+ */
 public class IR_Seq extends IR_Node {
     private List<IR_Node> statements = new ArrayList<IR_Node>();
     
@@ -16,13 +21,11 @@ public class IR_Seq extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return Type.NONE;
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         String concat = "";
         for (IR_Node child: statements) {
             concat += child.toString() + System.getProperty("line.separator");
@@ -32,7 +35,6 @@ public class IR_Seq extends IR_Node {
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return true;
     }
 

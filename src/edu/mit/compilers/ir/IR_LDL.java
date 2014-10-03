@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to load a local variable.
+ * 
+ */
 public class IR_LDL extends IR_Node {
     private IR_Var local_var;
     
@@ -13,19 +17,16 @@ public class IR_LDL extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return local_var.evaluateType();
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Loading " + local_var.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return evaluateType() == Type.BOOL || evaluateType() == Type.INT;
     }
 

@@ -1,10 +1,7 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ * IR_Node for the 'return' statement.
  *
  */
 public class IR_Return extends IR_Node {

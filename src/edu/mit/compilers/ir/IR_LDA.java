@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to load an array.
+ * 
+ */
 public class IR_LDA extends IR_Node {
     private IR_Var array;
     
@@ -17,7 +21,6 @@ public class IR_LDA extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         if (array.evaluateType() == Type.BOOLARR) {
             return Type.BOOL;
         } else if (array.evaluateType() == Type.INTARR) {
@@ -30,13 +33,11 @@ public class IR_LDA extends IR_Node {
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Loading from array " + array.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return array.getIndex().evaluateType() == Type.INT && (array.evaluateType() == Type.BOOLARR || array.evaluateType() == Type.INTARR);
     }
 

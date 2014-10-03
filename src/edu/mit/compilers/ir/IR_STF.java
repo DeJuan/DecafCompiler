@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to store a value to a field variable location.
+ * 
+ */
 public class IR_STF extends IR_Node {
     private IR_Var field;
     private IR_Node value;
@@ -19,19 +23,16 @@ public class IR_STF extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return Type.NONE;
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Storing to " + field.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return field.evaluateType() == value.evaluateType() && (field.evaluateType() == Type.BOOL || field.evaluateType() == Type.INT);
     }
 

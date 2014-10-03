@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to load a parameter variable.
+ * 
+ */
 public class IR_LDP extends IR_Node {
     private IR_Var parameter;
 
@@ -13,19 +17,16 @@ public class IR_LDP extends IR_Node {
     
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return parameter.evaluateType();
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Loading " + parameter.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return evaluateType() == Type.BOOL || evaluateType() == Type.INT;
     }
 

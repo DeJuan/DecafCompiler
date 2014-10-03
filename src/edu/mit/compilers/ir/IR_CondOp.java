@@ -1,10 +1,9 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ *  IR_Node for the conditional operators (&&, ||).
+ *  Grammar: expr cond_op expr
+ *  Each subclass of IR_CondOp takes in a left IR Node and a right IR Node.
  *
  */
 abstract class IR_CondOp extends IR_Node {

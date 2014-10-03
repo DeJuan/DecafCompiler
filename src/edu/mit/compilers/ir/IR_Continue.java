@@ -1,10 +1,7 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ * IR_Node for the 'continue' statement.
  *
  */
 public class IR_Continue extends IR_Node {

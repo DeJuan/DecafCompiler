@@ -1,10 +1,9 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ * IR_Node for the 'if' statement.
+ * Grammar: if ( expr ) block [else block]
+ * It takes in IR nodes for expr, the true block, and the false block.
  *
  */
 public class IR_If extends IR_Node {

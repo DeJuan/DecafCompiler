@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to store a value to a parameter location.
+ * 
+ */
 public class IR_STP extends IR_Node {
     private IR_Var parameter;
     private IR_Node value;
@@ -19,19 +23,16 @@ public class IR_STP extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return Type.NONE;
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Storing " + value.toString() + " to " + parameter.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return parameter.evaluateType() == value.evaluateType() && (parameter.evaluateType() == Type.INT || parameter.evaluateType() == Type.BOOL);
     }
 
