@@ -107,6 +107,7 @@ class Main {
     	        
     	  parser.program();
     	  if(parser.getError()) {
+          System.out.println("parse error");
     		  System.exit(1);
     	  }
     	  

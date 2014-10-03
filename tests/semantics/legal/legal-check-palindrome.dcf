@@ -10,6 +10,7 @@ int get_random() {
 
 boolean check_if_palindrome(int length) {
 	int length, index;
+  boolean is_palindrome;
 	index = 0;
     is_palindrome = true;
 
@@ -26,6 +27,7 @@ boolean check_if_palindrome(int length) {
 
 void main() {
 	int i, temp;
+  int length;
 	boolean is_palindrome;
 
 	length = 50;
