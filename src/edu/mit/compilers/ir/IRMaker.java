@@ -937,6 +937,10 @@ public class IRMaker {
                                        + ":" + elem.getFirstChild().getColumn());
                     return false;
                 }
+                if (elem.getFirstChild().getNextSibling().getText().equals("main") && elem.getNumberOfChildren() != 3) {
+                  System.err.println("main function takes no parameters");
+                  return false;
+                }
                 List<Boolean> argTypes = new ArrayList<Boolean>(); 
                 Map<String, Type> params = new HashMap<String, Type>();
                 AST retType = elem.getFirstChild();
