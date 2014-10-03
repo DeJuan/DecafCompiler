@@ -834,7 +834,7 @@ public class IRMaker {
         if (root.getNumberOfChildren() == 4) {
             fake_locals.add(new HashMap<String, Type>());
             fake_lens.add(new HashMap<String, Long>());
-            if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_lens))) {
+            if (!(ValidateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, fake_locals, fake_lens))) {
                 return false;
             }
         }
@@ -1669,7 +1669,7 @@ public class IRMaker {
         if (root.getNumberOfChildren() == 4) {
             locals.add(new HashMap<String, Type>());
             array_lens.add(new HashMap<String, Long>());
-            false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling(), globals, locals, array_lens);
+            false_block = GenerateBlock(root.getFirstChild().getNextSibling().getNextSibling().getNextSibling(), globals, locals, array_lens);
             locals.remove(locals.size() - 1);
             array_lens.remove(array_lens.size() - 1);
         } else {
