@@ -162,7 +162,7 @@ public class IRMaker {
         if (desc.getType() == Descriptor.Type.CALLOUT) {
             for (int i = 0; i < num_args; i++ ) {
                 arg = arg.getNextSibling();
-                if (!(arg.getType() == DecafParserTokenTypes.STRING_LITERAL) || ValidateExpr(arg, globals, locals, array_lens)) {
+                if ((arg.getType() != DecafParserTokenTypes.STRING_LITERAL) && !ValidateExpr(arg, globals, locals, array_lens)) {
                     System.err.println("arg passed to callout is neither String lit nor a valid exp at " + arg.getLine() + ":" + arg.getColumn());
                     return false;
                 }
@@ -531,8 +531,12 @@ public class IRMaker {
      */
     private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
         if (!(root.getType() == DecafParserTokenTypes.BLOCK)) {
+            System.err.println(root);
             System.err.println("block expected but not present - IRMaker error");
             return false;
+        }
+        if (root.getNumberOfChildren() == 0) {
+          return true;
         }
         Map<String, Type> declared = new HashMap<String, Type>(locals.get(locals.size() - 1));
         Map<String, Long> new_lens = new HashMap<String, Long>(array_lens.get(array_lens.size() - 1));
@@ -684,7 +688,7 @@ public class IRMaker {
                 System.err.println("Must return an int from an int-type function - at" + root.getLine() + ":" + root.getColumn());
                 return false;
             }
-            return false;
+            return true;
         } 
         System.err.println("IRMaker error - return type not present");
         return false;
@@ -868,6 +872,7 @@ public class IRMaker {
             }
             return false;
         }
+        System.err.println(root);
         System.err.println("IRMaker error - no expression possible");
         return false;
     }
@@ -914,6 +919,7 @@ public class IRMaker {
                         if (j != num_in_decl - 1 && var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                             if (!ValidateLiteral(var.getNextSibling(), fake_globals, fake_locals) 
                                     || ((IR_Literal.IR_IntLiteral) GenerateLiteral(var.getNextSibling(), fake_globals, fake_locals)).getValue() <= 0) {
+                                System.err.println("Invalid array length - at " + var.getNextSibling().getLine() + ":" + var.getNextSibling().getColumn());
                                 return false;
                             }
                             if (declaring == Type.INT) {
@@ -963,8 +969,9 @@ public class IRMaker {
                     System.err.println("IRMaker error - can't find valid method return type");
                 }
                 int n_args = (elem.getNumberOfChildren() - 3) / 2;
-                AST param = retType.getNextSibling().getNextSibling();
+                AST param = retType;
                 for (int k = 0; k < n_args; k++) {
+                    param = param.getNextSibling().getNextSibling();
                     if (params.containsKey(param.getNextSibling().getText())) {
                         System.err.println("variable already declared in same scope - at " + param.getLine() + ":" + param.getColumn());
                         return false;
@@ -976,13 +983,12 @@ public class IRMaker {
                         argTypes.add(true);
                         params.put(param.getNextSibling().getText(), Type.BOOL);
                     } 
-                    param = param.getNextSibling().getNextSibling();
 
                 }
                 fake_locals.add(params);
                 fake_globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
                 fake_lens.add(new HashMap<String, Long>());
-                if (!(ValidateBlock(param, fake_globals, fake_locals, fake_lens))) {
+                if (!(ValidateBlock(param.getNextSibling().getNextSibling(), fake_globals, fake_locals, fake_lens))) {
                     return false;
                 }
                 fake_locals.remove(0);
@@ -1087,9 +1093,9 @@ public class IRMaker {
             }
         } else {
             String retType = desc.getReturnType();
-            if (retType.equals("bool")) {
+            if (retType.equals("BOOL")) {
                 ret = Type.BOOL;
-            } else if (retType.equals("int")) {
+            } else if (retType.equals("INT")) {
                 ret = Type.INT;
             } else {
                 ret = Type.NONE;
@@ -1427,6 +1433,9 @@ public class IRMaker {
             return null;
         }
         List<IR_Node> statements = new ArrayList<IR_Node>();
+        if (root.getNumberOfChildren() == 0) {
+          return new IR_Seq(statements);
+        }
         int i = 0;
         int num_elem = root.getNumberOfChildren();
         AST cur_elem = root.getFirstChild();
@@ -1660,22 +1669,27 @@ public class IRMaker {
                 }
                 int j = 0;
                 while (j < num_in_decl) {
+                    var = elem.getFirstChild().getNextSibling();
+                    for (int k = 0; k < j; k++) {
+                      var = var.getNextSibling().getNextSibling();
+                    }
                     if (var.getType() == DecafParserTokenTypes.ID) {
                         if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                             if (declaring == Type.INT) {
                                 globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
-                                var = var.getNextSibling().getNextSibling();
                             } else if (declaring == Type.BOOL) {
                                 globals.put(var.getText(), new BoolArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
-                                var = var.getNextSibling().getNextSibling();
                             }
                         }
-                        if (declaring == Type.INT) {
+                        else {
+                          if (declaring == Type.INT) {
                             globals.put(var.getText(), new IntDescriptor());
-                        } else if (declaring == Type.BOOL) {
-                            globals.put(var.getText(), new BoolDescriptor());
+                          } else if (declaring == Type.BOOL) {
+                              globals.put(var.getText(), new BoolDescriptor());
+                          }
+                          j++;
                         }
                     }
                 }
@@ -1694,8 +1708,9 @@ public class IRMaker {
                     System.err.println("IRMaker error - can't find valid method return type");
                 }
                 int n_args = (elem.getNumberOfChildren() - 3) / 2;
-                AST param = retType.getNextSibling().getNextSibling();
+                AST param = retType;
                 for (int k = 0; k < n_args; k++) {
+                    param = retType.getNextSibling().getNextSibling();
                     if (param.getType() == DecafParserTokenTypes.TK_int) {
                         argTypes.add(false);
                         params.put(param.getNextSibling().getText(), Type.INT);
@@ -1703,13 +1718,12 @@ public class IRMaker {
                         argTypes.add(true);
                         params.put(param.getNextSibling().getText(), Type.BOOL);
                     } 
-                    param = param.getNextSibling().getNextSibling();
 
                 }
                 locals.add(params);
                 globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
                 array_lens.add(new HashMap<String, Long>());
-                IR_Seq method_IR = GenerateBlock(param, globals, locals, array_lens);
+                IR_Seq method_IR = GenerateBlock(param.getNextSibling().getNextSibling(), globals, locals, array_lens);
                 globals.get(name).setIR(method_IR);
             }
         }
