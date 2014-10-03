@@ -90,6 +90,7 @@ public class IRMaker {
             boolean valid = GenerateExpr(root.getFirstChild(), globals, locals, array_lens).evaluateType() == Type.INT;
             if (!valid) {
                 System.err.println("arrays take integer indices only - see " + root.getFirstChild().getLine() + ":" + root.getFirstChild().getColumn());
+                return false;
             }
             return valid;
         }
@@ -884,7 +885,7 @@ public class IRMaker {
                 AST var = elem.getFirstChild().getNextSibling();
                 if (elem.getFirstChild().getType() == DecafParserTokenTypes.TK_int) {
                     declaring = Type.INT;
-                } else if (elem.getType() == DecafParserTokenTypes.TK_boolean) {
+                } else if (elem.getFirstChild().getType() == DecafParserTokenTypes.TK_boolean) {
                     declaring = Type.BOOL;
                 } else {
                     System.err.println("Parser error - program should have been rejected");
@@ -892,12 +893,16 @@ public class IRMaker {
                 }
                 int j = 0;
                 while (j < num_in_decl) {
+                    var = elem.getFirstChild().getNextSibling();
+                    for (int k = 0; k < j; k++) {
+                      var = var.getNextSibling();
+                    }
                     if (var.getType() == DecafParserTokenTypes.ID) {
                         if (fake_globals.containsKey(var.getText())) {
                             System.err.println("variable already declared in same scope - at " + var.getLine() + ":" + var.getColumn());
                             return false;
                         }
-                        if (var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
+                        if (j != num_in_decl - 1 && var.getNextSibling().getType() == DecafParserTokenTypes.INT_LITERAL) {
                             if (!ValidateLiteral(var.getNextSibling(), fake_globals, fake_locals) 
                                     || ((IR_Literal.IR_IntLiteral) GenerateLiteral(var.getNextSibling(), fake_globals, fake_locals)).getValue() <= 0) {
                                 return false;
@@ -905,20 +910,20 @@ public class IRMaker {
                             if (declaring == Type.INT) {
                                 fake_globals.put(var.getText(), new IntArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
-                                var = var.getNextSibling().getNextSibling();
                             } else if (declaring == Type.BOOL) {
                                 fake_globals.put(var.getText(), new BoolArrayDescriptor(Integer.parseInt(var.getNextSibling().getText())));
                                 j++; j++;
-                                var = var.getNextSibling().getNextSibling();
                             } else {
                                 System.err.println("Parser error - program should have been rejected");
                                 return false;
                             }
-                        }
-                        if (declaring == Type.INT) {
-                            fake_globals.put(var.getText(), new IntDescriptor());
-                        } else if (declaring == Type.BOOL) {
-                            fake_globals.put(var.getText(), new BoolDescriptor());
+                        } else {
+                            if (declaring == Type.INT) {
+                                fake_globals.put(var.getText(), new IntDescriptor());
+                            } else if (declaring == Type.BOOL) {
+                                fake_globals.put(var.getText(), new BoolDescriptor());
+                            }
+                            j++;
                         }
                     }  else {
                         System.err.println("Parser error - program should have been rejected");
