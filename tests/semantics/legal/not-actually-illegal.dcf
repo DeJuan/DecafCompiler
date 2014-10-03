@@ -1,5 +1,7 @@
 callout printf;
+int printf;
+// identifier already used
 
 void main ( ) {
-  int printf;
+  return;
 }
