@@ -25,7 +25,7 @@ import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
  * The types of validation expressions are var, arithOp, 
  * call, compareOp, condOp, EqOp, load, store, literal,
  * break, continue, for, block, statement, return, while, if,
- * and expr.
+ * expr, and program.
  * 
  * To call a validate method, append validate followed by the 
  * type in CamelCase; i.e. validateVar, validateCondOp.
@@ -52,10 +52,18 @@ public class IRMaker {
     }
     /**
      * This method allows you to validate any variable by passing in the AST root alongside the global and local symbol tables. 
+     * It checks the type of the AST root, and if it's not an ID, shows an error and returns false. 
+     * Otherwise, it checks for the variable in the local symbol table. 
+     * If not found there, it checks the globals. 
+     * If still not found, the variable's been used without a declaration and an error is thrown. 
+     * 
+     * If found correctly, it checks to see whether or not the var is a direct reference to an array or if it is a primitive.
+     * If primitive, it's valid. Else, it checks to make sure that the array index used was valid. 
      * 
      * @param root - the root of the AST 
      * @param globals - the global symbol table, a Map<String, Descriptor>
      * @param locals - the local symbol table for the scope of this variable, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays. 
      * @return boolean : True or False, answering whether or not the variable is valid.
      */
     private boolean ValidateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -100,10 +108,13 @@ public class IRMaker {
 
     /**
      * This method allows you to check the validity of an arithmetic operation.
+     * It checks the number of children on the AST root first, and shows an error if that check fails.
+     * If it passes, it then gets the type of the root, and calls ValidateExpr() on it. 
      * 
      * @param root : the root of the AST for the operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope of this variable, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the given root
      */
     private boolean ValidateArithOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -138,10 +149,15 @@ public class IRMaker {
     /**
      * 
      * This method allows you to validate method calls.
+     * It checks the Type of the root, and if that passes, looks for the function in the global symbol table. 
+     * It then accesses the method descriptor and asks what type it is.
+     * If it's a CALLOUT, then the parameters are checked for a String or valid expression.
+     * If it's a method, argument type and number checking is performed. 
      * 
      * @param root : the ast root for the method call
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of method call
      */
     private boolean ValidateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -192,10 +208,14 @@ public class IRMaker {
     
     /**
      * This method allows you to check the validity of a compare operation.
+     *  It checks the number of children of the root AST node, and if that passes,
+     *  it checks the Type of the root and generates an expression based on that + the values of its children.
+     *  If the expression generated is valid, so is the comparison operation.
      *  
      * @param root : the ast root for the compare operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the comparison 
      */
     private boolean ValidateCompareOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -228,10 +248,14 @@ public class IRMaker {
     
     /**
      * This method allows you to check the validity of a conditional operation.
+     * It checks the number of children of the root, then the Type. 
+     * If both of those pass, it checks if the children are valid expressions, then generates an expression from those children and type checks the expression of that.
+     * 
      * 
      * @param root : the ast root for the conditional operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the conditional
      */
     private boolean ValidateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -263,10 +287,14 @@ public class IRMaker {
     
     /**
      * This method allows you to check the validity of an equivalence operation.
+     * It checks the number of children of the root node, then checks the Type of that root.
+     * If both pass, it checks that the children are valid expressions, then generates an expression from those children. 
+     * If the generated expression are valid, it returns true.
      * 
      * @param root : the ast root for the equivalence operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the equivalence operation
      */
     private boolean ValidateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -292,11 +320,12 @@ public class IRMaker {
     }
     
     /**
-     * This method checks the validity of a load operation.
+     * This method checks the validity of a load operation by calling ValidateVar on the desired load target. 
      * 
      * @param root : the ast root for the load operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the load
      */
     private boolean ValidateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -305,10 +334,17 @@ public class IRMaker {
     
     /**
      * This method checks the validity of a store operation.
+     * It gets the Type of the root node, checks it against ASSIGN, ASSIGN_MINUS, ASSIGN_PLUS.
+     * If it passes these checks,  it checks whether or not the first child is a valid variable, and the second child a valid expression. 
+     * It then generates a variable and expression IR_Node for the left hand and right hand side of the operation. 
+     * If the type of the right hand isn't an int, an error is shown.
+     * If the type of the left hand is not an array and it matches the right, then the store is valid.
+     * If the left is an array, then type checking for the assignement is done and validity declared based on that result.
      * 
      * @param root : the ast root for the store operation.
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the store
      */
     private boolean ValidateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -346,10 +382,16 @@ public class IRMaker {
     
     /**
      * This method allows you to check the validity of a literal.
+     * It checks the Type of the AST root and the type of its first child.
+     * Depending on that type, different checks are carried out. 
+     * For integers, the size of the integer is checked to make sure it is valid,
+     * and for potential booleans, they are checked against "true" and "false" for their value. 
+     * If the respective checks pass, the literal is valid.
      * 
      * @param root : the ast root for the literal
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the literal
      */
     private boolean ValidateLiteral(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -405,11 +447,12 @@ public class IRMaker {
     
     /**
      * This method allows you to check for the validity of break statements.
-     * It makes sure the break is in a loop.
+     * It makes sure that the break is inside of a loop.
      * 
      * @param root : the ast root for the break statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the break
      */
     private boolean ValidateBreak(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -428,11 +471,12 @@ public class IRMaker {
     
     /**
      * This method allows you to check the validity of a continue statement.
-     * It makes sure that the the continue is inside of a loop.
+     * It makes sure that the continue is inside of a loop.
      * 
      * @param root : the ast root for the continue statment
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the continue statement
      */
     private boolean ValidateContinue(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -450,12 +494,13 @@ public class IRMaker {
     }
     
     /**
-     * This method allows you to check the validity of a for statement.
+     * This method allows you to check the validity of a "for" statement.
      * It checks for the proper number of children and that the loop variable is declared correctly.
      * 
      * @param root : the ast root for the "for" statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the "for" statement
      */
     private boolean ValidateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -527,6 +572,7 @@ public class IRMaker {
      * @param root : the ast root for the block
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the code block
      */
     private boolean ValidateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -623,11 +669,12 @@ public class IRMaker {
     
     /**
      * This method allows you to check for the validity of a statement.
-     * It is a dispatch method; it checks the root for its type and calls the proper verifier for it.
+     * It is a dispatch method; it checks the root for its type and calls the proper validator for it.
      * 
      * @param root : the ast root for the statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the statement
      */
     private boolean ValidateStatement(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -655,11 +702,12 @@ public class IRMaker {
 
     /**
      * This allows you to check the validity of a return statement. 
-     * It checks the root's type, checks for non-void method, and any missing returns/improper type returns
+     * It checks the root's type, checks for non-void method, and any missing returns/improper type returns.
      * 
      * @param root : the ast root for the return statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the return statement
      */
     private boolean ValidateReturn(AST root, Map<String, Descriptor> globals,
@@ -696,12 +744,18 @@ public class IRMaker {
 
     /**
      * This allows you to check the validity of a while statement.
-     * It currently returns false and does not seem to be fully implemented; thus, any "while" will fail.
+     * It checks the Type of the root and the number of children. 
+     * If those checks pass, a check is placed for if the while has 3 children. 
+     * If it does, a limit is introduced so that the while only runs a limited, positive integer number of times. 
+     * After that the validity of the expression is checked.
+     * If that passes, the validity of the block is checked, and the result is valid only if both the statement itself 
+     * and the block it precedes passed their validity checks.
      * 
      * @param root : the ast root for the while statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
-     * @return boolean : True or False depending on validity of while - currently always False
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
+     * @return boolean : True or False depending on validity of while 
      */
     private boolean ValidateWhile(AST root, Map<String, Descriptor> globals,
             List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -754,6 +808,7 @@ public class IRMaker {
      * @param root : the ast root for the if statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
      * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of the if statement
      */
     private boolean ValidateIf(AST root, Map<String, Descriptor> globals,
@@ -785,10 +840,15 @@ public class IRMaker {
 
     /**
      * This allows for checking the validity of an expression.
+     * It is mainly a dispatch method; it checks to see if the root is a ? for ternary expressions and handles argument validity checks,
+     * and if not, then it dispatches to the proper Validate function.
+     * However, in the case that we're validating an "@" operation, we do the checks for it here and make sure it's being used on an array.
+     * We also handle checking for the negation operation (!) here, in that it can only be used on booleans.  
      * 
      * @param root : the ast root for the expression
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return boolean : True or False depending on validity of expression - currently always False
      */
     private boolean ValidateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -877,6 +937,13 @@ public class IRMaker {
         return false;
     }
     
+    /**
+     * This method takes in an AST root and walks through it, checking validity as it goes. If it reaches the end and hasn't encountered
+     * any errors, it will return true. 
+     *  
+     * @param root : The root of the AST for the program we will validate. 
+     * @return boolean : true or false depending on the validity of the program.
+     */
     private boolean ValidateProgram(AST root) {
         Map<String, Descriptor> fake_globals = new HashMap<String, Descriptor>();
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>();
@@ -1004,7 +1071,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the var
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Var : IR_Node specialized for variables
      */
     private IR_Var GenerateVar(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1036,7 +1104,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the arithmetic operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_ArithOp : IR_Node specialized for arithmetic operations - actually a subclass instance, specialized for specific equations
      */
     private IR_ArithOp GenerateArithOp(AST root, Map<String, Descriptor> globals, 
@@ -1068,7 +1137,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the method call or callout
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Call : IR_Node specialized for either type of method call
      */
     private IR_Call GenerateCall(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1116,7 +1186,8 @@ public class IRMaker {
      *  
      * @param root : the ast root for the comparison operator
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_CompareOp : IR_Node specialized for comparison ops - actually a subclass specialized for a particular operation
      */
     private IR_CompareOp GenerateCompareOp(AST root, Map<String, Descriptor> globals, 
@@ -1148,7 +1219,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the conditional operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_CondOp : IR_Node specialized for comparison operations - actually a subclass specialized for AND or OR
      */
     private IR_CondOp GenerateCondOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1174,7 +1246,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the equivalence operation
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_EqOp : IR_Node specialized for equivalence ops; specifically, a subclass specialzed for Equals and NotEquals
      */
     private IR_EqOp GenerateEqOp(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1202,7 +1275,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the load
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Node : Either an IR_LDL, IR_LDP, or IR_LDF, depending on where the var was found. 
      */
     private IR_Node GenerateLoad(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1241,7 +1315,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the store
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Node : Either an IR_STL, IR_STP, or IR_STF, depending on where the var was found.
      */
     private IR_Node GenerateStore(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1298,7 +1373,7 @@ public class IRMaker {
      * 
      * @param root : the ast root for the literal
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Literal : IR_Node specialized for literals; specifically, a subclass specialzed for IntLiteral or BoolLiteral
      */
     private IR_Literal GenerateLiteral(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -1334,7 +1409,7 @@ public class IRMaker {
      * 
      * @param root : the ast root for the break statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
      * @return IR_Break : IR_Node specialized for break statements
      */
     private IR_Break GenerateBreak(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -1351,7 +1426,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the continue statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Continue : IR_Node specialized for continue statements
      */
     private IR_Continue GenerateContinue(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals) {
@@ -1370,7 +1446,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the for statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_For : IR_Node specialized for "for" statements: Contains preloop info, conditional, and block
      */
     private IR_For GenerateFor(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1425,7 +1502,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the block
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Seq : IR_Node specialized for blocks : It contains a sequence of statements representing the code in the block. 
      */
     private IR_Seq GenerateBlock(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1509,7 +1587,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the return statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Return : IR_Node specialized for return statements : contains either an expression or null
      */
     private IR_Return GenerateReturn(AST root, Map<String, Descriptor> globals,
@@ -1529,7 +1608,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the while statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Node : IR_Node specialized for while statements; however, currently is always null
      */
     private IR_While GenerateWhile(AST root, Map<String, Descriptor> globals,
@@ -1562,7 +1642,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the if statement
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_If : IR_Node specialized for If statements. Contains the condition for the if, and the true/false blocks for that condition.
      */
     private IR_If GenerateIf(AST root, Map<String, Descriptor> globals,
@@ -1594,7 +1675,8 @@ public class IRMaker {
      * 
      * @param root : the ast root for the expression
      * @param globals : the global symbol table, a Map<String, Descriptor>
-     * @param locals the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param locals : the local symbol table for the scope in which the call is made, a Map<String, Type>
+     * @param array_lens : A list of Map<String, Long> tables that give the lengths of any local variable arrays.
      * @return IR_Node : IR_Node specialized for expressions; however, currently always null.
      */
     private IR_Node GenerateExpr(AST root, Map<String, Descriptor> globals, List<Map<String, Type>> locals, List<Map<String, Long>> array_lens) {
@@ -1643,6 +1725,16 @@ public class IRMaker {
         return null;
     }
     
+    /**
+     * This method is what we use to actually generate programs.
+     * It returns a Map<String, Descriptor> that has all the entries we need to do lookups for variables in the program. 
+     * It first uses ValidateProgram to make sure the program is valid. 
+     * If it is, it walks through the tree in the same way as ValidateProgram, but it actually uses the generate methods to
+     * build the program as it walks instead of just checking for syntactic correctness. 
+     * 
+     * @param root : The root of the AST we intend to build
+     * @return Map<String,Descriptor> : a mapping to descriptors based on their names as specified in the tree
+     */
     public Map<String, Descriptor> GenerateProgram(AST root) {
         Map<String, Descriptor> globals = new HashMap<String, Descriptor>();
         List<Map<String, Type>> locals = new ArrayList<Map<String, Type>>();
