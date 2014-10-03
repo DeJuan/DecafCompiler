@@ -728,6 +728,10 @@ public class IRMaker {
                 System.err.println("while experession must evaluate to boolean - at " + root.getLine() + ":" + root.getColumn());
                 return false;
             }
+            if (((IR_Literal.IR_IntLiteral) GenerateLiteral(limit_node, globals, locals)).getValue() <= 0) {
+              System.err.println("While loop bound must be a positive integer");
+              return false;
+            }
         }
         List<Map<String, Type>> fake_locals = new ArrayList<Map<String, Type>>(locals);
         List<Map<String, Long>> fake_lens = new ArrayList<Map<String, Long>>(array_lens);
