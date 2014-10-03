@@ -1827,10 +1827,16 @@ public class IRMaker {
 
                 }
                 locals.add(params);
+                locals.add(new HashMap<String, Type>());
                 globals.put(name, new MethodDescriptor(retType.getText(), argTypes));
+                array_lens.add(new HashMap<String, Long>());
                 array_lens.add(new HashMap<String, Long>());
                 IR_Seq method_IR = GenerateBlock(param.getNextSibling().getNextSibling(), globals, locals, array_lens);
                 globals.get(name).setIR(method_IR);
+                locals.remove(0);
+                locals.remove(0);
+                array_lens.remove(0);
+                array_lens.remove(0);
             }
         }
         if (!globals.containsKey("main")) {
