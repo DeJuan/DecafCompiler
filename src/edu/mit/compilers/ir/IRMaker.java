@@ -170,6 +170,10 @@ public class IRMaker {
             return true;
         } else if (desc.getType() == Descriptor.Type.METHOD) {
             List<Boolean> argTypes = desc.getArgTypes();
+            if (argTypes.size() != num_args) {
+              System.err.println("number of arguments must match those in method declaration - at " + arg.getLine() + ":" + arg.getColumn());
+              return false;
+            }
             for (int i = 0; i < num_args; i++ ) {
                 arg = arg.getNextSibling();
                 if (!((GenerateExpr(arg, globals, locals, array_lens).evaluateType() == Type.BOOL && argTypes.get(i)) 
