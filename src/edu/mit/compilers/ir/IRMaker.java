@@ -320,6 +320,7 @@ public class IRMaker {
             if (root.getType() == DecafParserTokenTypes.ASSIGN_MINUS || root.getType() == DecafParserTokenTypes.ASSIGN_PLUS) {
                 if (rhs.evaluateType() != Type.INT) {
                     System.err.println("+= and -= can only be applied to integers - at " + root.getLine() + ":" + root.getColumn());
+                    return false;
                 }
             }
             if (lhs.getIndex() != null) {
