@@ -1,10 +1,7 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ * IR_Node for the '!' operator.
  *
  */
 public class IR_Not extends IR_Node {

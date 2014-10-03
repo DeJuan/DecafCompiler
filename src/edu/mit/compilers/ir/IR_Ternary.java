@@ -1,5 +1,11 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node for a ternary expression.
+ * Grammar: expr ? expr : expr
+ * Constructor takes in 3 expressions as IR_Nodes, matching the logic from the grammar above.
+ * 
+ */
 public class IR_Ternary extends IR_Node {
     private IR_Node condition;
     private IR_Node true_expr;
@@ -25,19 +31,16 @@ public class IR_Ternary extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return true_expr.evaluateType();
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "if " + condition.toString() + " then " + true_expr.toString() + " else " + false_expr.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return condition.evaluateType() == Type.BOOL && true_expr.evaluateType() == false_expr.evaluateType();
     }
 

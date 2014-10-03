@@ -1,11 +1,10 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
- *
+ * IR_Node for arithmetic operations (+, -, *, /, %). 
+ * Grammar: expr arith_op expr
+ * Each subclass of IR_ArithOp takes in a left IR Node and a right IR Node.
+ * 
  */
 abstract class IR_ArithOp extends IR_Node {
 	protected IR_Node left;

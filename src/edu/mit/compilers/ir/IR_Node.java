@@ -1,13 +1,10 @@
-/**
- * Base case for an IR Node
- */
 package edu.mit.compilers.ir;
 
 
 /**
- * @author yygu
- * @author madmott
- *
+ * Abstract class for an Intermediate Representation Node.
+ * All IR nodes extends from this base class.
+ * 
  */
 public abstract class IR_Node {
 	

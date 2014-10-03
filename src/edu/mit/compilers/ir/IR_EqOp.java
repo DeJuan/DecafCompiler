@@ -1,10 +1,9 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 /**
- * @author yygu
+ *  IR_Node for the equality operators (==, !=).
+ *  Grammar: expr eq_op expr
+ *  Each subclass of IR_EqOp takes in a left IR Node and a right IR Node.
  *
  */
 abstract class IR_EqOp extends IR_Node {

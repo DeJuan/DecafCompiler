@@ -1,5 +1,9 @@
 package edu.mit.compilers.ir;
 
+/**
+ * IR_Node to store a value to a local variable location.
+ * 
+ */
 public class IR_STL extends IR_Node {
     private IR_Var local_var;
     private IR_Node value;
@@ -11,19 +15,16 @@ public class IR_STL extends IR_Node {
 
     @Override
     public Type evaluateType() {
-        // TODO Auto-generated method stub
         return Type.NONE;
     }
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return "Storing " + value.toString() + " to " + local_var.toString();
     }
 
     @Override
     public boolean isValid() {
-        // TODO Auto-generated method stub
         return local_var.evaluateType() == value.evaluateType() && (local_var.evaluateType() == Type.INT || local_var.evaluateType() == Type.BOOL);
     }
 

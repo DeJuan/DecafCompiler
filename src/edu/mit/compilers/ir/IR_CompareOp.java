@@ -1,11 +1,9 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
-
 /**
- * @author yygu
+ *  IR_Node for the comparison operators (<, >, <=, >=).
+ *  Grammar: expr comp_op expr
+ *  Each subclass of IR_CompareOp takes in a left IR Node and a right IR Node.
  *
  */
 abstract class IR_CompareOp extends IR_Node {

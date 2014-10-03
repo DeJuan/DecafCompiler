@@ -1,12 +1,9 @@
-/**
- * 
- */
 package edu.mit.compilers.ir;
 
 
 /**
- * @author yygu
- * @author madmott
+ * IR_Node for literals (string, boolean, integer).
+ * The constructor assigns the value of the literal to the 'value' field.
  *
  */
 abstract class IR_Literal extends IR_Node {
