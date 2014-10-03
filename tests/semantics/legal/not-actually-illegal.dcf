@@ -2,5 +2,4 @@ callout printf;
 
 void main ( ) {
   int printf;
-  // identifier already used
 }
