@@ -725,10 +725,10 @@ public class IRMaker {
         valid = valid && ValidateExpr(expr_node, globals, locals, array_lens); 
         if (valid) {
             if (!(GenerateExpr(expr_node, globals, locals, array_lens).evaluateType() == Type.BOOL)) {
-                System.err.println("while experession must evaluate to boolean - at " + root.getLine() + ":" + root.getColumn());
+                System.err.println("while expression must evaluate to boolean - at " + root.getLine() + ":" + root.getColumn());
                 return false;
             }
-            if (((IR_Literal.IR_IntLiteral) GenerateLiteral(limit_node, globals, locals)).getValue() <= 0) {
+            if (limit_node != null && ((IR_Literal.IR_IntLiteral) GenerateLiteral(limit_node, globals, locals)).getValue() <= 0) {
               System.err.println("While loop bound must be a positive integer");
               return false;
             }
@@ -985,6 +985,8 @@ public class IRMaker {
                 if (!(ValidateBlock(param, fake_globals, fake_locals, fake_lens))) {
                     return false;
                 }
+                fake_locals.remove(0);
+                fake_lens.remove(0);
             }
         }
         return true;
