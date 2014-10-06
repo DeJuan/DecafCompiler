@@ -112,14 +112,16 @@ class Main {
     	  }
     	  
     	  AST ast = parser.getAST();
+    	  printAst(ast,0);
     	  IRMaker ir_maker = new IRMaker();
-    	  if (ir_maker.GenerateProgram(ast) == null) {
+    	  if (ir_maker.make(ast) == null) {
     	      System.exit(1);
     	  }
       }
     } catch(Exception e) {
       // print the error:
       System.err.println(CLI.infile+" "+e);
+      e.printStackTrace();
     }
   }
 }

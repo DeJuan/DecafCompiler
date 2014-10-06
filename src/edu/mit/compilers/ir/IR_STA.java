@@ -26,8 +26,8 @@ public class IR_STA extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return Type.NONE;
+    public Type getType() {
+        return Type.VOID;
     }
 
     @Override
@@ -37,9 +37,9 @@ public class IR_STA extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return array.getIndex().evaluateType() == Type.INT 
-                && ((array.evaluateType() == Type.INTARR && value.evaluateType() == Type.INT) 
-                        || (array.evaluateType() == Type.BOOLARR && value.evaluateType() == Type.BOOL));
+        return array.getIndex().getType() == Type.INT 
+                && ((array.getType() == Type.INTARR && value.getType() == Type.INT) 
+                        || (array.getType() == Type.BOOLARR && value.getType() == Type.BOOL));
     }
 
 }

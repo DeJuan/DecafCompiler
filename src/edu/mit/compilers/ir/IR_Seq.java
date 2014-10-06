@@ -9,10 +9,18 @@ import java.util.List;
  * 
  */
 public class IR_Seq extends IR_Node {
-    private List<IR_Node> statements = new ArrayList<IR_Node>();
+    private List<IR_Node> statements;
     
-    public IR_Seq(List<IR_Node> statements){
-        this.statements = statements;
+    public IR_Seq(){
+        statements = new ArrayList<IR_Node> ();
+    }
+    
+    public void addNode(IR_Node n){
+    	statements.add(n);
+    }
+    
+    public void addNodes(ArrayList<IR_Node> s){
+    	statements.addAll(s);
     }
     
     public List<IR_Node> getStatements(){
@@ -20,8 +28,8 @@ public class IR_Seq extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return Type.NONE;
+    public Type getType() {
+        return Type.VOID;
     }
 
     @Override

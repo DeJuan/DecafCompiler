@@ -92,7 +92,8 @@ method_call: method_name LPAREN! (callout_arg (COMMA! callout_arg)*)? RPAREN!
 {#method_call = #([METHOD_CALL,"method_call"],#method_call);};
 
 method_name: ID;
-location: ID | (ID^ LBRACKET! expr RBRACKET!);
+location: (ID | (ID^ LBRACKET! expr RBRACKET!))
+{#location = #([LOCATION,"location"],#location);};
 
 // This section is the only one that needed "hacking" to remove the 
 // left recursion... for now.
@@ -102,14 +103,15 @@ and_exp: eq_exp  (options {greedy=true;}:AND^ eq_exp)*;
 eq_exp:  rel_exp (options {greedy=true;}:(EQUALS^ | NOT_EQUALS^) rel_exp)*;
 rel_exp: add_exp (options {greedy=true;}:(LT^ | GT^ | LTE^ | GTE^) add_exp)*;
 add_exp: mul_exp (options {greedy=true;}:(PLUS^|MINUS^) mul_exp)*;
-mul_exp: base_expr (options {greedy=true;}:(TIMES^|DIVIDE^|MOD^) base_expr)*;
+mul_exp: not_exp (options {greedy=true;}:(TIMES^|DIVIDE^|MOD^) not_exp)*;
+
+not_exp: (BANG^)? minus_exp;
+minus_exp: (MINUS^)? base_expr;
 
 base_expr: location
 	     | method_call
 	     | literal
 	     | AT^ ID
-	     | MINUS^ expr
-	     | BANG^ expr
 	     | LPAREN! expr RPAREN!;
 
 callout_arg: expr | STRING_LITERAL;

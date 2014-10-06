@@ -16,8 +16,8 @@ public class IR_LDP extends IR_Node {
     }
     
     @Override
-    public Type evaluateType() {
-        return parameter.evaluateType();
+    public Type getType() {
+        return parameter.getType();
     }
 
     @Override
@@ -27,7 +27,7 @@ public class IR_LDP extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return evaluateType() == Type.BOOL || evaluateType() == Type.INT;
+        return getType() == Type.BOOL || getType() == Type.INT;
     }
 
 }

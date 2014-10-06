@@ -32,13 +32,13 @@ abstract class IR_CondOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.BOOL && right.evaluateType() == Type.BOOL;
+			return left.getType() == Type.BOOL && right.getType() == Type.BOOL;
 		}
 		
 		@Override
@@ -65,13 +65,13 @@ abstract class IR_CondOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.BOOL && right.evaluateType() == Type.BOOL;
+			return left.getType() == Type.BOOL && right.getType() == Type.BOOL;
 		}
 		
 		@Override

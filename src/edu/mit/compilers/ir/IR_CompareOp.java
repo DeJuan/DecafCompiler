@@ -31,13 +31,13 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
+			return left.getType() == Type.INT && right.getType() == Type.INT;
 		}
 		
 		@Override
@@ -64,13 +64,13 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
+			return left.getType() == Type.INT && right.getType() == Type.INT;
 		}
 		
 		@Override
@@ -97,13 +97,13 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
+			return left.getType() == Type.INT && right.getType() == Type.INT;
 		}
 		
 		@Override
@@ -130,13 +130,13 @@ abstract class IR_CompareOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return left.evaluateType() == Type.INT && right.evaluateType() == Type.INT;
+			return left.getType() == Type.INT && right.getType() == Type.INT;
 		}
 		
 		@Override

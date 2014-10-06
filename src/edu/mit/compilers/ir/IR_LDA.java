@@ -20,10 +20,10 @@ public class IR_LDA extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        if (array.evaluateType() == Type.BOOLARR) {
+    public Type getType() {
+        if (array.getType() == Type.BOOLARR) {
             return Type.BOOL;
-        } else if (array.evaluateType() == Type.INTARR) {
+        } else if (array.getType() == Type.INTARR) {
             return Type.INT;
         } else {
             // This should NEVER happen if code is written right.
@@ -38,7 +38,7 @@ public class IR_LDA extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return array.getIndex().evaluateType() == Type.INT && (array.evaluateType() == Type.BOOLARR || array.evaluateType() == Type.INTARR);
+        return array.getIndex().getType() == Type.INT && (array.getType() == Type.BOOLARR || array.getType() == Type.INTARR);
     }
 
 }

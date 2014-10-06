@@ -33,13 +33,13 @@ public class IR_While extends IR_Node {
 	}
 	
 	@Override
-	public Type evaluateType() {
-		return Type.NONE;
+	public Type getType() {
+		return Type.VOID;
 	}
 	
 	@Override
 	public boolean isValid() {
-		return expr_cond.isValid() && expr_cond.evaluateType() == Type.BOOL 
+		return expr_cond.isValid() && expr_cond.getType() == Type.BOOL 
 				&& (maxLoops == null || maxLoops.isValid()) && block.isValid();
 	}
 	

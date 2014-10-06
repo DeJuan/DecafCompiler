@@ -20,7 +20,7 @@ abstract class IR_Literal extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.INT;
 		}
 		
@@ -47,7 +47,7 @@ abstract class IR_Literal extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
@@ -74,7 +74,7 @@ abstract class IR_Literal extends IR_Node {
 	    }
 	    
 	    @Override
-	    public Type evaluateType() {
+	    public Type getType() {
 	        return Type.STRING;
 	    }
 	    

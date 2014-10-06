@@ -14,8 +14,8 @@ public class IR_STL extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return Type.NONE;
+    public Type getType() {
+        return Type.VOID;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class IR_STL extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return local_var.evaluateType() == value.evaluateType() && (local_var.evaluateType() == Type.INT || local_var.evaluateType() == Type.BOOL);
+        return local_var.getType() == value.getType() && (local_var.getType() == Type.INT || local_var.getType() == Type.BOOL);
     }
 
 }

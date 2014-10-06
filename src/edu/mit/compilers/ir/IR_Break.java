@@ -9,8 +9,8 @@ public class IR_Break extends IR_Node {
 	public IR_Break() {}
 	
 	@Override
-	public Type evaluateType() {
-		return Type.NONE;
+	public Type getType() {
+		return Type.VOID;
 	}
 	
 	@Override

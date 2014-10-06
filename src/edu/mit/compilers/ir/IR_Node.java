@@ -8,7 +8,7 @@ package edu.mit.compilers.ir;
  */
 public abstract class IR_Node {
 	
-	public abstract Type evaluateType();
+	public abstract Type getType();
 	public abstract String toString();
 	public abstract boolean isValid();
 

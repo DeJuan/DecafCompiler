@@ -32,14 +32,14 @@ abstract class IR_EqOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return (left.evaluateType() == Type.INT || left.evaluateType() == Type.BOOL) && 
-				   (right.evaluateType() == Type.INT || right.evaluateType() == Type.BOOL);
+			return (left.getType() == Type.INT || left.getType() == Type.BOOL) && 
+				   (right.getType() == Type.INT || right.getType() == Type.BOOL);
 		}
 		
 		@Override
@@ -66,14 +66,14 @@ abstract class IR_EqOp extends IR_Node {
 		}
 		
 		@Override
-		public Type evaluateType() {
+		public Type getType() {
 			return Type.BOOL;
 		}
 		
 		@Override
 		public boolean isValid() {
-			return (left.evaluateType() == Type.INT || left.evaluateType() == Type.BOOL) && 
-				   (right.evaluateType() == Type.INT || right.evaluateType() == Type.BOOL);
+			return (left.getType() == Type.INT || left.getType() == Type.BOOL) && 
+				   (right.getType() == Type.INT || right.getType() == Type.BOOL);
 		}
 		
 		@Override

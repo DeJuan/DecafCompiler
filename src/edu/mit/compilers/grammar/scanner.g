@@ -34,6 +34,7 @@ tokens
   "while";
   BLOCK;
   FIELD_DECL;
+  LOCATION;
   METHOD_CALL;
   METHOD_DECL;
   PROGRAM;

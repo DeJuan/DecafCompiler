@@ -11,7 +11,7 @@ public class IR_Var extends IR_Node {
     private Type type;
     private IR_Node index; // The index into the array, if indexing into.  null if not accessing the contents of an array.
     
-    public IR_Var(String name, Type type, IR_Node index) {
+    public IR_Var(Type type, String name, IR_Node index) {
         this.name = name;
         this.type = type;
         this.index = index;
@@ -26,7 +26,7 @@ public class IR_Var extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
+    public Type getType() {
         return type;
     }
 

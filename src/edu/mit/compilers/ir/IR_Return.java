@@ -12,8 +12,8 @@ public class IR_Return extends IR_Node {
 	}
 	
 	@Override
-	public Type evaluateType() {
-		return Type.NONE;
+	public Type getType() {
+		return Type.VOID;
 	}
 	
 	@Override

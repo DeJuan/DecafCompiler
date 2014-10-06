@@ -16,13 +16,13 @@ public class IR_Not extends IR_Node {
 	}
 	
 	@Override
-	public Type evaluateType() {
+	public Type getType() {
 		return Type.BOOL;
 	}
 	
 	@Override
 	public boolean isValid() {
-		return expr.evaluateType() == Type.BOOL;
+		return expr.getType() == Type.BOOL;
 	}
 	
 	@Override

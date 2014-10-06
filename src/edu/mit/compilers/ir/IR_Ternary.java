@@ -30,8 +30,8 @@ public class IR_Ternary extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return true_expr.evaluateType();
+    public Type getType() {
+        return true_expr.getType();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class IR_Ternary extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return condition.evaluateType() == Type.BOOL && true_expr.evaluateType() == false_expr.evaluateType();
+        return condition.getType() == Type.BOOL && true_expr.getType() == false_expr.getType();
     }
 
 }

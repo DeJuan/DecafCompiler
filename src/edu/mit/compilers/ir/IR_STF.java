@@ -22,8 +22,8 @@ public class IR_STF extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return Type.NONE;
+    public Type getType() {
+        return Type.VOID;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class IR_STF extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return field.evaluateType() == value.evaluateType() && (field.evaluateType() == Type.BOOL || field.evaluateType() == Type.INT);
+        return field.getType() == value.getType() && (field.getType() == Type.BOOL || field.getType() == Type.INT);
     }
 
 }

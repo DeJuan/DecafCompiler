@@ -37,8 +37,8 @@ public class IR_For extends IR_Node {
 	}
 	
 	@Override
-	public Type evaluateType() {
-		return Type.NONE;
+	public Type getType() {
+		return Type.VOID;
 	}
 	
 	@Override

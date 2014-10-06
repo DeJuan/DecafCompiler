@@ -16,8 +16,8 @@ public class IR_LDL extends IR_Node {
     }
 
     @Override
-    public Type evaluateType() {
-        return local_var.evaluateType();
+    public Type getType() {
+        return local_var.getType();
     }
 
     @Override
@@ -27,7 +27,7 @@ public class IR_LDL extends IR_Node {
 
     @Override
     public boolean isValid() {
-        return evaluateType() == Type.BOOL || evaluateType() == Type.INT;
+        return getType() == Type.BOOL || getType() == Type.INT;
     }
 
 }

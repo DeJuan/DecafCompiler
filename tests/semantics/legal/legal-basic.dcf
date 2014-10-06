@@ -1,6 +1,18 @@
+callout printf;
+int k[0x7000000000000000];
+void foo(int a, int b)
+{
+}
 void main() {
-  int i[10];
-  int j;
+  int i[10], j , k [0x7000000000000000];
+  boolean bb;
+  int a;
+  foo(1, -1 );
+  
+  printf("aaaa");
   i[0] = 5 + 4;
-  j = 5 + 4;
+  j = 5 + 4 + j;
+  k[1] += (5)+(-5);
+  k[0] -= k[1];
+  a = !bb ? k[1] : j ;
 }

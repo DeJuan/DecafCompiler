@@ -13,16 +13,20 @@ import java.util.List;
 public class IR_Call extends IR_Node {
     private String name;
     private Type type;
-    private List<IR_Node> args = new ArrayList<IR_Node>();
+    private List<IR_Node> args;
  
-    public IR_Call(String name, Type type, List<IR_Node> args) {
+    public IR_Call(Type type, String name) {
         this.name = name;
         this.type = type;
-        this.args = args;
+        args=new ArrayList<IR_Node>();
     }
     
     public String getName() {
         return name;
+    }
+    
+    public void addArg(IR_Node a){
+    	args.add(a);
     }
     
     public List<IR_Node> getArgs() {
@@ -30,7 +34,7 @@ public class IR_Call extends IR_Node {
     }
     
     @Override
-    public Type evaluateType() {
+    public Type getType() {
         return type;
     }
 
