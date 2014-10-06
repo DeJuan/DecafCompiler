@@ -28,11 +28,13 @@ options
   @Override
   public void reportError (RecognitionException ex) {
     // Print the error via some kind of error reporting mechanism.
+    System.err.println("Parser error: " + ex.getMessage());
     error = true;
   }
   @Override
   public void reportError (String s) {
     // Print the error via some kind of error reporting mechanism.
+    System.err.println("Parser error: "+s);
     error = true;
   }
   public boolean getError () {
