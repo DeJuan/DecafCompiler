@@ -112,9 +112,10 @@ class Main {
     	  }
     	  
     	  AST ast = parser.getAST();
-    	  printAst(ast,0);
+//    	  printAst(ast,0);
     	  IRMaker ir_maker = new IRMaker();
-    	  if (ir_maker.make(ast) == null) {
+    	  ir_maker.make(ast);
+    	  if ( !ir_maker.isValid() ) {
     	      System.exit(1);
     	  }
       }

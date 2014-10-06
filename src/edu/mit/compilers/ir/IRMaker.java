@@ -9,37 +9,14 @@ import antlr.collections.AST;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class IRMaker {
 	private SymbolTable symbols;
 	private Type _returnType;
 	private boolean valid = true;
 	private ArrayList<String> loops;
-	private static void printLineCol(PrintStream ps, AST ast) {
-		ps.println("Line: " + ast.getLine() + " column " + ast.getColumn());
-	}
-
-	boolean checkDupSymbol(String name, AST node) {
-		if (symbols.lookupLocal(name) != null) {
-			valid = false;
-			System.err.println(name + " already declared in the same scope.");
-			printLineCol(System.err, node);
-			return true;
-		}
-		return false;
-	}
-
-	IR_Node lookupSymbol(String name, AST node) {
-		IR_Node ir_node = symbols.lookup(name);
-		if (ir_node == null) {
-			valid = false;
-			System.err.println(name + " undeclared.");
-			printLineCol(System.err, node);
-			return null;
-		}
-		return ir_node;
-	}
-
+	
 	public IRMaker() {
 		symbols = new SymbolTable();
 		loops = new ArrayList<String> ();
@@ -51,7 +28,8 @@ public class IRMaker {
 		loops.clear();
 		// global scope
 		symbols.incScope();
-
+		_returnType=null;
+		
 		IR_Seq root = new IR_Seq();
 
 		if (!ast.getText().equals("program")) {
@@ -83,15 +61,40 @@ public class IRMaker {
 			}
 			child = child.getNextSibling();
 		}
-
+		checkMain();
 		return root;
 	}
 
+	public boolean checkMain(){
+		HashMap<String, IR_Node> globalt = symbols.getTable(0);
+		IR_Node n = globalt.get("main");
+		if(n==null || !(n instanceof IR_MethodDecl) ){
+			valid = false;
+			System.err.println("No main function declared.");
+			return false;
+		}
+		IR_MethodDecl decl = (IR_MethodDecl)n;
+		if(decl.getNumArgs()>0){
+			valid = false;
+			System.err.println("main should not take arguments.");
+			return false;
+			
+		}
+		return true;
+	}
+	
+	public boolean isValid(){
+		return valid;
+	}
+	
 	private IR_Node makeMethodDecl(AST root) {
 		AST typeNode = root.getFirstChild();
 		Type t = tokenToType(typeNode.getType());
 		AST idNode = typeNode.getNextSibling();
 		String funName = idNode.getText();
+		if(checkDupSymbol(funName, idNode)){
+			valid = false;
+		}
 		_returnType = t;
 		IR_MethodDecl ir_method = new IR_MethodDecl(t, funName);
 		symbols.put(funName, ir_method);
@@ -106,6 +109,7 @@ public class IRMaker {
 			String paramName = paramNode.getText();
 			if (checkDupSymbol(paramName, paramNode)) {
 				paramNode = paramNode.getNextSibling();
+				valid = false;
 				continue;
 			}
 			IR_FieldDecl ir_param = new IR_FieldDecl(argt, paramName);
@@ -116,6 +120,7 @@ public class IRMaker {
 		IR_Seq body = makeBlock(paramNode, false);
 		ir_method.setBody(body);
 		symbols.decScope();
+		_returnType=null;
 		return ir_method;
 	}
 
@@ -178,7 +183,7 @@ public class IRMaker {
 				return null;
 			}
 			if (expr.getType() != ir_var.getType()) {
-				System.err.println("Cannot assign to" + ir_var.getName());
+				System.err.println("Assign to "+ir_var.getName()+" with wrong type " );
 				printLineCol(System.err, root);
 				valid = false;
 				return null;
@@ -198,10 +203,76 @@ public class IRMaker {
 		case DecafScannerTokenTypes.TK_while:
 			statement=makeWhile(root);
 			break;
+		case DecafScannerTokenTypes.TK_return:
+			statement = makeReturn(root);
+			break;
+		case DecafScannerTokenTypes.TK_break:
+			statement = makeBreak(root);
+			break;
+		case DecafScannerTokenTypes.TK_continue:
+			statement = makeContinue(root);
+			break;
 		}
 		return statement;
 	}
 
+	private IR_Continue makeContinue(AST root){
+		if(loops.size()==0){
+			System.err.println("Tried continue outside a loop.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		return new IR_Continue();		
+	}
+	
+	private IR_Break makeBreak(AST root){
+		if(loops.size()==0){
+			System.err.println("Tried break outside a loop.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		return new IR_Break();
+	}
+	
+	private IR_Return makeReturn(AST root){
+		AST exprNode = root.getFirstChild();
+		if(_returnType==null){
+			//shouldn't happen
+			System.err.println("Internal error in make return");
+			return null;
+		}
+		if(_returnType==Type.VOID){
+			if(exprNode != null){
+				System.err.println("Return value in a void function");
+				printLineCol(System.err,root);
+				valid = false;
+				return null;
+			}
+			return new IR_Return(null);
+		}
+		if(exprNode == null){
+			System.err.println("Need return value in function");
+			printLineCol(System.err,root);
+			valid = false;
+			return null;
+			
+		}
+		IR_Node expr = makeExpr(exprNode);
+		if(expr == null){
+			return null;
+		}
+		
+		if(expr.getType() != _returnType){
+			System.err.println("Wrong return type.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		return new IR_Return(expr);
+	}
+	
 	private IR_While makeWhile(AST root){
 		IR_Node cond = makeExpr(root.getFirstChild());
 		if(cond == null){
@@ -271,6 +342,9 @@ public class IRMaker {
 	private IR_If makeIf(AST root){
 		AST condNode = root.getFirstChild();
 		IR_Node expr = makeExpr(condNode);
+		if(expr==null){
+			return null;
+		}
 		if(expr.getType() != Type.BOOL){
 			System.err.println("If condition must be a boolean.");
 			printLineCol(System.err, condNode );
@@ -343,8 +417,13 @@ public class IRMaker {
 			return makeLocation(root);
 		case DecafScannerTokenTypes.INT_LITERAL:
 			return makeIntLiteral(root);
+		case DecafScannerTokenTypes.CHAR_LITERAL:
+			return new IR_IntLiteral((long)root.getText().charAt(1));
 		case DecafScannerTokenTypes.METHOD_CALL:
 			IR_Call ir_call = makeMethodCall(root);
+			if(ir_call==null){
+				return null;
+			}
 			if (ir_call.getType() == Type.VOID) {
 				System.err.println("Function " + ir_call.getName()
 						+ " in expression must return a result");
@@ -606,6 +685,7 @@ public class IRMaker {
 	private IR_Node makeFieldDecl(Type type, AST root, AST len) {
 		String name = root.getText();
 		if (checkDupSymbol(name, root)) {
+			valid = false;
 			return null;
 		}
 		IR_IntLiteral literal = null;
@@ -651,6 +731,7 @@ public class IRMaker {
 		AST id = root.getFirstChild();
 		String name = id.getText();
 		if (checkDupSymbol(name, root)) {
+			valid = false;
 			return null;
 		}
 		// callout returns int according to spec
@@ -689,6 +770,32 @@ public class IRMaker {
 		return false;
 	}
 
+	private static void printLineCol(PrintStream ps, AST ast) {
+		ps.println("Line: " + ast.getLine() + " column " + ast.getColumn());
+	}
+	
+	boolean checkDupSymbol(String name, AST node) {
+		if (symbols.lookupLocal(name) != null) {
+			valid = false;
+			System.err.println(name + " already declared in the same scope.");
+			printLineCol(System.err, node);
+			return true;
+		}
+		return false;
+	}
+
+	IR_Node lookupSymbol(String name, AST node) {
+		IR_Node ir_node = symbols.lookup(name);
+		if (ir_node == null) {
+			valid = false;
+			System.err.println(name + " undeclared.");
+			printLineCol(System.err, node);
+			return null;
+		}
+		return ir_node;
+	}
+
+	
 	private boolean isArrType(Type t) {
 		return t == Type.BOOLARR || t == Type.INTARR;
 	}
@@ -762,6 +869,10 @@ public class IRMaker {
 			return Ops.EQUALS;
 		case DecafScannerTokenTypes.NOT_EQUALS:
 			return Ops.NOT_EQUALS;
+		case DecafScannerTokenTypes.AND:
+			return Ops.AND;
+		case DecafScannerTokenTypes.OR:
+			return Ops.OR;
 		}
 		return null;
 	}
