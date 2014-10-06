@@ -81,7 +81,7 @@ type: TK_int | TK_boolean;
 statement: location (ASSIGN^ | ASSIGN_MINUS^ | ASSIGN_PLUS^) expr SEMICOLON!
      | method_call SEMICOLON!
 		 | TK_if^ LPAREN! expr RPAREN! block (TK_else block)?
-		 | TK_for^ LPAREN! ID ASSIGN expr COMMA! expr RPAREN! block
+		 | TK_for^ LPAREN! ID ASSIGN! expr COMMA! expr RPAREN! block
 		 | TK_while^ LPAREN! expr RPAREN! (COLON! INT_LITERAL)? block
 		 | TK_return^ (expr)? SEMICOLON!
 		 | TK_break^ SEMICOLON!
@@ -105,8 +105,8 @@ rel_exp: add_exp (options {greedy=true;}:(LT^ | GT^ | LTE^ | GTE^) add_exp)*;
 add_exp: mul_exp (options {greedy=true;}:(PLUS^|MINUS^) mul_exp)*;
 mul_exp: not_exp (options {greedy=true;}:(TIMES^|DIVIDE^|MOD^) not_exp)*;
 
-not_exp: (BANG^)? minus_exp;
-minus_exp: (MINUS^)? base_expr;
+not_exp:  BANG^ not_exp | minus_exp;
+minus_exp: MINUS^ minus_exp |base_expr;
 
 base_expr: location
 	     | method_call

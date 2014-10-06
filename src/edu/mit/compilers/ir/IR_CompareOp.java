@@ -6,143 +6,38 @@ package edu.mit.compilers.ir;
  *  Each subclass of IR_CompareOp takes in a left IR Node and a right IR Node.
  *
  */
-abstract class IR_CompareOp extends IR_Node {
+public class IR_CompareOp extends IR_Node {
 	protected IR_Node left;
 	protected IR_Node right;
-	
-	abstract IR_Node getLeft();
-	abstract IR_Node getRight();
-	
-	public static class IR_CompareOp_LT extends IR_CompareOp {
-		
-		public IR_CompareOp_LT(IR_Node left_child, IR_Node right_child) {
-			left = left_child;
-			right = right_child;
-		}
-		
-		@Override
-		public IR_Node getLeft() {
-			return this.left;
-		}
-		
-		@Override
-		public IR_Node getRight() {
-			return this.right;
-		}
-		
-		@Override
-		public Type getType() {
-			return Type.BOOL;
-		}
-		
-		@Override
-		public boolean isValid() {
-			return left.getType() == Type.INT && right.getType() == Type.INT;
-		}
-		
-		@Override
-		public String toString() {
-			return "<" + left.toString() + right.toString();
-		}
+	Ops op;
+
+	public IR_CompareOp(IR_Node l, IR_Node r, Ops o) {
+		left = l;
+		right = r;
+		op = o;
 	}
-	
-	public static class IR_CompareOp_GT extends IR_CompareOp {
-		
-		public IR_CompareOp_GT(IR_Node left_child, IR_Node right_child) {
-			left = left_child;
-			right = right_child;
-		}
-		
-		@Override
-		public IR_Node getLeft() {
-			return this.left;
-		}
-		
-		@Override
-		public IR_Node getRight() {
-			return this.right;
-		}
-		
-		@Override
-		public Type getType() {
-			return Type.BOOL;
-		}
-		
-		@Override
-		public boolean isValid() {
-			return left.getType() == Type.INT && right.getType() == Type.INT;
-		}
-		
-		@Override
-		public String toString() {
-			return "<" + left.toString() + right.toString();
-		}
+
+	public IR_Node getLeft() {
+		return this.left;
 	}
-	
-	public static class IR_CompareOp_LTE extends IR_CompareOp {
-		
-		public IR_CompareOp_LTE(IR_Node left_child, IR_Node right_child) {
-			left = left_child;
-			right = right_child;
-		}
-		
-		@Override
-		public IR_Node getLeft() {
-			return this.left;
-		}
-		
-		@Override
-		public IR_Node getRight() {
-			return this.right;
-		}
-		
-		@Override
-		public Type getType() {
-			return Type.BOOL;
-		}
-		
-		@Override
-		public boolean isValid() {
-			return left.getType() == Type.INT && right.getType() == Type.INT;
-		}
-		
-		@Override
-		public String toString() {
-			return "<=" + left.toString() + right.toString();
-		}
+
+	public IR_Node getRight() {
+		return this.right;
 	}
-	
-	public static class IR_CompareOp_GTE extends IR_CompareOp {
-		
-		public IR_CompareOp_GTE(IR_Node left_child, IR_Node right_child) {
-			left = left_child;
-			right = right_child;
-		}
-		
-		@Override
-		public IR_Node getLeft() {
-			return this.left;
-		}
-		
-		@Override
-		public IR_Node getRight() {
-			return this.right;
-		}
-		
-		@Override
-		public Type getType() {
-			return Type.BOOL;
-		}
-		
-		@Override
-		public boolean isValid() {
-			return left.getType() == Type.INT && right.getType() == Type.INT;
-		}
-		
-		@Override
-		public String toString() {
-			return ">=" + left.toString() + right.toString();
-		}
+
+	@Override
+	public Type getType() {
+		return Type.BOOL;
+	}
+
+	@Override
+	public boolean isValid() {
+		return left.getType() == Type.INT && right.getType() == Type.INT;
+	}
+
+	@Override
+	public String toString() {
+		return op + left.toString() + right.toString();
 	}
 
 }

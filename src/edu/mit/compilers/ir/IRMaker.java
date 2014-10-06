@@ -14,12 +14,12 @@ public class IRMaker {
 	private SymbolTable symbols;
 	private Type _returnType;
 	private boolean valid = true;
-
+	private ArrayList<String> loops;
 	private static void printLineCol(PrintStream ps, AST ast) {
 		ps.println("Line: " + ast.getLine() + " column " + ast.getColumn());
 	}
 
-	boolean checkSymbolDup(String name, AST node) {
+	boolean checkDupSymbol(String name, AST node) {
 		if (symbols.lookupLocal(name) != null) {
 			valid = false;
 			System.err.println(name + " already declared in the same scope.");
@@ -42,11 +42,13 @@ public class IRMaker {
 
 	public IRMaker() {
 		symbols = new SymbolTable();
+		loops = new ArrayList<String> ();
 	}
 
 	public IR_Node make(AST ast) {
 		valid = true;
 		symbols.clear();
+		loops.clear();
 		// global scope
 		symbols.incScope();
 
@@ -102,7 +104,7 @@ public class IRMaker {
 			paramNode = paramNode.getNextSibling();
 			ir_method.addArg(argt);
 			String paramName = paramNode.getText();
-			if (checkSymbolDup(paramName, paramNode)) {
+			if (checkDupSymbol(paramName, paramNode)) {
 				paramNode = paramNode.getNextSibling();
 				continue;
 			}
@@ -111,13 +113,21 @@ public class IRMaker {
 			paramNode = paramNode.getNextSibling();
 		}
 
-		IR_Seq body = makeBlock(paramNode);
+		IR_Seq body = makeBlock(paramNode, false);
 		ir_method.setBody(body);
 		symbols.decScope();
 		return ir_method;
 	}
 
-	IR_Seq makeBlock(AST root) {
+	IR_Seq makeBlock(AST root){
+		return makeBlock(root, true);
+	}
+	
+	IR_Seq makeBlock(AST root, boolean newScope) {
+		if(newScope){
+			symbols.incScope();
+		}
+		
 		IR_Seq ir_block = new IR_Seq();
 		AST child = root.getFirstChild();
 		while (child != null) {
@@ -129,8 +139,13 @@ public class IRMaker {
 			default:
 				IR_Node statement = makeStatement(child);
 				ir_block.addNode(statement);
+				break;
 			}
 			child = child.getNextSibling();
+		}
+		
+		if(newScope){
+			symbols.decScope();
 		}
 		return ir_block;
 	}
@@ -169,27 +184,111 @@ public class IRMaker {
 				return null;
 			}
 
-			statement = new IR_Assign(ir_var, expr, getOpString(tokenType));
+			statement = new IR_Assign(ir_var, expr, getOp(tokenType));
 			break;
 		case DecafScannerTokenTypes.METHOD_CALL:
 			statement = makeMethodCall(root);
+			break;
+		case DecafScannerTokenTypes.TK_if:
+			statement = makeIf(root);
+			break;
+		case DecafScannerTokenTypes.TK_for:
+			statement = makeFor(root);
+			break;
+		case DecafScannerTokenTypes.TK_while:
+			statement=makeWhile(root);
+			break;
 		}
 		return statement;
 	}
 
-	String getOpString(int type) {
-		switch (type) {
-		case DecafScannerTokenTypes.ASSIGN:
-			return "=";
-		case DecafScannerTokenTypes.ASSIGN_PLUS:
-			return "+=";
-		case DecafScannerTokenTypes.ASSIGN_MINUS:
-			return "-=";
-
+	private IR_While makeWhile(AST root){
+		IR_Node cond = makeExpr(root.getFirstChild());
+		if(cond == null){
+			return null;
 		}
-		return null;
+		if(cond.getType() != Type.BOOL){
+			System.out.println("While loop condition must be boolean");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		AST boundNode = root.getFirstChild().getNextSibling();
+		IR_IntLiteral literal=null ;
+		if(boundNode.getType() == DecafScannerTokenTypes.INT_LITERAL){
+			literal = makeIntLiteral(boundNode);
+			if(literal.getValue()<=0){
+				System.err.println("Optional bound of while loop must be positive.");
+				printLineCol(System.err, boundNode);
+				valid = false;
+				return null;
+			}
+			boundNode = boundNode.getNextSibling();
+		}
+		loops.add("while");
+		IR_Seq block = makeBlock(boundNode);
+		loops.remove(loops.size()-1);
+		IR_While ret = new IR_While(cond, literal, block);
+		return ret;
 	}
-
+	
+	private IR_For makeFor(AST root){
+		AST varNode = root.getFirstChild();
+		String varName = varNode.getText();
+		IR_Node varDecl = lookupSymbol(varName,varNode);
+		if(varDecl==null){
+			return null;
+		}
+		if(varDecl.getType()!=Type.INT){
+			System.err.println("Loop variable must be int");
+			printLineCol(System.err, varNode);
+			valid = false;
+			return null;
+		}
+		IR_Var ir_var= new IR_Var(varDecl.getType(), varName,null);
+		AST exprNode = varNode.getNextSibling();
+		IR_Node expr[] = new IR_Node[2];
+		for (int ii = 0; ii < 2; ii++) {
+			expr[ii]= makeExpr(exprNode);
+			if (expr[ii] == null) {
+				return null;
+			}
+			if (expr[ii].getType() != Type.INT) {
+				System.err.println("Loop bounds must be int");
+				printLineCol(System.err, varNode);
+				valid = false;
+				return null;
+			}
+			exprNode = exprNode.getNextSibling();
+		}
+		loops.add("for");
+		IR_Seq block = makeBlock(exprNode);
+		loops.remove(loops.size()-1);
+		IR_For ret = new IR_For(ir_var, expr[0], expr[1], block);
+		return ret;
+	}
+	
+	private IR_If makeIf(AST root){
+		AST condNode = root.getFirstChild();
+		IR_Node expr = makeExpr(condNode);
+		if(expr.getType() != Type.BOOL){
+			System.err.println("If condition must be a boolean.");
+			printLineCol(System.err, condNode );
+			valid = false;
+			return null;
+		}
+		AST blockNode = condNode.getNextSibling();
+		IR_Seq trueBlock = makeBlock(blockNode);
+		blockNode = blockNode.getNextSibling() ;
+		if(blockNode== null){
+			return new IR_If(expr, trueBlock, null);
+		}
+		blockNode = blockNode.getNextSibling();
+		IR_Seq falseBlock = makeBlock(blockNode);
+		
+		return new IR_If(expr, trueBlock, falseBlock);
+	}
+	
 	private IR_Var makeLocation(AST root) {
 		AST idNode = root.getFirstChild();
 		String varName = idNode.getText();
@@ -238,6 +337,7 @@ public class IRMaker {
 	private IR_Node makeExpr(AST root) {
 		AST lhs;
 		IR_Node expr = null;
+		Type t ;
 		switch (root.getType()) {
 		case DecafScannerTokenTypes.LOCATION:
 			return makeLocation(root);
@@ -264,7 +364,7 @@ public class IRMaker {
 			if(ir_node ==null){
 				return null;
 			}
-			Type t = ir_node.getType();
+			t = ir_node.getType();
 			if(!isArrType(t)){
 				System.err.println("Cannot apply @ to "+varName);
 				printLineCol(System.err, idNode);
@@ -288,7 +388,7 @@ public class IRMaker {
 			}
 			if(expr.getType() != Type.INT){
 				System.err.println("Can only negate integers.");
-				printLineCol(System.err, lhs);
+				printLineCol(System.err, root);
 				valid = false;
 				return null;
 			}
@@ -301,21 +401,111 @@ public class IRMaker {
 				return null;
 			}
 			if(expr.getType() != Type.BOOL){
-				System.err.println("Can apply NOT to booleans.");
-				printLineCol(System.err, lhs);
+				System.err.println("Can only apply NOT to booleans.");
+				printLineCol(System.err, root);
 				valid = false;
 				return null;
 			}
 			return new IR_Not(expr);
 		case DecafScannerTokenTypes.QUESTION:
-			
+			return makeQuestion(root);
+		default:
+			break;
 		}
 		
+		Ops op = getOp(root.getType());
+		lhs = root.getFirstChild();
+		IR_Node lexp = makeExpr(lhs);
+		if(lexp == null){
+			return null;
+		}
+		AST rhs = lhs.getNextSibling();
+		IR_Node rexp = makeExpr(rhs);
+		if(rexp==null){
+			return null;
+		}
+		if(lexp.getType() != rexp.getType()){
+			System.err.println("Binary operands differ.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		if(isArithOp(op)){
+			if(lexp.getType()!=Type.INT){
+				System.err.println("Arithmetic operators only takes integers.");
+				printLineCol(System.err, root);
+				valid = false;
+				return null;
+			}
+			expr = new IR_ArithOp(lexp, rexp, op);
+		}else if(isCompareOp(op)){
+			if(lexp.getType()!=Type.INT){
+				System.err.println("Comparison operators only takes integers.");
+				printLineCol(System.err, root);
+				valid = false;
+				return null;
+			}
+			expr = new IR_CompareOp(lexp, rexp, op);			
+		}else if(isEqOp(op)){
+			if(lexp.getType()!=Type.INT && lexp.getType()!=Type.BOOL){
+				System.err.println("Equality operators only takes integers or booleans.");
+				printLineCol(System.err, root);
+				valid = false;
+				return null;
+			}
+			expr = new IR_EqOp(lexp, rexp, op);			
+		}else if(isCondOp(op)){
+			if(lexp.getType()!=Type.BOOL){
+				System.err.println("Conditional operators only takes booleans.");
+				printLineCol(System.err, root);
+				valid = false;
+				return null;
+			}
+			expr = new IR_CondOp(lexp, rexp, op);			
+		}
 		
-		
-		return null;
+		return expr;
 	}
 
+	private IR_Ternary makeQuestion(AST root){
+		Type t;
+		AST condNode = root.getFirstChild();
+		IR_Node cond = makeExpr(condNode);
+		if(cond == null){
+			return null;
+		}
+		if(cond.getType()!=Type.BOOL){
+			System.err.println("? needs a boolean condition.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		AST valNode = condNode.getNextSibling();
+		IR_Node trueExpr = makeExpr(valNode);
+		if(trueExpr == null){
+			return null;
+		}
+		valNode = valNode.getNextSibling();
+		IR_Node falseExpr = makeExpr(valNode);
+		if(falseExpr==null){
+			return null;
+		}
+		t = trueExpr.getType();
+		if(t!=Type.INT && t!=Type.BOOL){
+			System.err.println("'?' can only evaluate to int or bool.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		if(t!=falseExpr.getType()){
+			System.err.println("Alternates of '?' have different types.");
+			printLineCol(System.err, root);
+			valid = false;
+			return null;
+		}
+		return new IR_Ternary(cond, trueExpr, falseExpr);
+	}
+	
 	private IR_Call makeMethodCall(AST root){
 		AST idNode = root.getFirstChild();
 		String funName = idNode.getText();
@@ -415,7 +605,7 @@ public class IRMaker {
 
 	private IR_Node makeFieldDecl(Type type, AST root, AST len) {
 		String name = root.getText();
-		if (checkSymbolDup(name, root)) {
+		if (checkDupSymbol(name, root)) {
 			return null;
 		}
 		IR_IntLiteral literal = null;
@@ -451,6 +641,7 @@ public class IRMaker {
 		if (checkIntSize(text, negate, val)) {
 			return new IR_IntLiteral(val[0]);
 		}
+		valid = false;
 		System.err.println("Invalid Integer range.");
 		printLineCol(System.err, root);
 		return null;
@@ -459,7 +650,7 @@ public class IRMaker {
 	private IR_Node makeCalloutDecl(AST root) {
 		AST id = root.getFirstChild();
 		String name = id.getText();
-		if (checkSymbolDup(name, root)) {
+		if (checkDupSymbol(name, root)) {
 			return null;
 		}
 		// callout returns int according to spec
@@ -540,4 +731,88 @@ public class IRMaker {
 		}
 		return t;
 	}
+	
+	Ops getOp(int type) {
+		switch (type) {
+		case DecafScannerTokenTypes.ASSIGN:
+			return Ops.ASSIGN;
+		case DecafScannerTokenTypes.ASSIGN_PLUS:
+			return Ops.ASSIGN_PLUS;
+		case DecafScannerTokenTypes.ASSIGN_MINUS:
+			return Ops.ASSIGN_MINUS;
+		case DecafScannerTokenTypes.PLUS:
+			return Ops.PLUS;
+		case DecafScannerTokenTypes.MINUS:
+			return Ops.MINUS;
+		case DecafScannerTokenTypes.TIMES:
+			return Ops.TIMES;
+		case DecafScannerTokenTypes.DIVIDE:
+			return Ops.DIVIDE;
+		case DecafScannerTokenTypes.MOD:
+			return Ops.MOD;
+		case DecafScannerTokenTypes.LT:
+			return Ops.LT;
+		case DecafScannerTokenTypes.LTE:
+			return Ops.LTE;
+		case DecafScannerTokenTypes.GT:
+			return Ops.GT;
+		case DecafScannerTokenTypes.GTE:
+			return Ops.GTE;
+		case DecafScannerTokenTypes.EQUALS:
+			return Ops.EQUALS;
+		case DecafScannerTokenTypes.NOT_EQUALS:
+			return Ops.NOT_EQUALS;
+		}
+		return null;
+	}
+
+	private boolean isArithOp(Ops op){
+		switch(op){
+		case PLUS:
+		case MINUS:
+		case TIMES:
+		case DIVIDE:
+		case MOD:
+		return true;
+		default:
+			break;
+		}
+		return false;
+	}
+	
+	private boolean isCompareOp(Ops op){
+		switch(op){
+		case LT:
+		case LTE:
+		case GT:
+		case GTE:
+		return true;
+		default:
+			break;
+		}
+		return false;		
+	}
+	
+	private boolean isEqOp(Ops op){
+		switch(op){
+		case EQUALS:
+		case NOT_EQUALS:
+		return true;
+		default:
+			break;
+		}
+		return false;		
+	}
+	
+	private boolean isCondOp(Ops op){
+		switch(op){
+		case AND:
+		case OR:
+		return true;
+		default:
+			break;
+		}
+		return false;		
+	}
+
 }

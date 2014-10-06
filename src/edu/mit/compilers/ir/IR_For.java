@@ -1,6 +1,5 @@
 package edu.mit.compilers.ir;
 
-import edu.mit.compilers.ir.IR_CompareOp.IR_CompareOp_LT;
 import edu.mit.compilers.ir.IR_STL;
 
 import java.util.ArrayList;
@@ -14,26 +13,32 @@ import java.util.List;
  *
  */
 public class IR_For extends IR_Node {
-	protected IR_Seq preLoop;
-	protected IR_CompareOp_LT lt;
+	//loop variable
+	private IR_Var loopVar;
+	protected IR_Node start, end;
 	protected IR_Seq block;
 	
-	public IR_For(IR_Seq preloop, IR_CompareOp_LT cond, IR_Seq block) {
-	    this.preLoop = preloop;
-	    this.lt = cond;
-	    this.block = block;
+	public IR_For(IR_Var v, IR_Node s, IR_Node e, IR_Seq b) {
+		loopVar = v;
+		start= s;
+		end = e;
+	    block = b;
 	}
 	
-	public IR_Node getPreLoop() {
-		return this.preLoop;
+	public IR_Var getVar(){
+		return loopVar;
 	}
 	
-	public IR_CompareOp_LT getLt() {
-		return this.lt;
+	public IR_Node getStart() {
+		return start;
+	}
+	
+	public IR_Node getEnd() {
+		return end;
 	}
 	
 	public IR_Seq getBlock() {
-		return this.block;
+		return block;
 	}
 	
 	@Override
@@ -43,12 +48,12 @@ public class IR_For extends IR_Node {
 	
 	@Override
 	public boolean isValid() {
-		return preLoop.isValid() && lt.isValid() && block.isValid();
+		return false;
 	}
 	
 	@Override
 	public String toString() {
-		return "for(" + preLoop.toString() + ", " + lt.toString() + ")" + "{" + block.toString() + "}";
+		return "for(" + loopVar.toString() + ", " + start.toString()+ ","+ end.toString()+ ")" + "{" + block.toString() + "}";
 	}
 
 }
