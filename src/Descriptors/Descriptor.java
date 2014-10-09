@@ -2,6 +2,7 @@ package Descriptors;
 
 import java.util.List;
 
+import edu.mit.compilers.codegen.MemLocation;
 import edu.mit.compilers.ir.IR_Node;
 
 /**
@@ -45,6 +46,7 @@ public abstract class Descriptor {
 		
 	}
 	
+	public MemLocation loc;
 	
 	private List<Boolean> argTypes;
 	private long length;
