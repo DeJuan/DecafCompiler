@@ -16,4 +16,16 @@ public class CodegenContext {
 	public void printInstructions(PrintStream ps){
 		
 	}
+	
+	/**@brief for storing tmps.
+	 * The backend may do something more than just push and pop.
+	 * @param val
+	 */
+	public void push(MemLocation loc){
+		
+	}
+	
+	public void pop(MemLocation loc){
+		
+	}
 }
