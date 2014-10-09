@@ -2,9 +2,19 @@ package edu.mit.compilers.codegen;
 
 import java.util.ArrayList;
 
+/**@brief an assembly instruction
+ * 
+ * @author desaic
+ *
+ */
 public class Instruction {
+	
 	public String cmd;
+	
 	public ArrayList<String> args;
+	
+	/**@brief jump labels
+	 */
 	public String label;
 	public Instruction(String c, String a1){
 		cmd = c;
