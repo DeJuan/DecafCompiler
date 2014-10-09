@@ -13,4 +13,14 @@ public class Codegen {
 	public static void generateMethodDecl(IR_Node MethodDecl, CodegenContext context){
 		
 	}
+	
+	/**@brief expression nodes should return location of the result
+	 * 
+	 * @param expr
+	 * @param context
+	 * @return
+	 */
+	public static MemLocation generateExpr(IR_Node expr, CodegenContext context){
+		return null;
+	}
 }

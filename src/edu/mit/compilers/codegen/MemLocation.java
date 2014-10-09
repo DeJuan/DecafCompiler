@@ -14,4 +14,13 @@ abstract public class MemLocation {
 		 */
 		public String label;
 	}
+	
+	/**@brief for int literals
+	 * 
+	 * @author desaic
+	 *
+	 */
+	public static class LiteralLocation{
+		public long val;
+	}
 }
