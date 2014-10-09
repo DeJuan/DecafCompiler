@@ -9,7 +9,4 @@ void main() {
   boolean bb;
   int a;
   a = 1*2*3*a;
-  if(true == 5){
-    a=4;
-  }
 }

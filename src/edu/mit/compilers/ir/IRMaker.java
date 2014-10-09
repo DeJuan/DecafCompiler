@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class IRMaker {
-	private SymbolTable symbols;
+	private SymbolTable<IR_Node> symbols;
 	private Type _returnType;
 	private boolean valid = true;
 	private ArrayList<String> loops;
 	
 	public IRMaker() {
-		symbols = new SymbolTable();
+		symbols = new SymbolTable<IR_Node>();
 		loops = new ArrayList<String> ();
 	}
 

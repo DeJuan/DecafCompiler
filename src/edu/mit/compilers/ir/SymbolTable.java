@@ -3,16 +3,16 @@ package edu.mit.compilers.ir;
 import java.util.HashMap;
 import java.util.ArrayList;
 
-public class SymbolTable {
+public class SymbolTable<V> {
 	
-	private ArrayList<HashMap<String, IR_Node> > tables;
+	private ArrayList<HashMap<String, V> > tables;
 	
 	public SymbolTable(){
-		tables = new ArrayList<HashMap<String, IR_Node>>();
+		tables = new ArrayList<HashMap<String, V>>();
 	}
 	
 	public void incScope(){
-		tables.add(new HashMap<String, IR_Node>());
+		tables.add(new HashMap<String, V>());
 	}
 
 	public void decScope(){
@@ -22,17 +22,17 @@ public class SymbolTable {
 		tables.remove(tables.size()-1);
 	}
 
-	public IR_Node lookupLocal(String name){
-		HashMap<String, IR_Node> t = tables.get(tables.size()-1);
+	public V lookupLocal(String name){
+		HashMap<String, V> t = tables.get(tables.size()-1);
 		if (t.containsKey(name)) {
 			return t.get(name);
 		}
 		return null;
 	}
 	
-	public IR_Node lookup(String name){
+	public V lookup(String name){
 		for(int ii = tables.size()-1; ii>=0 ; ii--){
-			HashMap<String, IR_Node> t = tables.get(ii);
+			HashMap<String, V> t = tables.get(ii);
 			if(t.containsKey(name)){
 				return t.get(name);
 			}
@@ -40,8 +40,8 @@ public class SymbolTable {
 		return null;
 	}
 	
-	public boolean put(String name, IR_Node node){
-		HashMap<String, IR_Node> t = tables.get(tables.size()-1);
+	public boolean put(String name, V node){
+		HashMap<String, V> t = tables.get(tables.size()-1);
 		if(t.containsKey(name)){
 			return false;
 		}
@@ -49,7 +49,7 @@ public class SymbolTable {
 		return true;
 	}
 	
-	public HashMap<String, IR_Node> getTable(int idx){
+	public HashMap<String, V> getTable(int idx){
 		return tables.get(idx);
 	}
 	
