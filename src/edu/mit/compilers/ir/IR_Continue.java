@@ -14,11 +14,6 @@ public class IR_Continue extends IR_Node {
 	}
 	
 	@Override
-	public boolean isValid() {
-		return true;
-	}
-	
-	@Override
 	public String toString() {
 		return "continue";
 	}

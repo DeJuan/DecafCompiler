@@ -31,9 +31,4 @@ public class IR_STF extends IR_Node {
         return "Storing to " + field.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return field.getType() == value.getType() && (field.getType() == Type.BOOL || field.getType() == Type.INT);
-    }
-
 }

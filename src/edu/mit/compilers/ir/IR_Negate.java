@@ -10,20 +10,12 @@ public class IR_Negate extends IR_Node {
 	}
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
 		return Type.INT;
 	}
 
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
 		return "-";
-	}
-
-	@Override
-	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

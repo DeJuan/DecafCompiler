@@ -14,7 +14,6 @@ public class IR_Assign extends IR_Node {
 	
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
 		return Type.VOID;
 	}
 
@@ -23,11 +22,4 @@ public class IR_Assign extends IR_Node {
 		// TODO Auto-generated method stub
 		return op.toString();
 	}
-
-	@Override
-	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 }

@@ -36,9 +36,4 @@ public class IR_LDA extends IR_Node {
         return "Loading from array " + array.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return array.getIndex().getType() == Type.INT && (array.getType() == Type.BOOLARR || array.getType() == Type.INTARR);
-    }
-
 }

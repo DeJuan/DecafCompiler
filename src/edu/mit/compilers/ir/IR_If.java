@@ -33,13 +33,7 @@ public class IR_If extends IR_Node {
 	public Type getType() {
 		return Type.VOID;
 	}
-	
-	@Override
-	public boolean isValid() {
-		return expr.getType() == Type.BOOL 
-				&& expr.isValid() && trueBlock.isValid() && falseBlock.isValid();
-	}
-	
+		
 	@Override
 	public String toString() {
 		return "if(" + expr.toString() + ")" + "{" + trueBlock.toString() + "}" + 

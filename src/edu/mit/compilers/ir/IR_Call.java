@@ -42,10 +42,4 @@ public class IR_Call extends IR_Node {
     public String toString() {
         return "Calling method " + name;
     }
-
-    @Override
-    public boolean isValid() {
-        return true;
-    }
-
 }

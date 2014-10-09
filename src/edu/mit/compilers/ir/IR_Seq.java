@@ -41,9 +41,4 @@ public class IR_Seq extends IR_Node {
         return concat;
     }
 
-    @Override
-    public boolean isValid() {
-        return true;
-    }
-
 }

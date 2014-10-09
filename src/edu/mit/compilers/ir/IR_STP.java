@@ -31,9 +31,4 @@ public class IR_STP extends IR_Node {
         return "Storing " + value.toString() + " to " + parameter.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return parameter.getType() == value.getType() && (parameter.getType() == Type.INT || parameter.getType() == Type.BOOL);
-    }
-
 }

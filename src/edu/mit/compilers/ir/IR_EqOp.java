@@ -29,13 +29,7 @@ public class IR_EqOp extends IR_Node {
 	public Type getType() {
 		return Type.BOOL;
 	}
-
-	@Override
-	public boolean isValid() {
-		return (left.getType() == Type.INT || left.getType() == Type.BOOL)
-				&& (right.getType() == Type.INT || right.getType() == Type.BOOL);
-	}
-
+	
 	@Override
 	public String toString() {
 		return op + left.toString() + right.toString();

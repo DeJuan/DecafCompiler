@@ -22,10 +22,4 @@ public class IR_STL extends IR_Node {
     public String toString() {
         return "Storing " + value.toString() + " to " + local_var.toString();
     }
-
-    @Override
-    public boolean isValid() {
-        return local_var.getType() == value.getType() && (local_var.getType() == Type.INT || local_var.getType() == Type.BOOL);
-    }
-
 }

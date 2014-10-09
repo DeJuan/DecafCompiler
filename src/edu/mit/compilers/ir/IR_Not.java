@@ -21,11 +21,6 @@ public class IR_Not extends IR_Node {
 	}
 	
 	@Override
-	public boolean isValid() {
-		return expr.getType() == Type.BOOL;
-	}
-	
-	@Override
 	public String toString() {
 		return "!" + expr.toString();
 	}

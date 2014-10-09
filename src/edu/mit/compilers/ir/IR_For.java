@@ -1,10 +1,5 @@
 package edu.mit.compilers.ir;
 
-import edu.mit.compilers.ir.IR_STL;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * IR_Node for the 'for' statement.
  * Grammar: for ( id = expr, expr ) block
@@ -45,12 +40,7 @@ public class IR_For extends IR_Node {
 	public Type getType() {
 		return Type.VOID;
 	}
-	
-	@Override
-	public boolean isValid() {
-		return false;
-	}
-	
+		
 	@Override
 	public String toString() {
 		return "for(" + loopVar.toString() + ", " + start.toString()+ ","+ end.toString()+ ")" + "{" + block.toString() + "}";

@@ -10,6 +10,5 @@ public abstract class IR_Node {
 	
 	public abstract Type getType();
 	public abstract String toString();
-	public abstract boolean isValid();
 
 }

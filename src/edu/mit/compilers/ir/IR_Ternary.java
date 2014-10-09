@@ -39,9 +39,4 @@ public class IR_Ternary extends IR_Node {
         return "if " + condition.toString() + " then " + true_expr.toString() + " else " + false_expr.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return condition.getType() == Type.BOOL && true_expr.getType() == false_expr.getType();
-    }
-
 }

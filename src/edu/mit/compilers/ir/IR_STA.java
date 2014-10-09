@@ -34,12 +34,4 @@ public class IR_STA extends IR_Node {
     public String toString() {
         return "Storing " + value.toString() + " to array " + array.toString();
     }
-
-    @Override
-    public boolean isValid() {
-        return array.getIndex().getType() == Type.INT 
-                && ((array.getType() == Type.INTARR && value.getType() == Type.INT) 
-                        || (array.getType() == Type.BOOLARR && value.getType() == Type.BOOL));
-    }
-
 }

@@ -31,11 +31,6 @@ public class IR_CondOp extends IR_Node {
 	}
 
 	@Override
-	public boolean isValid() {
-		return left.getType() == Type.BOOL && right.getType() == Type.BOOL;
-	}
-
-	@Override
 	public String toString() {
 		return op + left.toString() + right.toString();
 	}

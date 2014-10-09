@@ -48,7 +48,6 @@ public class IR_MethodDecl extends IR_Node {
 	
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
 		if(isCallout){
 			return Type.CALLOUT;
 		}else{
@@ -58,14 +57,7 @@ public class IR_MethodDecl extends IR_Node {
 
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
 		return "fun " + name;
-	}
-
-	@Override
-	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

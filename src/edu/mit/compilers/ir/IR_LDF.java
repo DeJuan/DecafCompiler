@@ -25,9 +25,4 @@ public class IR_LDF extends IR_Node {
         return "Loading " + field.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return getType() == Type.BOOL || getType() == Type.INT;
-    }
-
 }

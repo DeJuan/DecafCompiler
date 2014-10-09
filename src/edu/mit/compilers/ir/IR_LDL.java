@@ -25,9 +25,4 @@ public class IR_LDL extends IR_Node {
         return "Loading " + local_var.toString();
     }
 
-    @Override
-    public boolean isValid() {
-        return getType() == Type.BOOL || getType() == Type.INT;
-    }
-
 }

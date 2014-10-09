@@ -31,11 +31,6 @@ public class IR_CompareOp extends IR_Node {
 	}
 
 	@Override
-	public boolean isValid() {
-		return left.getType() == Type.INT && right.getType() == Type.INT;
-	}
-
-	@Override
 	public String toString() {
 		return op + left.toString() + right.toString();
 	}

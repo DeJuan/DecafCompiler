@@ -23,12 +23,7 @@ abstract class IR_Literal extends IR_Node {
 		public Type getType() {
 			return Type.INT;
 		}
-		
-		@Override
-		public boolean isValid() {
-			return true;
-		}
-		
+	
 		@Override
 		public String toString() {
 			return Long.toString(value);
@@ -52,11 +47,6 @@ abstract class IR_Literal extends IR_Node {
 		}
 		
 		@Override
-		public boolean isValid() {
-			return true;
-		}
-		
-		@Override
 		public String toString() {
 			return Boolean.toString(value);
 		}
@@ -76,11 +66,6 @@ abstract class IR_Literal extends IR_Node {
 	    @Override
 	    public Type getType() {
 	        return Type.STRING;
-	    }
-	    
-	    @Override
-	    public boolean isValid() {
-	        return true;
 	    }
 	    
 	    @Override

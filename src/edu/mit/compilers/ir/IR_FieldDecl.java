@@ -21,20 +21,12 @@ public class IR_FieldDecl extends IR_Node {
 	
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
 		return type;
 	}
 
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
 		return name;
-	}
-
-	@Override
-	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 
 }

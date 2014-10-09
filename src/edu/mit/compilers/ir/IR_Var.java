@@ -34,10 +34,4 @@ public class IR_Var extends IR_Node {
     public String toString() {
         return name;
     }
-
-    @Override
-    public boolean isValid() {
-        return true;
-    }
-
 }

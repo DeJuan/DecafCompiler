@@ -14,11 +14,6 @@ public class IR_Break extends IR_Node {
 	}
 	
 	@Override
-	public boolean isValid() {
-		return true;
-	}
-	
-	@Override
 	public String toString() {
 		return "break";
 	}
