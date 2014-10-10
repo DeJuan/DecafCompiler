@@ -7,10 +7,6 @@ abstract public class MemLocation {
 		REG_LOC
 	};
 	
-	public enum Regs{
-		RAX, RBX, RCX, RDX, RSP, RBP, RSI, RDI,R8,R9,R10,R11
-	};
-	
 	abstract public LocType getType(); 
 	
 	public class StackLocation{

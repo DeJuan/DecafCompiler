@@ -6,7 +6,7 @@ import Descriptors.Descriptor;
 import edu.mit.compilers.ir.SymbolTable;
 
 public class CodegenContext {
-	
+	public static final int INT_SIZE=8;
 	/**@brief flat list of assembly code.
 	 * Append to this list as appropriate.
 	 */
