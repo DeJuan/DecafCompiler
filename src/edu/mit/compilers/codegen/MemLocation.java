@@ -1,5 +1,7 @@
 package edu.mit.compilers.codegen;
 
+import edu.mit.compilers.ir.Type;
+
 abstract public class MemLocation {
 	
 	public enum LocType{
@@ -9,8 +11,12 @@ abstract public class MemLocation {
 	
 	abstract public LocType getType(); 
 	
+	public long getValue(){
+		return 0;
+	}
+	
 	public class StackLocation{
-		/**@brief with respect to rbp
+		/**@brief with respect to rbp. Measured in bytes.
 		 */
 		public long offset;
 		public String toString(){
@@ -19,6 +25,10 @@ abstract public class MemLocation {
 		
 		public LocType getType(){
 			return LocType.STACK_LOC;
+		}
+		
+		public long getValue(){
+			return offset;
 		}
 	}
 	
@@ -47,6 +57,9 @@ abstract public class MemLocation {
 		public LocType getType(){
 			return LocType.LITERAL_LOC;
 		}
+		public long getValue(){
+			return val;
+		}
 	}
 	
 	public class RegLocation{
@@ -68,21 +81,32 @@ abstract public class MemLocation {
 		 * stack + register
 		 */
 		public MemLocation array;
+		/**@brief if offset is a literal
+		 * its units is bytes.
+		 */
 		public MemLocation offset;
+		public Type type;
+		
 		public String toString(){
+			StringBuilder sb = new StringBuilder();
 			switch(array.getType()){
 			case LABEL_LOC:
+				sb.append(array.toString());
 				if(offset.getType()==LocType.REG_LOC){
-					
+					sb.append("(,"+offset.toString()+", "+CodegenConst.INT_SIZE +")");
 				}else if(offset.getType()==LocType.LITERAL_LOC){
-					
+					long len = offset.getValue();
+					sb.append("+" + len + "("+Regs.RIP+")" );
 				}
 				break;
 			case STACK_LOC:
+				long len = array.getValue();
 				if(offset.getType()==LocType.REG_LOC){
-					
+					sb.append(len+"("+Regs.RBP+", "+offset.toString()+", "+
+							CodegenConst.INT_SIZE+")");
 				}else if(offset.getType()==LocType.LITERAL_LOC){
-					
+					len += offset.getValue();
+					sb.append(len+"("+Regs.RBP+")");
 				}
 				break;
 			default:
@@ -90,7 +114,7 @@ abstract public class MemLocation {
 				System.out.println("Internal error: invalid array location.");
 				break;
 			}
-			return null;
+			return sb.toString();
 		}
 		
 		public LocType getType(){
