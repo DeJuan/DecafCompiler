@@ -90,6 +90,8 @@ abstract public class MemLocation {
 				}
 				break;
 			default:
+				//This shouldn't be reachable when we compile any program.
+				System.out.println("Internal error: invalid array location.");
 				break;
 			}
 			return null;
