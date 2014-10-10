@@ -98,6 +98,16 @@ public abstract class Descriptor {
 	 */
 	public abstract IR_Node getIR() throws UnsupportedOperationException;
 	
+	public void setLocation(MemLocation location)
+	{
+		this.loc = location;
+	}
+	
+	public MemLocation getLocation()
+	{
+		return this.loc;
+	}
+	
 	
 
 }
