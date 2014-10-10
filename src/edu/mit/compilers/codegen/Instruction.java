@@ -11,19 +11,19 @@ public class Instruction {
 	
 	public String cmd;
 	
-	public ArrayList<String> args;
+	public ArrayList<MemLocation> args;
 	
 	/**@brief jump labels
 	 */
 	public String label;
-	public Instruction(String c, String a1){
+	public Instruction(String c, MemLocation a1){
 		cmd = c;
-		args = new ArrayList<String> ();
+		args = new ArrayList<MemLocation> ();
 		args.add(a1);
 	}
-	public Instruction(String c, String a1, String a2){
+	public Instruction(String c, MemLocation a1, MemLocation a2){
 		cmd = c;
-		args = new ArrayList<String> ();
+		args = new ArrayList<MemLocation> ();
 		args.add(a1);
 		args.add(a2);
 	}

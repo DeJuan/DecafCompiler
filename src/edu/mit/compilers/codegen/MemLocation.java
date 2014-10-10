@@ -27,7 +27,7 @@ abstract public class MemLocation {
 	}
 	
 	public class LabelLocation{
-		/**@brief label for global variables and arrays
+		/**@brief label for global variables, arrays and jump labels
 		 */
 		public String label;
 		public String toString(){
