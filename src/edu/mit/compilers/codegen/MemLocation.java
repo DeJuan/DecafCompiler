@@ -52,7 +52,7 @@ abstract public class MemLocation {
 	public class RegLocation{
 		public Regs reg;
 		public String toString(){
-			return "%"+reg;
+			return reg.toString();
 		}
 		public LocType getType(){
 			return LocType.REG_LOC;
