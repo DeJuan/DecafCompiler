@@ -14,6 +14,11 @@ public class CodegenContext {
 	/**@brief symbol table for locations of variables*/
 	public SymbolTable<Descriptor> symbol;
 	
+	/**@brief String literals are replaced with their corresponding
+	 * labels in the first pass.
+	 */
+	public ArrayList<String> stringLiterals;
+	
 	/**@brief size of local variables in a function*/
 	long localvarSize;
 	

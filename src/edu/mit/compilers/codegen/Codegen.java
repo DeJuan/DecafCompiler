@@ -1,12 +1,22 @@
 package edu.mit.compilers.codegen;
 import edu.mit.compilers.ir.*;
 public class Codegen {
-	/**@brief generate code for root node if IR
+	/**@brief generate code for root node of IR.
 	 * 
 	 * @param node root node
 	 * @param context
 	 */
 	public static void generateProgram(IR_Node node, CodegenContext context){
+		generateStringLiteral(node,context);
+	}
+
+	/**@brief In the first pass, all string literals are replaced with their labels.
+	 * Their values stored in codegen context.
+	 * 
+	 * @param root
+	 * @param context
+	 */
+	public static void generateStringLiteral(IR_Node root, CodegenContext context){
 		
 	}
 	
@@ -23,4 +33,5 @@ public class Codegen {
 	public static MemLocation generateExpr(IR_Node expr, CodegenContext context){
 		return null;
 	}
+	
 }
