@@ -22,6 +22,14 @@ public class IRMaker {
 		loops = new ArrayList<String> ();
 	}
 
+	/**@brief The main function that builds the IR tree.
+	 * Builds a sequence of field declarations, method declarations
+	 * and callout declarations.
+	 * @param ast
+	 * @return Root of the IR tree of type IR_Seq. Returns
+	 * null of IR is illegal.
+	 * 
+	 */
 	public IR_Node make(AST ast) {
 		valid = true;
 		symbols.clear();
@@ -83,6 +91,10 @@ public class IRMaker {
 		return true;
 	}
 	
+	/**@brief After building the IR. One can check the validity.
+	 * 
+	 * @return True if the IR is legal.
+	 */
 	public boolean isValid(){
 		return valid;
 	}
@@ -105,13 +117,13 @@ public class IRMaker {
 		while (paramNode.getType() != DecafScannerTokenTypes.BLOCK) {
 			Type argt = tokenToType(paramNode.getType());
 			paramNode = paramNode.getNextSibling();
-			ir_method.addArg(argt);
 			String paramName = paramNode.getText();
 			if (checkDupSymbol(paramName, paramNode)) {
 				paramNode = paramNode.getNextSibling();
 				valid = false;
 				continue;
 			}
+			ir_method.addArg(argt, paramName);
 			IR_FieldDecl ir_param = new IR_FieldDecl(argt, paramName);
 			symbols.put(paramName, ir_param);
 			paramNode = paramNode.getNextSibling();

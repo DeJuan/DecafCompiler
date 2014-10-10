@@ -1,6 +1,7 @@
 package edu.mit.compilers;
 
 import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 
@@ -8,11 +9,14 @@ import antlr.ASTFactory;
 import antlr.Token;
 import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
+import edu.mit.compilers.codegen.Codegen;
+import edu.mit.compilers.codegen.CodegenContext;
 import edu.mit.compilers.grammar.DecafParser;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScanner;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
 import edu.mit.compilers.ir.IRMaker;
+import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -118,6 +122,41 @@ class Main {
     	  if ( !ir_maker.isValid() ) {
     	      System.exit(1);
     	  }
+      }
+      
+      else if (CLI.target == Action.ASSEMBLY) {
+    	  DecafScanner scanner =
+    	            new DecafScanner(new DataInputStream(inputStream));
+    	  DecafParser parser = new DecafParser(scanner);
+    	  parser.setTrace(CLI.debug);
+    	        
+    	  ASTFactory factory = new ASTFactory();                         
+    	  factory.setASTNodeClass(CommonASTWithLines.class);
+    	  parser.setASTFactory(factory);
+    	        
+    	  parser.program();
+    	  if(parser.getError()) {
+    		  System.out.println("parse error.");
+    		  System.exit(1);
+    	  }
+    	  
+    	  AST ast = parser.getAST();
+    	  IRMaker ir_maker = new IRMaker();
+    	  IR_Node root = ir_maker.make(ast);
+    	  if ( !ir_maker.isValid() ) {
+    		  System.out.println("symantic error.");
+    	      System.exit(1);
+    	  }
+    	  
+    	  String outFile = "a.s";
+    	  if(CLI.outfile!=null){
+    		  outFile = CLI.outfile;
+    	  }
+    	  CodegenContext context = new CodegenContext();
+    	  Codegen.generateProgram(root, context);
+    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
+    	  context.printInstructions(ps);
+    	  ps.close();
       }
     } catch(Exception e) {
       // print the error:

@@ -36,7 +36,7 @@ public class CodegenContext {
 	 * 
 	 * @param ps target of print. System.out or an output file stream.
 	 */
-	public void generateInstructions(PrintStream ps){
+	public void printInstructions(PrintStream ps){
 		
 	}
 	

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class IR_MethodDecl extends IR_Node {
 	public Type retType;
 	public String name;
-	public ArrayList<Type> args;
+	public ArrayList<IR_FieldDecl> args;
 	public IR_Seq body;
 	
 	private boolean isCallout;
@@ -15,13 +15,13 @@ public class IR_MethodDecl extends IR_Node {
 	}
 	
 	public Type getArgType(int idx){
-		return args.get(idx);
+		return args.get(idx).getType();
 	}
 	
 	public IR_MethodDecl(Type r, String n){
 		retType = r;
 		name = n;
-		args = new ArrayList<Type>();
+		args = new ArrayList<IR_FieldDecl>();
 		body = new IR_Seq();
 		isCallout = false;
 	}
@@ -29,13 +29,13 @@ public class IR_MethodDecl extends IR_Node {
 	public IR_MethodDecl(Type r, String n, boolean callout){
 		retType = r;
 		name = n;
-		args = new ArrayList<Type>();
+		args = new ArrayList<IR_FieldDecl>();
 		body = new IR_Seq();
 		isCallout = callout;
 	}
 	
-	public void addArg(Type a){
-		args.add(a);
+	public void addArg(Type t, String name){
+		args.add(new IR_FieldDecl(t,name));
 	}
 	
 	public void setBody(IR_Seq block){
