@@ -15,7 +15,7 @@ abstract public class MemLocation {
 		return 0;
 	}
 	
-	public class StackLocation{
+	public static class StackLocation extends MemLocation{
 		/**@brief with respect to rbp. Measured in bytes.
 		 */
 		public long offset;
@@ -32,7 +32,7 @@ abstract public class MemLocation {
 		}
 	}
 	
-	public class LabelLocation{
+	public class LabelLocation extends MemLocation{
 		/**@brief label for global variables, arrays and jump labels
 		 */
 		public String label;
@@ -49,7 +49,7 @@ abstract public class MemLocation {
 	 * @author desaic
 	 *
 	 */
-	public class LiteralLocation{
+	public class LiteralLocation extends MemLocation{
 		public long val;
 		public String toString(){
 			return "$"+val;
@@ -62,7 +62,7 @@ abstract public class MemLocation {
 		}
 	}
 	
-	public class RegLocation{
+	public class RegLocation extends MemLocation{
 		public Regs reg;
 		public String toString(){
 			return reg.toString();
@@ -72,7 +72,7 @@ abstract public class MemLocation {
 		}
 	}
 	
-	public class ArrayLocation{
+	public class ArrayLocation extends MemLocation{
 		/**@brief there are 4 combinations of acceptable 
 		 * array addressing:
 		 * label + literal  

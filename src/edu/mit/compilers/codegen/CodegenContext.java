@@ -2,6 +2,8 @@ package edu.mit.compilers.codegen;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import Descriptors.Descriptor;
 import edu.mit.compilers.ir.SymbolTable;
 
@@ -17,7 +19,7 @@ public class CodegenContext {
 	/**@brief String literals are replaced with their corresponding
 	 * labels in the first pass.
 	 */
-	public ArrayList<String> stringLiterals;
+	public HashMap<String, Long> stringLiterals;
 	
 	/**@brief size of local variables in a function*/
 	long localvarSize;
@@ -25,7 +27,10 @@ public class CodegenContext {
 	public MemLocation rsp;
 	
 	public CodegenContext(){
-		
+		stringLiterals = new HashMap<String,Long>();
+		symbol = new SymbolTable<Descriptor>();
+		ins = new ArrayList<Instruction>();
+		rsp = new MemLocation.StackLocation();
 	}
 	
 	public void incScope(){

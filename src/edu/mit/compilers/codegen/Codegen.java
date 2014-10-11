@@ -7,10 +7,10 @@ public class Codegen {
 	 * @param context
 	 */
 	public static void generateProgram(IR_Node node, CodegenContext context){
-		generateStringLiteral(node,context);
+		
 	}
 
-	/**@brief In the first pass, all string literals are replaced with their labels.
+	/**@brief All string literals are replaced with their labels.
 	 * Their values stored in codegen context.
 	 * 
 	 * @param root

@@ -76,7 +76,7 @@ public class IRMaker {
 	public boolean checkMain(){
 		HashMap<String, IR_Node> globalt = symbols.getTable(0);
 		IR_Node n = globalt.get("main");
-		if(n==null || !(n instanceof IR_MethodDecl) ){
+		if(n==null || !(n.getType()==Type.METHOD) ){
 			valid = false;
 			System.err.println("No main function declared.");
 			return false;
