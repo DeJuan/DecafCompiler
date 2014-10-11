@@ -12,6 +12,10 @@ public class IR_Assign extends IR_Node {
 		op  = o;
 	}
 	
+	public Ops getOp(){
+		return op;
+	}
+	
 	@Override
 	public Type getType() {
 		return Type.VOID;

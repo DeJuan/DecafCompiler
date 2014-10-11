@@ -16,6 +16,10 @@ public class IR_ArithOp extends IR_Node {
 		op = o;
 	}
 	
+	public Ops getOp(){
+		return op;
+	}
+	
 	public IR_Node getLeft(){
 		return left;
 	}

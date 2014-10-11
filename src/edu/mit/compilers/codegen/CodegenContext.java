@@ -7,6 +7,8 @@ import java.util.List;
 
 import edu.mit.compilers.ir.SymbolTable;
 
+/**@brief Information used throughout codegen
+ */
 public class CodegenContext {
 	/**@brief flat list of assembly code.
 	 * Append to this list as appropriate.
@@ -108,7 +110,7 @@ public class CodegenContext {
 	 */
 	public List<Instruction> push(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
-		
+		il.add(new Instruction("push", loc));
 		return il;
 	}
 
@@ -117,7 +119,7 @@ public class CodegenContext {
 	 */
 	public List<Instruction> pop(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
-		
+		il.add(new Instruction("pop", loc));
 		return il;
 	}
 }

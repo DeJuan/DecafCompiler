@@ -11,6 +11,10 @@ public class IR_CondOp extends IR_Node {
 	protected IR_Node right;
 	Ops op;
 
+	public Ops getOp(){
+		return op;
+	}
+	
 	public IR_CondOp(IR_Node l, IR_Node r, Ops o) {
 		left = l;
 		right = r;
