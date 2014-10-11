@@ -98,8 +98,41 @@ public class Codegen {
 	 * @return
 	 */
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
+		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		
-		return null;
+		if (expr instanceof IR_ArithOp){
+			IR_ArithOp arith = (IR_ArithOp)expr;
+		}
+		
+		
+		else if(expr instanceof IR_CompareOp){
+			IR_CompareOp compare = (IR_CompareOp) expr;
+		}
+		
+		else if (expr instanceof IR_CondOp){
+			IR_CondOp conditional = (IR_CondOp)expr;
+		}
+		
+		else if (expr instanceof IR_EqOp){
+			IR_EqOp equivalence = (IR_EqOp)expr;
+		}
+		
+		else if (expr instanceof IR_Not){
+			IR_Not not = (IR_Not)expr;
+		}
+		
+		else if (expr instanceof IR_Negate){
+			IR_Negate negation = (IR_Negate)expr;
+		}
+		
+		else if (expr instanceof IR_Ternary){
+			IR_Ternary ternary = (IR_Ternary)expr;
+		}
+		
+		else{
+			System.err.println("Unexpected Node type passed to generateExpr.");
+			System.err.println("The node passed in was of type " + expr.getType().toString());
+		}
 	}
 
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
