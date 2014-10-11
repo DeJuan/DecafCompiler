@@ -1,4 +1,5 @@
 package edu.mit.compilers.codegen;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,9 +93,35 @@ public class Codegen {
 	 */
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = new ArrayList<Instruction>();
+		List<List<Instruction>> intermediates = new ArrayList<List<Instruction>>();
 		
 		if (expr instanceof IR_ArithOp){
 			IR_ArithOp arith = (IR_ArithOp)expr;
+			Ops op = arith.getOp();
+			switch (op){
+				case PLUS:
+					IR_Node left = arith.getLeft();
+					IR_Node right = arith.getRight();
+					
+					if (left instanceof IR_Var && right instanceof IR_Var){
+						List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+						List<Instruction> rhs = generateVarExpr((IR_Var)right, context);
+						ins.addAll(lhs);
+						ins.addAll(rhs);
+						ins.add(new Instruction("pop", %r10))
+					}
+					
+					if (left instanceof IR_ArithOp ||){
+						intermediates.add(generateExpr(left, context));
+					}
+					
+					if (right instanceof IR_ArithOp){
+						intermediates.add(generateExpr(right, context));
+					}
+					
+					
+					
+			}
 		}
 		
 		
@@ -151,7 +178,6 @@ public class Codegen {
 			break;
 		}
 		return ins;
->>>>>>> origin/master
 	}
 
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
