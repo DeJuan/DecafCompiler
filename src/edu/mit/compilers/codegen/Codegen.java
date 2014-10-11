@@ -83,15 +83,7 @@ public class Codegen {
 	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
 		
 	}
-	
-	public static void generateMethodCall(IR_Call call, CodegenContext context){
 		
-	}
-
-	public static void generateCalloutCall(){
-		
-	}
-	
 	/**@brief expression nodes should return location of the result
 	 * 
 	 * @param expr
