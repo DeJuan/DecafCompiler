@@ -2,7 +2,7 @@ callout printf;
 int aa;
 int bb[10];
 void main(){
-  printf("hello\n");
+  printf("hello%d, %d, %d\n",aa,aa,aa);
   printf("12345\n");
   printf("hello");
   printf("hello\n");

@@ -77,20 +77,13 @@ public class Codegen {
 		context.addIns(new Instruction(".comm "+decl.getName() + ","+size+","+CodegenConst.ALIGN_SIZE));
 		Descriptor d = new Descriptor(decl);
 		d.setLocation(new LocLabel(decl.getName()));
+		context.putSymbol(decl.getName(), d);
 	}
 	
 	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
 		
 	}
-	
-	public static void generateMethodCall(IR_Call call, CodegenContext context){
 		
-	}
-
-	public static void generateCalloutCall(){
-		
-	}
-	
 	/**@brief expression nodes should return location of the result
 	 * 
 	 * @param expr
@@ -98,7 +91,7 @@ public class Codegen {
 	 * @return
 	 */
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
-		ArrayList<Instruction> ins = new ArrayList<Instruction>();
+		List<Instruction> ins = new ArrayList<Instruction>();
 		
 		if (expr instanceof IR_ArithOp){
 			IR_ArithOp arith = (IR_ArithOp)expr;
@@ -129,10 +122,36 @@ public class Codegen {
 			IR_Ternary ternary = (IR_Ternary)expr;
 		}
 		
+		if(expr instanceof IR_Var){
+			IR_Var var = (IR_Var)expr;
+			ins=generateVarExpr(var, context);
+			return ins;
+		}
+
 		else{
 			System.err.println("Unexpected Node type passed to generateExpr.");
 			System.err.println("The node passed in was of type " + expr.getType().toString());
 		}
+		ins = null;
+		return ins;
+		
+		
+		
+		
+	}
+
+	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context){
+		List<Instruction> ins=null;
+		switch(var.getType()){
+		case INT:
+			Descriptor d = context.findSymbol(var.getName());
+			ins = context.push(d.getLocation());
+			break;
+		default:
+			break;
+		}
+		return ins;
+>>>>>>> origin/master
 	}
 
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
@@ -154,6 +173,8 @@ public class Codegen {
 		List<IR_Node> args = call.getArgs();
 		for(int ii = 0;ii<args.size();ii++){
 			IR_Node arg = args.get(ii);
+			//source location of argument
+			LocationMem argSrc=null;
 			if(arg instanceof IR_Literal.IR_StringLiteral){
 				IR_Literal.IR_StringLiteral sl=(IR_Literal.IR_StringLiteral)arg;
 				String ss = sl.getValue();
@@ -162,14 +183,24 @@ public class Codegen {
 					idx = (long) context.stringLiterals.size();
 					context.stringLiterals.put(ss, idx);
 				}
-				LocationMem aa= argLoc(ii);
-				Instruction argIns = new Instruction("mov", new LocJump("$"+CodegenContext.StringLiteralLoc(idx)), aa);
-				ins.add(argIns);
+				argSrc = new LocJump("$"+CodegenContext.StringLiteralLoc(idx));
 			}else{
 				List<Instruction> exprIns = generateExpr(arg, context);
+				ins.addAll(exprIns);
+				//load argument to temporary register.
+				argSrc = new LocReg(Regs.R10);
+				ins.addAll(context.pop(argSrc));
 			}
+			List<Instruction> argIns = setCallArg(argSrc,ii,context);
+			ins.addAll(argIns);
 		}
 		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
+		
+		//pop all arguments on the stack
+		if(args.size()>CodegenConst.N_REG_ARG){
+			long stackArgSize = CodegenConst.INT_SIZE * (args.size()-CodegenConst.N_REG_ARG);
+			ins.add(new Instruction("sub", new LocLiteral(stackArgSize), new LocReg(Regs.RSP)));
+		}
 		return ins;
 	}
 	
@@ -177,10 +208,27 @@ public class Codegen {
 			Regs.RCX, Regs.R8, Regs.R9};
 
 	private static LocationMem argLoc(int idx){
-		if(idx<6){
+		if(idx<CodegenConst.N_REG_ARG){
 			return new LocReg(regArg[idx]);
 		}
 		long offset = 16+(idx-6)*CodegenConst.INT_SIZE;
 		return new LocStack(offset);
+	}
+	
+	/**@brief set the ith method call argument
+	 * 
+	 * @param argSrc
+	 * @param idx
+	 * @return
+	 */
+	private static List<Instruction> setCallArg(LocationMem argSrc, int idx, CodegenContext context){
+		ArrayList<Instruction> ins=new ArrayList<Instruction>();
+		if(idx<CodegenConst.N_REG_ARG){
+			LocationMem argDst = argLoc(idx);
+			ins.add(new Instruction("mov", argSrc, argDst));
+		}else{
+			ins.addAll(context.push(argSrc));
+		}
+		return ins;
 	}
 }

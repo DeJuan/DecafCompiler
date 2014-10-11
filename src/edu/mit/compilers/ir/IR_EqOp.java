@@ -11,6 +11,9 @@ public class IR_EqOp extends IR_Node {
 	protected IR_Node right;
 	Ops op;
 
+	public Ops getOp(){
+		return op;
+	}
 	public IR_EqOp(IR_Node l, IR_Node r, Ops o) {
 		left = l;
 		right = r;
