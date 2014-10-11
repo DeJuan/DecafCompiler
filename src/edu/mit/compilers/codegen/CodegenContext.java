@@ -83,10 +83,12 @@ public class CodegenContext {
 	 */
 	public void printInstructions(PrintStream ps){
 		//header
-		ps.println(".section  .rodata");
 		
 		//string literals
 		long nString = stringLiterals.keySet().size();
+		if(nString>0){
+			ps.println(".section  .rodata");
+		}
 		String ss[] = new String[(int) nString];
 		
 		for(String k: stringLiterals.keySet()){

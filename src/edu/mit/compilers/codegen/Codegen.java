@@ -163,7 +163,9 @@ public class Codegen {
 		}
 		return ins;
 	}
-	
+	/**@brief registers used for function arguments.
+	 * 
+	 */
 	private static final Regs regArg[] = {Regs.RDI, Regs.RSI, Regs.RDX,
 			Regs.RCX, Regs.R8, Regs.R9};
 
