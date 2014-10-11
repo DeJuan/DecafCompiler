@@ -102,15 +102,22 @@ public class CodegenContext {
 		}
 	}
 	
-	/**@brief for storing tmps.
+	/**@brief Push value stored in loc to the stack.
 	 * The backend may do something more than just push and pop.
 	 * @param val
 	 */
-	public void push(LocationMem loc){
+	public List<Instruction> push(LocationMem loc){
+		ArrayList<Instruction> il = new ArrayList<Instruction>();
 		
+		return il;
 	}
-	
-	public LocationMem pop(){
-		return null;
+
+	/**@brief 
+	 * @param loc pop the top of stack pointed to by rsp and store the value in loc
+	 */
+	public List<Instruction> pop(LocationMem loc){
+		ArrayList<Instruction> il = new ArrayList<Instruction>();
+		
+		return il;
 	}
 }

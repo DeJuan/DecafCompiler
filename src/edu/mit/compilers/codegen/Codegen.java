@@ -132,6 +132,8 @@ public class Codegen {
 				LocationMem aa= argLoc(ii);
 				Instruction argIns = new Instruction("mov", new LocJump("$"+CodegenContext.StringLiteralLoc(idx)), aa);
 				ins.add(argIns);
+			}else{
+				List<Instruction> exprIns = generateExpr(arg, context);
 			}
 		}
 		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
