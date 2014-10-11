@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import Descriptors.Descriptor;
 import edu.mit.compilers.ir.SymbolTable;
 
 public class CodegenContext {
