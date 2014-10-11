@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.mit.compilers.ir.*;
+import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 public class Codegen {
 	/**@brief generate code for root node of IR.
 	 * 
@@ -19,9 +20,10 @@ public class Codegen {
 				generateMethodDecl(n, context);
 			}else if(n.getType()==Type.CALLOUT){
 				generateCallout(n, context);
+			}else if(n instanceof IR_FieldDecl){
+				generateFieldDeclGlobal((IR_FieldDecl)n, context);
 			}
 		}
-
 	}
 
 	public static void generateCallout(IR_Node node, CodegenContext context){
@@ -62,16 +64,22 @@ public class Codegen {
 		context.addIns(ins);
 		context.addIns(new Instruction("leave"));
 		context.addIns(new Instruction("ret"));
-	
 		context.decScope();
-		
-	}
-
-	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
-		
 	}
 	
 	public static void generateFieldDeclGlobal(IR_FieldDecl decl, CodegenContext context){
+		IR_IntLiteral len = decl.getLength();
+		long size = CodegenConst.INT_SIZE;
+		if(len != null){
+			//array
+			size = CodegenConst.INT_SIZE * len.getValue();
+		}
+		context.addIns(new Instruction(".comm "+decl.getName() + ","+size+","+CodegenConst.ALIGN_SIZE));
+		Descriptor d = new Descriptor(decl);
+		d.setLocation(new LocLabel(decl.getName()));
+	}
+	
+	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
 		
 	}
 	

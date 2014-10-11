@@ -1,4 +1,6 @@
 callout printf;
+int aa;
+int bb[10];
 void main(){
   printf("hello\n");
   printf("12345\n");

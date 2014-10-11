@@ -463,7 +463,7 @@ public class IRMaker {
 				return null;
 			}
 			IR_FieldDecl arr = (IR_FieldDecl)ir_node;
-			return arr.len;
+			return arr.getLength();
 		case DecafScannerTokenTypes.MINUS:
 			lhs = root.getFirstChild();
 			if(lhs.getNextSibling() != null){
