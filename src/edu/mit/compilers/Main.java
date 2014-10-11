@@ -147,7 +147,7 @@ class Main {
     		  System.out.println("symantic error.");
     	      System.exit(1);
     	  }
-    	  
+    			  
     	  String outFile = "a.s";
     	  if(CLI.outfile!=null){
     		  outFile = CLI.outfile;

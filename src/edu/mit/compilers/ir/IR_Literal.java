@@ -6,7 +6,7 @@ package edu.mit.compilers.ir;
  * The constructor assigns the value of the literal to the 'value' field.
  *
  */
-abstract class IR_Literal extends IR_Node {
+public abstract class IR_Literal extends IR_Node {
 	
 	public static class IR_IntLiteral extends IR_Literal {
 		private Long value;

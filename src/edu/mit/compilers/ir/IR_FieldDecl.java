@@ -19,6 +19,10 @@ public class IR_FieldDecl extends IR_Node {
 		len = l;
 	}
 	
+	public String getName(){
+		return name;
+	}
+	
 	@Override
 	public Type getType() {
 		return type;

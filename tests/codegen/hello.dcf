@@ -1,0 +1,7 @@
+callout printf;
+void main(){
+  printf("hello\n");
+  printf("12345\n");
+  printf("hello");
+  printf("hello\n");
+}
