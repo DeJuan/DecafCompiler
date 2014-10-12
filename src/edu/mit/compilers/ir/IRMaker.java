@@ -615,6 +615,7 @@ public class IRMaker {
 		Type t = funDecl.getRetType();
 		
 		IR_Call ir_call = new IR_Call(t, funName);
+		ir_call.setDecl(funDecl);
 		AST argNode=idNode.getNextSibling();
 		
 		if(funDecl.getType() == Type.CALLOUT){

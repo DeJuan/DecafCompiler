@@ -154,6 +154,10 @@ public class Codegen {
 			List<Instruction> argIns = setCallArg(argSrc,ii,context);
 			ins.addAll(argIns);
 		}
+		IR_MethodDecl decl = call.getDecl();
+		if(decl.getType() == Type.CALLOUT){
+			ins.add(new Instruction("mov ", new LocLiteral(0),  new LocReg(Regs.RAX)));			
+		}
 		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
 		
 		//pop all arguments on the stack
