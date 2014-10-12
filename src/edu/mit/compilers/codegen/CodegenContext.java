@@ -34,11 +34,24 @@ public class CodegenContext {
 	 */
 	public LocStack rsp;
 	
+	private int numLabels;
+	
 	public CodegenContext(){
 		stringLiterals = new HashMap<String,Long>();
 		symbol = new SymbolTable<Descriptor>();
 		ins = new ArrayList<Instruction>();
 		rsp = new LocStack();
+		numLabels=0;
+	}
+	
+	/**@brief generate a unique jump label.
+	 * 
+	 * @return String for the label.
+	 */
+	public String genLabel(){
+		String label = ".L"+numLabels;
+		numLabels++;
+		return label;
 	}
 	
 	/**@brief convenience functions for symbol table.

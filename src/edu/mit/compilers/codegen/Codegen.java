@@ -101,8 +101,9 @@ public class Codegen {
 		context.putSymbol(decl.getName(), d);
 	}
 	
-	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
+	public static List<Instruction> generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
 		
+		return new ArrayList<Instruction>();
 	}
 		
 	/**@brief expression nodes should return location of the result
@@ -140,11 +141,15 @@ public class Codegen {
 		List<IR_Node> stmt = block.getStatements();
 		for(int ii = 0;ii<stmt.size(); ii++){
 			IR_Node st = stmt.get(ii);
+			List<Instruction> stIns =null;
 			if (st instanceof IR_Call){
 				IR_Call call = (IR_Call)st;
-				List<Instruction> stIns = generateCall(call,context);
-				ins.addAll(stIns);
+				stIns = generateCall(call,context);
+			}else if(st instanceof IR_FieldDecl){
+				IR_FieldDecl decl =(IR_FieldDecl) st;
+				stIns = generateFieldDecl(decl,context);
 			}
+			ins.addAll(stIns);
 		}
 		return ins;
 	}
