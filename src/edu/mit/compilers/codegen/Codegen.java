@@ -96,33 +96,35 @@ public class Codegen {
 		List<List<Instruction>> intermediates = new ArrayList<List<Instruction>>();
 		
 		if (expr instanceof IR_ArithOp){
-			return generateArithExpr((IR_ArithOp) expr, context);
+			ins = generateArithExpr((IR_ArithOp) expr, context);
+			return ins;
 		}
 		
 		else if(expr instanceof IR_CompareOp){
 			IR_CompareOp compare = (IR_CompareOp) expr;
-			return generateCompareOp(compare, context);
+			ins = generateCompareOp(compare, context);
+			return ins;
 		}
 		
 		else if (expr instanceof IR_CondOp){
 			IR_CondOp conditional = (IR_CondOp)expr;
-			return generateCondOp(conditional, context);
+			ins = generateCondOp(conditional, context);
+			return ins;
 		}
 		
 		else if (expr instanceof IR_EqOp){
 			IR_EqOp equivalence = (IR_EqOp)expr;
 		}
 		
-		else if (expr instanceof IR_Not){
-			IR_Not not = (IR_Not)expr;
-		}
-		
 		else if (expr instanceof IR_Negate){
 			IR_Negate negation = (IR_Negate)expr;
+			//%TODO Ask group - Want to do new Instruction("neg", ????) where ???? needs to be resolved.
 		}
 		
 		else if (expr instanceof IR_Ternary){
 			IR_Ternary ternary = (IR_Ternary)expr;
+			ins = generateTernaryOp(ternary, context);
+			return ins;
 		}
 		
 		if(expr instanceof IR_Var){
@@ -143,6 +145,11 @@ public class Codegen {
 		
 	}
 
+
+	private static List<Instruction> generateTernaryOp(IR_Ternary ternary,CodegenContext context) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context){
 		List<Instruction> ins=null;
@@ -168,10 +175,59 @@ public class Codegen {
 		
 		if (operation != "idiv"){
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (!operation.startsWith("cmp")){
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
 		}
 		
-		else{
+		else{ //Instruction is idiv
 			LocReg rdx = new LocReg(Regs.RDX);
 			LocReg rax = new LocReg(Regs.RAX);
 	
@@ -192,9 +248,60 @@ public class Codegen {
 		ins.addAll(rhs); //Will be in R10 and on stack
 		ins.add(new Instruction("pop", r11)); //Pop rhs value into r11
 		ins.add(new Instruction("pop", r10)); //pop lhs value into r10
-		if (operation != "idiv"){
+		if (operation != "idiv")
+		{
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (!operation.startsWith("cmp"))
+			{
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
 		}
 		
 		else{
@@ -219,7 +326,56 @@ public class Codegen {
 		ins.add(new Instruction("mov", new LocLiteral(rhs.getValue()), r11)); //Put literal in r11
 		if (operation != "idiv"){
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (!operation.startsWith("cmp")){
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
 		}
 		
 		else{
@@ -597,7 +753,8 @@ public class Codegen {
 		return ins;
 		
 	}
-		
+	
+	//TODO SHOULD THIS BE CREATING AN IR_BOOL OR SOMETHING? JUST WONDERING...
 	private static List<Instruction> generateCompareOp(IR_CompareOp compare, CodegenContext context) {
 			List<Instruction> ins = new ArrayList<Instruction>();
 			IR_Node left = compare.getLeft();
@@ -606,23 +763,51 @@ public class Codegen {
 				System.err.println("Incomparable arguments passed into generateCompareOp.");
 				return null;
 			}
-
+			
+			Ops op = compare.getOp();
+			String operator;
+			switch(op){
+			case GT:
+				operator = "cmpgt";
+				break;
+			case GTE:
+				operator = "cmpge";
+				break;
+			case EQUALS:
+				operator = "cmpeq";
+				break;
+			case LT:
+				operator = "cmplt";
+				break;
+			case LTE:
+				operator = "cmple";
+				break;
+			default:
+				return null; //Irrecoverable, can't compare with an incorrect op
+			}
+			
+			
 			if (left instanceof IR_Var)
 			{
 				List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
 				ins.addAll(lhs);
 
 				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, "cmp");
+					return handleRHSisIR_Var(ins, context, right, operator);
 				}
 
 				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
 				}
 
 
 				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, "cmp");
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
 				}
 			}
 
@@ -632,15 +817,20 @@ public class Codegen {
 				ins.addAll(lhs);
 
 				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, "cmp");
+					return handleRHSisIR_Var(ins, context, right, operator);
 				}
 
 				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
 				}
 
 				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, "cmp");
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
 				}
 			}
 
@@ -651,17 +841,46 @@ public class Codegen {
 				ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
 
 				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, "cmp");
+					return handleRHSisIR_Var(ins, context, right, operator);
 				}
 
 				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
 				}
 
 				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, "cmp");
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
 				}
 			}
+			
+			
+			if (left instanceof IR_CompareOp){
+				List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
+				ins.addAll(lhs);
+				
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
+				}
+			}
+			
 			return ins;
 	}
 			
@@ -670,10 +889,31 @@ public class Codegen {
 		List<Instruction> ins = new ArrayList<Instruction>();
 		IR_Node left = conditional.getLeft();
 		IR_Node right = conditional.getRight();
-		if (left.getType() != Type.BOOL || right.getType() != Type.BOOL){
-			System.err.println("Non-boolean arguments passed into generateCompareOp.");
-			return null;
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		Ops op = conditional.getOp();
+		
+		if( left instanceof IR_CompareOp)
+		{
+			List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
+			ins.addAll(lhs);
+			ins.add(new Instruction("pop", r10)); //Get value of comparison from stack. 1 = true, 0 = false.
+			if (right instanceof IR_Literal.IR_BoolLiteral){
+				IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+				//TODO rhs.getValue() is a Boolean...how to use it? 1 for true 0 for false? And do cmp on the 0 and 1?
+				
+			}
+			
+			//TODO What other cases are there? What do we need to worry about comparing?
+			
+			if (right instanceof IR_CompareOp){
+				List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+				ins.addAll(rhs);
+			}
 		}
+		
+		
+		
 		
 		
 	}
