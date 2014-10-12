@@ -191,7 +191,15 @@ public class Codegen {
 						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
 						ins.add(new Instruction("push", rax)); //Push the result to the stack.
 						return ins;
-					
+
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
 					case "cmpgt":
 						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
 						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
@@ -268,7 +276,15 @@ public class Codegen {
 						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
 						ins.add(new Instruction("push", rax)); //Push the result to the stack.
 						return ins;
-					
+
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
 					case "cmpgt":
 						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
 						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
@@ -343,6 +359,14 @@ public class Codegen {
 						ins.add(new Instruction("push", rax)); //Push the result to the stack.
 						return ins;
 					
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
 					case "cmpgt":
 						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
 						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
@@ -775,6 +799,9 @@ public class Codegen {
 				break;
 			case EQUALS:
 				operator = "cmpeq";
+				break;
+			case NOT_EQUALS:
+				operator = "cmpne";
 				break;
 			case LT:
 				operator = "cmplt";
