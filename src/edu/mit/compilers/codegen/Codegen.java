@@ -602,8 +602,8 @@ public class Codegen {
 			List<Instruction> ins = new ArrayList<Instruction>();
 			IR_Node left = compare.getLeft();
 			IR_Node right = compare.getRight();
-			if (left.getType() != Type.INT || right.getType() != Type.INT){
-				System.err.println("Non integer arguments passed into generateCompareOp.");
+			if (left.getType() != right.getType()){
+				System.err.println("Incomparable arguments passed into generateCompareOp.");
 				return null;
 			}
 
@@ -667,7 +667,15 @@ public class Codegen {
 			
 	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
 		// TODO Auto-generated method stub
-		return null;
+		List<Instruction> ins = new ArrayList<Instruction>();
+		IR_Node left = conditional.getLeft();
+		IR_Node right = conditional.getRight();
+		if (left.getType() != Type.BOOL || right.getType() != Type.BOOL){
+			System.err.println("Non-boolean arguments passed into generateCompareOp.");
+			return null;
+		}
+		
+		
 	}
 	
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
