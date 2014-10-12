@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.mit.compilers.ir.*;
-import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
+import edu.mit.compilers.ir.IR_Literal.*;
 import edu.mit.compilers.codegen.LocationMem;
 
 public class Codegen {
@@ -95,15 +95,38 @@ public class Codegen {
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = null;
 		
-		if(expr instanceof IR_Var){
-			IR_Var var = (IR_Var)expr;
-			ins=generateVarExpr(var, context);
-		}
+		if (expr instanceof IR_Var) {
+			IR_Var var = (IR_Var) expr;
+			ins = generateVarExpr(var, context);
+		} 
 		
+		else if (expr instanceof IR_Literal) {
+			IR_Literal literal = (IR_Literal) expr;
+			ins = generateLiteral(literal, context);
+		}
+	
+		return ins;
+	}
+	
+	public static List<Instruction> generateLiteral(IR_Literal literal, CodegenContext context) {
+		List<Instruction> ins = null;
+		
+		if (literal instanceof IR_IntLiteral) {
+			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
+			ins = context.push(new LocLiteral(int_literal.getValue()));
+		} 
+		else if (literal instanceof IR_BoolLiteral) {
+			IR_BoolLiteral bool_literal = (IR_BoolLiteral) literal;
+			if (bool_literal.getValue()) {
+				ins = context.push(new LocLiteral(CodegenConst.BOOL_TRUE));
+			} else {
+				ins = context.push(new LocLiteral(CodegenConst.BOOL_FALSE));
+			}
+		}
 		return ins;
 	}
 
-	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context){
+	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
 		List<Instruction> ins = null;
 		Descriptor d = context.findSymbol(var.getName());
 		switch (var.getType()) {
