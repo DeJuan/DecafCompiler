@@ -24,20 +24,25 @@ public class CodegenContext {
 	public HashMap<String, Long> stringLiterals;
 	
 	/**@brief size of local variables in a function*/
-	long localvarSize;
+	ArrayList<Long> localVarSize;
 	
-	public LocationMem rsp;
+	/**@brief maximum stack size required by local variables in a function.
+	 */
+	long maxLocalSize;
+	
+	/**@brief location of rsp with respect to rbp
+	 */
+	public LocStack rsp;
 	
 	public CodegenContext(){
 		stringLiterals = new HashMap<String,Long>();
 		symbol = new SymbolTable<Descriptor>();
 		ins = new ArrayList<Instruction>();
 		rsp = new LocStack();
-		incScope();
 	}
 	
-	/**@brief convenience functions for symbol table
-	 * 
+	/**@brief convenience functions for symbol table.
+	 * Push a new symbol table when entering a block.
 	 */
 	public void incScope(){
 		symbol.incScope();
@@ -97,13 +102,22 @@ public class CodegenContext {
 		}
 		
 		for(int ii =0 ;ii<ss.length;ii++){
-			String tmp = ss[ii].replace("\t", "\\\\t");
 			ps.print (StringLiteralLoc(ii) + ": \n.string \"" + ss[ii]+ "\"\n");
 		}
 		
 		for(int ii = 0;ii<ins.size();ii++){
 			ps.println(ins.get(ii));
 		}
+	}
+	
+	/**@brief initializes rsp, maxLocalSize and localVarSize.
+	 * 
+	 */
+	public void enterFun(){
+		//rsp at the same place as rbp
+		rsp.setValue(0);
+		maxLocalSize=0;
+		localVarSize = new ArrayList<Long>();
 	}
 	
 	/**@brief Push value stored in loc to the stack.
@@ -113,6 +127,7 @@ public class CodegenContext {
 	public List<Instruction> push(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
 		il.add(new Instruction("push", loc));
+		rsp.setValue(rsp.getValue() - CodegenConst.INT_SIZE);
 		return il;
 	}
 
@@ -122,6 +137,7 @@ public class CodegenContext {
 	public List<Instruction> pop(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
 		il.add(new Instruction("pop", loc));
+		rsp.setValue(rsp.getValue() + CodegenConst.INT_SIZE);
 		return il;
 	}
 }

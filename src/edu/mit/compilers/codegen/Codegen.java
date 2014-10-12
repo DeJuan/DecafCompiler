@@ -46,22 +46,43 @@ public class Codegen {
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(name, d);
 		context.incScope();
+		context.enterFun();
+		
+		//instructions for potentially saving arguments.
+		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
+				
+		//save register parameters to stack
 		for(int ii = 0; ii<decl.args.size(); ii++){
 			IR_FieldDecl a = decl.args.get(ii);
 			Descriptor argd = new Descriptor(a);
 			context.putSymbol(a.getName(), argd);
-			argd.setLocation(argLoc(ii));
+			
+			LocationMem argSrc = argLoc(ii);
+			LocationMem argDst = argSrc;
+			if(ii<CodegenConst.N_REG_ARG){
+				//save register arguments on the stack
+				List<Instruction> pushIns = context.push(argSrc);
+				argIns.addAll(pushIns);
+				argDst = context.rsp.clone();
+			}
+			argd.setLocation(argDst);
 		}
-		context.localvarSize=0;
-		List<Instruction> ins= generateBlock(decl.body, context);
-		LocLiteral loc= new LocLiteral(context.localvarSize);
-		Instruction ii;
+		
+		//generateBlock accumulates static local stack size required. 
+		List<Instruction> blockIns = generateBlock(decl.body, context);
+
+		//instructions for entering a function.
+		LocLiteral loc= new LocLiteral(context.maxLocalSize);
+		Instruction tmpIns;
 		context.addIns(new Instruction(".global", new LocJump(name)));
-		ii = Instruction.labelInstruction(name);
-		context.addIns(ii);
-		ii = new Instruction("enter", loc, new LocLiteral(0));
-		context.addIns(ii);
-		context.addIns(ins);
+		tmpIns = Instruction.labelInstruction(name);
+		context.addIns(tmpIns);
+		tmpIns = new Instruction("enter", loc, new LocLiteral(0));
+		context.addIns(tmpIns);
+		context.addIns(argIns);
+		
+		//write instructions for function body.
+		context.addIns(blockIns);
 		context.addIns(new Instruction("leave"));
 		context.addIns(new Instruction("ret"));
 		context.decScope();
@@ -156,6 +177,8 @@ public class Codegen {
 		}
 		IR_MethodDecl decl = call.getDecl();
 		if(decl.getType() == Type.CALLOUT){
+			//# of floating point registers is stored in rax
+			//need to zero it for callouts.
 			ins.add(new Instruction("mov ", new LocLiteral(0),  new LocReg(Regs.RAX)));			
 		}
 		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
