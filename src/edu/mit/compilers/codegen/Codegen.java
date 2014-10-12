@@ -106,6 +106,7 @@ public class Codegen {
 		
 		else if (expr instanceof IR_CondOp){
 			IR_CondOp conditional = (IR_CondOp)expr;
+			return generateCondOp(conditional, context);
 		}
 		
 		else if (expr instanceof IR_EqOp){
@@ -142,6 +143,7 @@ public class Codegen {
 		
 	}
 
+
 	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context){
 		List<Instruction> ins=null;
 		switch(var.getType()){
@@ -166,7 +168,7 @@ public class Codegen {
 		
 		if (operation != "idiv"){
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
 		}
 		
 		else{
@@ -192,7 +194,7 @@ public class Codegen {
 		ins.add(new Instruction("pop", r10)); //pop lhs value into r10
 		if (operation != "idiv"){
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
 		}
 		
 		else{
@@ -217,7 +219,7 @@ public class Codegen {
 		ins.add(new Instruction("mov", new LocLiteral(rhs.getValue()), r11)); //Put literal in r11
 		if (operation != "idiv"){
 			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
-			ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			if (operation != "cmp") ins.add(new Instruction("push", r10)); //put r10 contents on stack
 		}
 		
 		else{
@@ -263,8 +265,6 @@ public class Codegen {
 		List<Instruction> ins = new ArrayList<Instruction>();
 		
 		Ops op = arith.getOp();
-		LocReg r10 = new LocReg(Regs.R10);
-		LocReg r11 = new LocReg(Regs.R11);
 		if (arith.getLeft().getType() != Type.INT || arith.getRight().getType() != Type.INT){
 			System.err.println("Non integer arguments detected in generateArithExpr. Returning null list.");
 			ins = null;
@@ -599,8 +599,75 @@ public class Codegen {
 	}
 		
 	private static List<Instruction> generateCompareOp(IR_CompareOp compare, CodegenContext context) {
-			// TODO Auto-generated method stub
-			return null;
+			List<Instruction> ins = new ArrayList<Instruction>();
+			IR_Node left = compare.getLeft();
+			IR_Node right = compare.getRight();
+			if (left.getType() != Type.INT || right.getType() != Type.INT){
+				System.err.println("Non integer arguments passed into generateCompareOp.");
+				return null;
+			}
+
+			if (left instanceof IR_Var)
+			{
+				List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+				ins.addAll(lhs);
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, "cmp");
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+				}
+
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, "cmp");
+				}
+			}
+
+			if (left instanceof IR_ArithOp) 
+			{
+				List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+				ins.addAll(lhs);
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, "cmp");
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, "cmp");
+				}
+			}
+
+
+			if (left instanceof IR_Literal)
+			{
+				IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+				ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, "cmp");
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, "cmp");
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, "cmp");
+				}
+			}
+			return ins;
+	}
+			
+	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
