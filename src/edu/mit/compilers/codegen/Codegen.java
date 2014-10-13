@@ -3,7 +3,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.mit.compilers.ir.*;
-import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
+import edu.mit.compilers.ir.IR_Literal.*;
+import edu.mit.compilers.codegen.LocationMem;
+
 public class Codegen {
 	/**@brief generate code for root node of IR.
 	 * 
@@ -128,20 +130,82 @@ public class Codegen {
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = null;
 		
-		if(expr instanceof IR_Var){
-			IR_Var var = (IR_Var)expr;
-			ins=generateVarExpr(var, context);
-		}
+		if (expr instanceof IR_Var) {
+			IR_Var var = (IR_Var) expr;
+			ins = generateVarExpr(var, context);
+		} 
 		
+		else if (expr instanceof IR_Literal) {
+			IR_Literal literal = (IR_Literal) expr;
+			ins = generateLiteral(literal, context);
+		}
+	
+		return ins;
+	}
+	
+	public static List<Instruction> generateLiteral(IR_Literal literal, CodegenContext context) {
+		List<Instruction> ins = null;
+		
+		if (literal instanceof IR_IntLiteral) {
+			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
+			ins = context.push(new LocLiteral(int_literal.getValue()));
+		} 
+		else if (literal instanceof IR_BoolLiteral) {
+			IR_BoolLiteral bool_literal = (IR_BoolLiteral) literal;
+			if (bool_literal.getValue()) {
+				ins = context.push(new LocLiteral(CodegenConst.BOOL_TRUE));
+			} else {
+				ins = context.push(new LocLiteral(CodegenConst.BOOL_FALSE));
+			}
+		}
 		return ins;
 	}
 
-	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context){
-		List<Instruction> ins=null;
-		switch(var.getType()){
+	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
+		List<Instruction> ins = null;
+		Descriptor d = context.findSymbol(var.getName());
+		switch (var.getType()) {
 		case INT:
-			Descriptor d = context.findSymbol(var.getName());
 			ins = context.push(d.getLocation());
+			break;
+		case BOOL:
+			ins = context.push(d.getLocation());
+			break;
+		case INTARR:
+			IR_Node index_int = var.getIndex();
+			if (index_int instanceof IR_IntLiteral) {
+				LocArray loc_array = new LocArray(d.getLocation(), 
+						new LocLiteral(((IR_IntLiteral) index_int).getValue()), Type.INTARR);
+				ins = context.push(loc_array);
+			} else {
+				// evaluate index and push index location to stack
+				ins = generateExpr(index_int, context);
+				LocReg r11 = new LocReg(Regs.R11);
+				// convert index to offset (in bytes)
+				ins.add(new Instruction("imul", new LocLiteral(CodegenConst.INT_SIZE), r11));
+				// saves offset at R11
+				ins.add(new Instruction("pop", r11));
+				LocArray loc_array = new LocArray(d.getLocation(), r11, Type.INTARR);
+				ins.addAll(context.push(loc_array));
+			}	
+			break;
+		case BOOLARR:
+			IR_Node index_bool = var.getIndex();
+			if (index_bool instanceof IR_IntLiteral) {
+				LocArray loc_array = new LocArray(d.getLocation(), 
+						new LocLiteral(((IR_IntLiteral) index_bool).getValue()), Type.BOOLARR);
+				ins = context.push(loc_array);
+			} else {
+				// evaluate index and push index location to stack
+				ins = generateExpr(index_bool, context);
+				LocReg r11 = new LocReg(Regs.R11);
+				// convert index to offset (in bytes)
+				ins.add(new Instruction("imul", new LocLiteral(CodegenConst.INT_SIZE), r11));
+				// saves offset at R11
+				ins.add(new Instruction("pop", r11));
+				LocArray loc_array = new LocArray(d.getLocation(), r11, Type.BOOLARR);
+				ins.addAll(context.push(loc_array));
+			}	
 			break;
 		default:
 			break;
