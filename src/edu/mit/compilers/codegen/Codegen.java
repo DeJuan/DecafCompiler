@@ -918,6 +918,7 @@ public class Codegen {
 		IR_Node right = conditional.getRight();
 		LocReg r10 = new LocReg(Regs.R10);
 		LocReg r11 = new LocReg(Regs.R11);
+		LocReg rax = new LocReg(Regs.RAX);
 		Ops op = conditional.getOp();
 		
 		if( left instanceof IR_CompareOp)
@@ -925,6 +926,16 @@ public class Codegen {
 			List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
 			ins.addAll(lhs);
 			ins.add(new Instruction("pop", r10)); //Get value of comparison from stack. 1 = true, 0 = false.
+			switch(op){
+			
+			case AND: //Try to short-circuit on left.
+				ins.add(new Instruction("mov", new LocLiteral(0), r11));
+				ins.add(new Instruction("cmp", r10, r11));
+				ins.add(new Instruction("move", r11, rax)); //WRong, this gets executed regardless, I need labels to jump with. 
+				ins.add(new Instruction("push", rax));
+				return ins;
+			}
+			
 			if (right instanceof IR_Literal.IR_BoolLiteral){
 				IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
 				//TODO rhs.getValue() is a Boolean...how to use it? 1 for true 0 for false? And do cmp on the 0 and 1?
