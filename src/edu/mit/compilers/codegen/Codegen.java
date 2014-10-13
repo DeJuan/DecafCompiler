@@ -150,12 +150,19 @@ public class Codegen {
 		}
 		
 		else if (expr instanceof IR_EqOp){
-			IR_EqOp equivalence = (IR_EqOp)expr;
+			IR_CompareOp equivalence = (IR_CompareOp)expr; //There's no real difference between CondOp and EqOp except operators
+			ins = generateCompareOp(equivalence, context); //I've combined all the comparison operations in my one method; it can take and resolve EqOp operators.
+			return ins;
 		}
 		
 		else if (expr instanceof IR_Negate){
 			IR_Negate negation = (IR_Negate)expr;
-			//%TODO Ask group - Want to do new Instruction("neg", ????) where ???? needs to be resolved.
+			LocReg r10 = new LocReg(Regs.R10);
+			ins = generateExpr(negation.getExpr(), context);
+			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
+			ins.add(new Instruction("not", r10)); //negate it
+			ins.add(new Instruction("push", r10)); //push it back to stack
+			return ins;
 		}
 		
 		else if (expr instanceof IR_Ternary){
@@ -207,9 +214,26 @@ public class Codegen {
 	}
 
 
-	private static List<Instruction> generateTernaryOp(IR_Ternary ternary,CodegenContext context) {
-		// TODO Auto-generated method stub
-		return null;
+	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		String labelForFalse = context.genLabel();
+		Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+		String labelForDone = context.genLabel();
+		Instruction doneHere = Instruction.labelInstruction(labelForDone);
+		
+		List<Instruction> ins = new ArrayList<Instruction>();
+		ins.addAll(generateExpr(ternary.getCondition(), context)); //Get result of conditional onto the stack by resolving it. 
+		ins.add(new Instruction("pop", r10)); //pop result into r10.
+		ins.add(new Instruction("mov", new LocLiteral(1), r11)); // put 1, or true, into r11
+		ins.add(new Instruction("cmp", r10, r11)); //Compare r10 against truth
+		ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //If result isn't equal, r10 is 0, meaning we take the false branch.
+		ins.addAll(generateExpr(ternary.getTrueExpr(), context)); //If we don't jump, resolve the true branch 
+		ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //jump to being done
+		ins.add(wasFalse); //If we jump, we jump here.
+		ins.addAll(generateExpr(ternary.getFalseExpr(), context)); //Resolve the false branch. 
+		ins.add(doneHere); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
+		return ins; //We're done, return the list.
 	}
 
 	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
