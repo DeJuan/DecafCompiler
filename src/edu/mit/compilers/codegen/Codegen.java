@@ -75,7 +75,7 @@ public class Codegen {
 		//instructions for entering a function.
 		LocLiteral loc= new LocLiteral(context.maxLocalSize);
 		Instruction tmpIns;
-		context.addIns(new Instruction(".global", new LocJump(name)));
+		context.addIns(new Instruction(".global", new LocLabel(name)));
 		tmpIns = Instruction.labelInstruction(name);
 		context.addIns(tmpIns);
 		tmpIns = new Instruction("enter", loc, new LocLiteral(0));
@@ -234,7 +234,7 @@ public class Codegen {
 	public static List<Instruction>  generateCall(IR_Call call, CodegenContext context ){
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> args = call.getArgs();
-		for(int ii = 0;ii<args.size();ii++){
+		for(int ii = args.size()-1; ii>=0; ii--){
 			IR_Node arg = args.get(ii);
 			//source location of argument
 			LocationMem argSrc=null;
@@ -246,7 +246,7 @@ public class Codegen {
 					idx = (long) context.stringLiterals.size();
 					context.stringLiterals.put(ss, idx);
 				}
-				argSrc = new LocJump("$"+CodegenContext.StringLiteralLoc(idx));
+				argSrc = new LocLabel("$"+CodegenContext.StringLiteralLoc(idx));
 			}else{
 				List<Instruction> exprIns = generateExpr(arg, context);
 				ins.addAll(exprIns);
@@ -263,7 +263,7 @@ public class Codegen {
 			//need to zero it for callouts.
 			ins.add(new Instruction("mov ", new LocLiteral(0),  new LocReg(Regs.RAX)));			
 		}
-		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
+		ins.add(new Instruction("call ", new LocLabel(call.getName()) ));
 		
 		//pop all arguments on the stack
 		if(args.size()>CodegenConst.N_REG_ARG){

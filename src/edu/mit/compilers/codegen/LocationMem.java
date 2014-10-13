@@ -8,7 +8,7 @@ abstract public class LocationMem {
 	
 	public enum LocType{
 		STACK_LOC, LABEL_LOC, LITERAL_LOC, ARRAY_LOC,
-		REG_LOC, JUMP_LOC
+		REG_LOC
 	};
 	
 	abstract public LocType getType(); 
