@@ -1,7 +1,5 @@
 package edu.mit.compilers.codegen;
 
-import edu.mit.compilers.ir.Type;
-
 public class LocArray extends LocationMem{
 	/**@brief there are 4 combinations of acceptable 
 	 * array addressing:
@@ -11,16 +9,15 @@ public class LocArray extends LocationMem{
 	 * stack + register
 	 */
 	public LocationMem array;
-	/**@brief if offset is a literal
-	 * its units is bytes.
+	/**@brief Unit is number of items.
 	 */
 	public LocationMem offset;
-	public Type type;
+	public int itemSize;
 	
-	public LocArray(LocationMem array, LocationMem offset, Type type) {
+	public LocArray(LocationMem array, LocationMem offset, int s) {
 		this.array = array;
 		this.offset = offset;
-		this.type = type;
+		itemSize = s;
 	}
 	
 	public String toString(){
@@ -29,9 +26,9 @@ public class LocArray extends LocationMem{
 		case LABEL_LOC:
 			sb.append(array.toString());
 			if (offset.getType() == LocType.REG_LOC) {
-				sb.append("(," + offset.toString() + ", " + CodegenConst.INT_SIZE +")");
+				sb.append("(," + offset.toString() + ", " + itemSize +")");
 			} else if (offset.getType() == LocType.LITERAL_LOC) {
-				long len = offset.getValue();
+				long len = itemSize * offset.getValue();
 				sb.append("+" + len + "(" + Regs.RIP + ")");
 			}
 			break;
@@ -39,9 +36,9 @@ public class LocArray extends LocationMem{
 			long len = array.getValue();
 			if(offset.getType() == LocType.REG_LOC){
 				sb.append(len + "(" + Regs.RBP + ", " + offset.toString() + ", " +
-						CodegenConst.INT_SIZE + ")");
+						itemSize + ")");
 			} else if (offset.getType() == LocType.LITERAL_LOC) {
-				len += offset.getValue();
+				len += itemSize * offset.getValue();
 				sb.append(len + "(" + Regs.RBP + ")");
 			}
 			break;

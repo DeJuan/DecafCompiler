@@ -164,7 +164,7 @@ public class Codegen {
 	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
 		List<Instruction> ins = null;
 		Descriptor d = context.findSymbol(var.getName());
-		switch (var.getType()) {
+		switch (d.getIR().getType()) {
 		case INT:
 			ins = context.push(d.getLocation());
 			break;
@@ -172,40 +172,38 @@ public class Codegen {
 			ins = context.push(d.getLocation());
 			break;
 		case INTARR:
-			IR_Node index_int = var.getIndex();
-			if (index_int instanceof IR_IntLiteral) {
+			IR_Node index = var.getIndex();
+			if (index instanceof IR_IntLiteral) {
+				IR_IntLiteral index_int = (IR_IntLiteral)var.getIndex();
 				LocArray loc_array = new LocArray(d.getLocation(), 
-						new LocLiteral(((IR_IntLiteral) index_int).getValue()), Type.INTARR);
+						new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
 				ins = context.push(loc_array);
 			} else {
 				// evaluate index and push index location to stack
-				ins = generateExpr(index_int, context);
+				ins = generateExpr(index, context);
 				LocReg r11 = new LocReg(Regs.R11);
-				// convert index to offset (in bytes)
-				ins.add(new Instruction("imul", new LocLiteral(CodegenConst.INT_SIZE), r11));
 				// saves offset at R11
 				ins.add(new Instruction("pop", r11));
-				LocArray loc_array = new LocArray(d.getLocation(), r11, Type.INTARR);
+				LocArray loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
 				ins.addAll(context.push(loc_array));
-			}	
+			}
 			break;
 		case BOOLARR:
-			IR_Node index_bool = var.getIndex();
-			if (index_bool instanceof IR_IntLiteral) {
+			index = var.getIndex();
+			if (index instanceof IR_IntLiteral) {
+				IR_IntLiteral index_int = (IR_IntLiteral)var.getIndex();
 				LocArray loc_array = new LocArray(d.getLocation(), 
-						new LocLiteral(((IR_IntLiteral) index_bool).getValue()), Type.BOOLARR);
+						new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
 				ins = context.push(loc_array);
 			} else {
 				// evaluate index and push index location to stack
-				ins = generateExpr(index_bool, context);
+				ins = generateExpr(index, context);
 				LocReg r11 = new LocReg(Regs.R11);
-				// convert index to offset (in bytes)
-				ins.add(new Instruction("imul", new LocLiteral(CodegenConst.INT_SIZE), r11));
 				// saves offset at R11
 				ins.add(new Instruction("pop", r11));
-				LocArray loc_array = new LocArray(d.getLocation(), r11, Type.BOOLARR);
+				LocArray loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
 				ins.addAll(context.push(loc_array));
-			}	
+			}
 			break;
 		default:
 			break;
