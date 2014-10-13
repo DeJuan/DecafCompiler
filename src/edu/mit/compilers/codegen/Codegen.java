@@ -15,7 +15,6 @@ public class Codegen {
 	public static void generateProgram(IR_Node root, CodegenContext context){
 		IR_Seq seq = (IR_Seq)root;
 		List<IR_Node> stmt = seq.getStatements();
-		context.incScope();
 		for (int ii =0 ;ii<stmt.size(); ii++){
 			IR_Node n = stmt.get(ii);
 			if(n.getType()==Type.METHOD){
@@ -47,23 +46,44 @@ public class Codegen {
 		String name = decl.name;
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(name, d);
+		context.enterFun();
 		context.incScope();
+		
+		//instructions for potentially saving arguments.
+		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
+				
+		//save register parameters to stack
 		for(int ii = 0; ii<decl.args.size(); ii++){
 			IR_FieldDecl a = decl.args.get(ii);
 			Descriptor argd = new Descriptor(a);
 			context.putSymbol(a.getName(), argd);
-			argd.setLocation(argLoc(ii));
+			
+			LocationMem argSrc = argLoc(ii);
+			LocationMem argDst = argSrc;
+			if(ii<CodegenConst.N_REG_ARG){
+				//save register arguments on the stack
+				List<Instruction> pushIns = context.push(argSrc);
+				argIns.addAll(pushIns);
+				argDst = context.getRsp();
+			}
+			argd.setLocation(argDst);
 		}
-		context.localvarSize=0;
-		List<Instruction> ins= generateBlock(decl.body, context);
-		LocLiteral loc= new LocLiteral(context.localvarSize);
-		Instruction ii;
+		
+		//generateBlock accumulates static local stack size required. 
+		List<Instruction> blockIns = generateBlock(decl.body, context);
+
+		//instructions for entering a function.
+		LocLiteral loc= new LocLiteral(context.maxLocalSize);
+		Instruction tmpIns;
 		context.addIns(new Instruction(".global", new LocJump(name)));
-		ii = Instruction.labelInstruction(name);
-		context.addIns(ii);
-		ii = new Instruction("enter", loc, new LocLiteral(0));
-		context.addIns(ii);
-		context.addIns(ins);
+		tmpIns = Instruction.labelInstruction(name);
+		context.addIns(tmpIns);
+		tmpIns = new Instruction("enter", loc, new LocLiteral(0));
+		context.addIns(tmpIns);
+		context.addIns(argIns);
+		
+		//write instructions for function body.
+		context.addIns(blockIns);
 		context.addIns(new Instruction("leave"));
 		context.addIns(new Instruction("ret"));
 		context.decScope();
@@ -82,8 +102,23 @@ public class Codegen {
 		context.putSymbol(decl.getName(), d);
 	}
 	
-	public static void generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
-		
+	public static List<Instruction> generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
+		String name = decl.getName();
+		Descriptor d = new Descriptor(decl);
+		Type type = decl.getType();
+		long size = CodegenConst.INT_SIZE;
+		switch(type){
+		case INTARR:
+		case BOOLARR:
+			size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
+			break;
+		default:
+			break;
+		}
+		LocStack loc = context.allocLocal(size);
+		d.setLocation(loc);
+		context.putSymbol(name, d);
+		return new ArrayList<Instruction>();
 	}
 		
 	/**@brief expression nodes should return location of the result
@@ -181,14 +216,20 @@ public class Codegen {
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> stmt = block.getStatements();
+		context.incScope();
 		for(int ii = 0;ii<stmt.size(); ii++){
 			IR_Node st = stmt.get(ii);
+			List<Instruction> stIns =null;
 			if (st instanceof IR_Call){
 				IR_Call call = (IR_Call)st;
-				List<Instruction> stIns = generateCall(call,context);
-				ins.addAll(stIns);
+				stIns = generateCall(call,context);
+			}else if(st instanceof IR_FieldDecl){
+				IR_FieldDecl decl =(IR_FieldDecl) st;
+				stIns = generateFieldDecl(decl,context);
 			}
+			ins.addAll(stIns);
 		}
+		context.decScope();
 		return ins;
 	}
 	
@@ -220,6 +261,8 @@ public class Codegen {
 		}
 		IR_MethodDecl decl = call.getDecl();
 		if(decl.getType() == Type.CALLOUT){
+			//# of floating point registers is stored in rax
+			//need to zero it for callouts.
 			ins.add(new Instruction("mov ", new LocLiteral(0),  new LocReg(Regs.RAX)));			
 		}
 		ins.add(new Instruction("call ", new LocJump(call.getName()) ));
