@@ -1024,34 +1024,285 @@ public class Codegen {
 			List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
 			ins.addAll(lhs);
 			ins.add(new Instruction("pop", r10)); //Get value of comparison from stack. 1 = true, 0 = false.
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
 			switch(op){
 			
 			case AND: //Try to short-circuit on left.
-				ins.add(new Instruction("mov", new LocLiteral(0), r11));
-				ins.add(new Instruction("cmp", r10, r11));
-				ins.add(new Instruction("move", r11, rax)); //WRong, this gets executed regardless, I need labels to jump with. 
-				ins.add(new Instruction("push", rax));
-				return ins;
-			}
-			
-			if (right instanceof IR_Literal.IR_BoolLiteral){
-				IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
-				//TODO rhs.getValue() is a Boolean...how to use it? 1 for true 0 for false? And do cmp on the 0 and 1?
+				String labelForTrue = context.genLabel(); //Label for if left is true
+				Instruction wasTrue = Instruction.labelInstruction(labelForTrue); //turn label for true into an instruction
+				ins.add(new Instruction("mov", new LocLiteral(0), r11)); 
+				ins.add(new Instruction("cmp", r10, r11)); //Compare result of lhs and 0
+				ins.add(new Instruction("jne", new LocLabel(labelForTrue))); //If it's not 0, it was true, so jump to label for eval rhs
+				ins.add(new Instruction("push", new LocLiteral(0))); //If we didn't jump past this, it was false, so push 0 on the stack.
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Jump to done, no need to even try looking at the right. 
+				ins.add(wasTrue); //We need to evaluate the right, so worry about what it could be. 
 				
-			}
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have True && False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+				
+				
+				ins.add(doneHere);
+				return ins;
 			
-			//TODO What other cases are there? What do we need to worry about comparing?
 			
-			if (right instanceof IR_CompareOp){
-				List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-				ins.addAll(rhs);
+			
+			//TODO? What other cases are there? What do we need to worry about comparing?
+			
+			case OR:
+				String labelForFalse = context.genLabel();
+				Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+				ins.add(new Instruction("mov", new LocLiteral(1), r11));
+				ins.add(new Instruction("cmp", r10, r11));
+				ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //IF it was false, we need to check the right hand side.
+				ins.add(new Instruction("push", new LocLiteral(1))); //If we didn't jump, it was true, so don't even bother with the rhs
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Push one to stack and be done. 
+				ins.add(wasFalse);
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have False || False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+			
+				ins.add(doneHere);
+				return ins;
+				
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
 			}
 		}
 		
 		
+		else if (left instanceof IR_Literal.IR_BoolLiteral){
+			IR_Literal.IR_BoolLiteral lhs = (IR_Literal.IR_BoolLiteral) left;
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
+			boolean valCheckLeft = lhs.getValue();
+			switch(op)
+			{
+			case AND:
+				
+				if (!valCheckLeft){//If false, we have False && stuff. Ignore rhs. Push 0 and be done. 
+					ins.add(new Instruction("push", new LocLiteral(0)));
+					return ins;
+				}
+				
+				else{ //valCheck was True, so answer depends on rhs alone.
+					if (right instanceof IR_Literal.IR_BoolLiteral){
+						IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+						boolean valCheck = rhs.getValue(); //handle it here in the Java code
+						if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+							ins.add(new Instruction("push", new LocLiteral(1)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						else{ //Else we have True && False, push a 0 and be done
+							ins.add(new Instruction("push", new LocLiteral(0)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						
+					}
+					
+					else if (right instanceof IR_CompareOp){
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						
+					}
+					
+					else if (right instanceof IR_CondOp){
+						List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+						ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
+				}
+
+				ins.add(doneHere);
+				return ins;
+				
+			
+			case OR:
+				if (valCheckLeft){ //We have True || stuff. Ignore rhs and return True.
+					ins.add(new Instruction("push", new LocLiteral(1)));
+					return ins;
+				}
+				
+				else{//We have False || stuff. Answer is only dependent on stuff.
+					if (right instanceof IR_Literal.IR_BoolLiteral){
+						IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+						boolean valCheck = rhs.getValue(); //handle it here in the Java code
+						if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+							ins.add(new Instruction("push", new LocLiteral(1)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						else{ //Else we have False || False, push a 0 and be done
+							ins.add(new Instruction("push", new LocLiteral(0)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						
+					}
+					
+					else if (right instanceof IR_CompareOp){
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						
+					}
+					
+					else if (right instanceof IR_CondOp){
+						List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+						ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
+				}
+			ins.add(doneHere);
+			return ins;
+			
+			
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
+			}
+		}
 		
+		else if (left instanceof IR_CondOp){
+			List<Instruction> lhs = generateCondOp((IR_CondOp) left, context);
+			ins.add(new Instruction("pop", r10)); //Result of lhs was on stack, get it off and into r10. From here on, it's a copy of what I did before for comp op.
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
+			switch(op){
+			
+			case AND: //Try to short-circuit on left.
+				String labelForTrue = context.genLabel(); //Label for if left is true
+				Instruction wasTrue = Instruction.labelInstruction(labelForTrue); //turn label for true into an instruction
+				ins.add(new Instruction("mov", new LocLiteral(0), r11)); 
+				ins.add(new Instruction("cmp", r10, r11)); //Compare result of lhs and 0
+				ins.add(new Instruction("jne", new LocLabel(labelForTrue))); //If it's not 0, it was true, so jump to label for eval rhs
+				ins.add(new Instruction("push", new LocLiteral(0))); //If we didn't jump past this, it was false, so push 0 on the stack.
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Jump to done, no need to even try looking at the right. 
+				ins.add(wasTrue); //We need to evaluate the right, so worry about what it could be. 
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have True && False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+				
+				
+				ins.add(doneHere);
+				return ins;
+			
+			
+			//TODO? What other cases are there? What do we need to worry about comparing? Did we miss something?!?! Still an issue! 
+			
+			case OR:
+				String labelForFalse = context.genLabel();
+				Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+				ins.add(new Instruction("mov", new LocLiteral(1), r11));
+				ins.add(new Instruction("cmp", r10, r11));
+				ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //IF it was false, we need to check the right hand side.
+				ins.add(new Instruction("push", new LocLiteral(1))); //If we didn't jump, it was true, so don't even bother with the rhs
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Push one to stack and be done. 
+				ins.add(wasFalse);
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have False || False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+			
+				ins.add(doneHere);
+				return ins;
+
+				
+			
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
+			}
+		}
 		
-		
+		return ins;
 	}
 	
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
