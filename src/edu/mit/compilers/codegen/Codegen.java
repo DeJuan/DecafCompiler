@@ -13,7 +13,6 @@ public class Codegen {
 	public static void generateProgram(IR_Node root, CodegenContext context){
 		IR_Seq seq = (IR_Seq)root;
 		List<IR_Node> stmt = seq.getStatements();
-		context.incScope();
 		for (int ii =0 ;ii<stmt.size(); ii++){
 			IR_Node n = stmt.get(ii);
 			if(n.getType()==Type.METHOD){
@@ -45,8 +44,8 @@ public class Codegen {
 		String name = decl.name;
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(name, d);
-		context.incScope();
 		context.enterFun();
+		context.incScope();
 		
 		//instructions for potentially saving arguments.
 		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
@@ -63,7 +62,7 @@ public class Codegen {
 				//save register arguments on the stack
 				List<Instruction> pushIns = context.push(argSrc);
 				argIns.addAll(pushIns);
-				argDst = context.rsp.clone();
+				argDst = context.getRsp();
 			}
 			argd.setLocation(argDst);
 		}
@@ -102,7 +101,21 @@ public class Codegen {
 	}
 	
 	public static List<Instruction> generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
-		
+		String name = decl.getName();
+		Descriptor d = new Descriptor(decl);
+		Type type = decl.getType();
+		long size = CodegenConst.INT_SIZE;
+		switch(type){
+		case INTARR:
+		case BOOLARR:
+			size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
+			break;
+		default:
+			break;
+		}
+		LocStack loc = context.allocLocal(size);
+		d.setLocation(loc);
+		context.putSymbol(name, d);
 		return new ArrayList<Instruction>();
 	}
 		
@@ -139,6 +152,7 @@ public class Codegen {
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> stmt = block.getStatements();
+		context.incScope();
 		for(int ii = 0;ii<stmt.size(); ii++){
 			IR_Node st = stmt.get(ii);
 			List<Instruction> stIns =null;
@@ -151,6 +165,7 @@ public class Codegen {
 			}
 			ins.addAll(stIns);
 		}
+		context.decScope();
 		return ins;
 	}
 	

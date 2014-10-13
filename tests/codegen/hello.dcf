@@ -6,6 +6,8 @@ void foo(int a1, int a2, int a3, int a4, int a5, int a6, int a7){
   printf("%d",a1);
 }
 void main(){
+  int dd;
+  int ee[5];
   foo(aa,bb,aa,bb,aa,bb,aa);
   printf("hello%d, %d, %d %d %d %d %d\n",aa,aa,aa, aa,aa,aa);
   printf("12345\n");

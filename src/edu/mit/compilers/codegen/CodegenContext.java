@@ -28,11 +28,12 @@ public class CodegenContext {
 	
 	/**@brief maximum stack size required by local variables in a function.
 	 */
-	long maxLocalSize;
+	long totalLocalSize, maxLocalSize;
 	
 	/**@brief location of rsp with respect to rbp
+	 * used to compute statically local variable location on stack.
 	 */
-	public LocStack rsp;
+	private LocStack rsp;
 	
 	private int numLabels;
 	
@@ -41,6 +42,7 @@ public class CodegenContext {
 		symbol = new SymbolTable<Descriptor>();
 		ins = new ArrayList<Instruction>();
 		rsp = new LocStack();
+		symbol.incScope();
 		numLabels=0;
 	}
 	
@@ -54,17 +56,6 @@ public class CodegenContext {
 		return label;
 	}
 	
-	/**@brief convenience functions for symbol table.
-	 * Push a new symbol table when entering a block.
-	 */
-	public void incScope(){
-		symbol.incScope();
-	}
-	
-	public void decScope(){
-		symbol.decScope();
-	}
-
 	/**
 	 * @param name
 	 * @param d
@@ -130,7 +121,58 @@ public class CodegenContext {
 		//rsp at the same place as rbp
 		rsp.setValue(0);
 		maxLocalSize=0;
+		totalLocalSize=0;
 		localVarSize = new ArrayList<Long>();
+		localVarSize.add(0L);
+	}
+	
+	public LocStack getRsp(){
+		return rsp.clone();
+	}
+	
+	public void setRsp(long offset){
+		rsp.setValue(offset);
+	}
+	
+	/**@brief Called when entering a block.
+	 * Field declaration always appears before other statements.
+	 * @param size byte size
+	 * @return
+	 */
+	public LocStack allocLocal(long size){
+		long offset = rsp.getValue();
+		offset-=size;
+		rsp.setValue(offset);
+		
+		int idx = localVarSize.size()-1;
+		long blockSize = localVarSize.get(idx);
+		blockSize+= size;
+		localVarSize.set(idx, blockSize);
+		totalLocalSize += size;
+		return rsp.clone();
+	}
+	
+	/**@brief convenience functions for symbol table.
+	 * Push a new symbol table when entering a block.
+	 */
+	public void incScope(){
+		symbol.incScope();
+		localVarSize.add(0L);
+	}
+	
+	public void decScope(){
+		symbol.decScope();
+		int idx = localVarSize.size()-1;
+		long locals = localVarSize.get(idx);
+		localVarSize.remove(idx);
+		if(totalLocalSize>maxLocalSize){
+			maxLocalSize = totalLocalSize;
+		}
+		totalLocalSize -= locals;
+
+		long offset = rsp.getValue();
+		offset+=locals;
+		rsp.setValue(offset);		
 	}
 	
 	/**@brief Push value stored in loc to the stack.
