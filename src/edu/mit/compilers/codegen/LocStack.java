@@ -1,7 +1,5 @@
 package edu.mit.compilers.codegen;
 
-import edu.mit.compilers.codegen.LocationMem.LocType;
-
 public class LocStack extends LocationMem{
 	/**@brief with respect to rbp. Measured in bytes.
 	 */
@@ -22,5 +20,13 @@ public class LocStack extends LocationMem{
 	
 	public long getValue(){
 		return offset;
+	}
+	
+	public void setValue(long v){
+		offset = v;
+	}
+	
+	public LocStack clone(){
+		return new LocStack(offset);
 	}
 }

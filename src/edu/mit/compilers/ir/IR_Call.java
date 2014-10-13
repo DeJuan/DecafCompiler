@@ -14,11 +14,20 @@ public class IR_Call extends IR_Node {
     private String name;
     private Type type;
     private List<IR_Node> args;
+    private IR_MethodDecl decl;
  
     public IR_Call(Type type, String name) {
         this.name = name;
         this.type = type;
         args=new ArrayList<IR_Node>();
+    }
+    
+    public IR_MethodDecl getDecl(){
+    	return decl;
+    }
+    
+    public void setDecl(IR_MethodDecl method){
+    	decl = method;
     }
     
     public String getName() {

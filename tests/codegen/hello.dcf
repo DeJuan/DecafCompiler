@@ -1,8 +1,16 @@
 callout printf;
 int aa;
-int bb[10];
+int bb;
+int cc[10];
+void foo(int a1, int a2, int a3, int a4, int a5, int a6, int a7){
+  printf("%d\n",a1);
+}
 void main(){
-  printf("hello%d, %d, %d\n",aa,aa,aa);
+  int dd;
+  int ee[5];
+  printf("%d %d %d %d\n", cc[dd], cc[1], ee[aa], ee[2]);
+  foo(ee[0],ee[1],ee[2],bb,aa,bb,aa);
+  printf("hello%d, %d, %d %d %d %d %d\n",dd,ee[5],aa, aa,aa,aa);
   printf("12345\n");
   printf("hello");
   printf("hello\n");
