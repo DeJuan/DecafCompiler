@@ -31,7 +31,7 @@ public class CodegenContext {
 	long totalLocalSize, maxLocalSize;
 	
 	/**@brief location of rsp with respect to rbp
-	 * used to compute statically local variable location on stack.
+	 * Only used to compute statically local variable location on stack.
 	 */
 	private LocStack rsp;
 	

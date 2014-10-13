@@ -9,7 +9,7 @@ void main(){
   int dd;
   int ee[5];
   foo(aa,bb,aa,bb,aa,bb,aa);
-  printf("hello%d, %d, %d %d %d %d %d\n",aa,aa,aa, aa,aa,aa);
+  printf("hello%d, %d, %d %d %d %d %d\n",dd,aa,aa, aa,aa,aa);
   printf("12345\n");
   printf("hello");
   printf("hello\n");

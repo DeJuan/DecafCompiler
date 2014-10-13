@@ -206,7 +206,7 @@ public class Codegen {
 		//pop all arguments on the stack
 		if(args.size()>CodegenConst.N_REG_ARG){
 			long stackArgSize = CodegenConst.INT_SIZE * (args.size()-CodegenConst.N_REG_ARG);
-			ins.add(new Instruction("sub", new LocLiteral(stackArgSize), new LocReg(Regs.RSP)));
+			ins.add(new Instruction("addq", new LocLiteral(stackArgSize), new LocReg(Regs.RSP)));
 		}
 		return ins;
 	}
