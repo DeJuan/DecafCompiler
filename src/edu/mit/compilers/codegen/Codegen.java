@@ -91,13 +91,6 @@ public class Codegen {
 	}
 	
 	public static void generateFieldDeclGlobal(IR_FieldDecl decl, CodegenContext context){
-		IR_IntLiteral len = decl.getLength();
-		long size = CodegenConst.INT_SIZE;
-		if(len != null){
-			//array
-			size = CodegenConst.INT_SIZE * len.getValue();
-		}
-		context.addIns(new Instruction(".comm "+decl.getName() + ","+size+","+CodegenConst.ALIGN_SIZE));
 		Descriptor d = new Descriptor(decl);
 		d.setLocation(new LocLabel(decl.getName()));
 		context.putSymbol(decl.getName(), d);
