@@ -2,20 +2,20 @@ callout printf;
 int aa;
 int bb;
 int cc[10];
-void foo(int a1, int a2, int a3, int a4, int a5, int a6, int a7){
-  printf("%d %d %d %d %d %d %d\n",a1,a2,a3,a4,a5,a6,a7);
+void foo(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8){
+  printf("%d %d %d %d %d %d %d %d\n",a1,a2,a3,a4,a5,a6,a7,a8);
 }
 void main(){
   int dd;
   int ee[5];
   dd = 1;
   aa = 2;
-  cc[0] = 0; cc[1] = 1; cc[2] = 2; cc[3] = 3;
+  cc[0] = 0; cc[1] = 1; cc[2] = 2; cc[3] = 3; cc[4] = 4;
   ee[0] = 0; ee[1] = 1; ee[2] = 2; ee[3] = 3;
   cc[0] -=5+6;
   ee[0] +=10;
   printf("%d %d %d %d\n", cc[dd], cc[1], ee[aa], ee[2]);
-  foo(ee[0],ee[1],ee[2],cc[0],cc[1],cc[2], cc[3]);
+  foo(ee[0],ee[1],ee[2],cc[0],cc[1],cc[2], cc[3], cc[4]);
   printf("hello: %d, %d, %d %d %d %d %d\n",dd,ee[5],aa, aa,aa,aa);
   printf("12345\n");
   printf("hello\t");
