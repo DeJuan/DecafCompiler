@@ -1,0 +1,83 @@
+callout random;
+
+// Finds the longest palindrome in an array of integers.
+
+int Arr[100];
+int max_len;
+int palindrome;
+
+// Because decaf doesn't have exponents
+int power(int base, int exponent) {
+	if (exponent == 0) {
+		return 1;
+	}
+	if (exponent == 1) {
+		return base;
+	}
+	return base * power(base, exponent-1);
+}
+
+// Slice the array at the indices (inclusive) and return as a single integer
+int slice_array(int start_index, int end_index) {
+	int i, power_of_ten, palindrome;
+	palindrome = 0;
+	i = start_index;
+	power_of_ten = end_index - start_index;
+	while (i <= end_index) {
+		palindrome += Arr[i] * power(10, power_of_ten);
+		power_of_ten -= 1;
+		i += 1;
+	}
+	return palindrome;
+}
+
+// Given an index or a pair of neighboring indices, 
+// find the longest palindrome centered there.
+void expand_from_center(int index_l, int index_r, int n) {
+	int len;
+	while ((index_l >= 0) && (index_r < n) && 
+		(Arr[index_l] == Arr[index_r])) {
+		index_l -= 1;
+		index_r += 1;
+	}
+	index_l += 1;
+	index_r -= 1;
+	len = index_r - index_l + 1;
+	if (len > 0 && len > max_len) {
+		max_len = len;
+		palindrome = slice_array(index_l, index_r);
+	}
+}
+
+// Expand for each of the 2N-1 centers and finds the longest palindrome
+int find_longest_palindrome(int len) {
+	int i;
+	for (i = 0, len-2) {
+		// expand from center number (odd cases)
+		expand_from_center(i, i, len);
+
+		// expand from middle two numbers (even cases)
+		expand_from_center(i, i+1, len);
+	}
+	// for base case of len=1
+	expand_from_center(len-1, len-1, len);
+}
+
+// Initialize array with random integers
+void initialize_array(int n) {
+	int i, temp;
+	for (i = 0, n) {
+		temp = random();
+		Arr[i] = temp;
+	}
+}
+
+void main() {
+	int n;
+	n = 100;
+	initialize_array(n);
+
+	max_len = 0;
+	find_longest_palindrome(n);
+}
+

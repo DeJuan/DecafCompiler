@@ -1,0 +1,91 @@
+callout random;
+callout printf;
+
+// Finds the min and max of an array in the least # of comparisons.
+
+int Arr[100];
+int min;
+int max;
+
+int naive_way(int n) {
+	int i, compares;
+	i = 0;
+	compares = 0;
+	while (i < n) {
+		if (Arr[i] < min) {
+			min = Arr[i];
+		} else {
+			if (Arr[i] > max) {
+				max = Arr[i];
+			}
+			compares += 1;
+		}
+		compares += 1;
+		i += 1;
+	}
+	return compares;
+}
+
+int find_min_max(int n) {
+	int i, end, index, compares;
+	int local_min, local_max;
+	i = 0;
+	compares = 0;
+	end = n / 2;
+	if (n % 2 == 1) {
+		end -= 1;
+	}
+	while (i < end) {
+		index = i*2;
+		if (Arr[index] <= Arr[index+1]) {
+			local_min = Arr[index];
+			local_max = Arr[index+1];
+		} else {
+			local_min = Arr[index+1];
+			local_max = Arr[index];
+		}
+		if (local_min < min) {
+			min = local_min;
+		}
+		if (local_max > max) {
+			max = local_max;
+		}
+		compares += 3;
+		i += 1;
+	}
+	if (n % 2 == 1) {
+		if (Arr[n-1] < min) {
+			min = Arr[n-1];
+		} else {
+			if (Arr[n-1] > max) {
+				max = Arr[n-1];
+			}
+		}
+		compares += 1;
+	}
+	return compares;
+}
+
+// Initialize array with random integers
+void initialize_array(int n) {
+	int i, temp;
+	for (i = 0, n) {
+		temp = random();
+		Arr[i] = temp;
+	}
+}
+
+void main() {
+	int n, compares;
+	initialize_array(n);
+
+	min = Arr[0];
+	max = Arr[0];
+
+	if (n > 1) {
+		compares = naive_way(n);
+		printf("Naive: There are %d integers. We used %d compares.", n, compares);
+		compares = find_min_max(n);
+		printf("Improved: There are %d integers. We used %d compares.", n, compares);
+	}
+}

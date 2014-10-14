@@ -1,0 +1,43 @@
+callout printf;
+callout srandom;
+callout random;
+
+// Check if an array of integers is a palindrome.
+
+int A[100];
+
+int get_random() {
+	return random();
+}
+
+boolean check_if_palindrome(int length) {
+	int index;
+  boolean is_palindrome;
+	index = 0;
+    is_palindrome = true;
+
+    while (is_palindrome && index < length / 2):100 {
+        if (A[index] != A[length-index-1]) {
+        	is_palindrome = false;
+        	break;
+        }
+        index += 1;
+	}
+	return is_palindrome;
+	
+}
+
+void main() {
+	int length, i, temp;
+	boolean is_palindrome;
+
+	length = 50;
+	srandom(17);
+	for (i=0, length) {
+		temp = get_random();
+		A[i] = temp;
+	}
+	is_palindrome = check_if_palindrome(length);
+
+	printf("Is this a palindrome? %d", is_palindrome);
+}
