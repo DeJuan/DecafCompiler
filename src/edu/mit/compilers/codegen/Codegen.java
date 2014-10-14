@@ -159,9 +159,9 @@ public class Codegen {
 			IR_Negate negation = (IR_Negate)expr;
 			LocReg r10 = new LocReg(Regs.R10);
 			ins = generateExpr(negation.getExpr(), context);
-			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
+			ins.addAll(context.pop(r10)); //Get whatever that expr was off stack
 			ins.add(new Instruction("negq", r10)); //negate it
-			ins.add(new Instruction("push", r10)); //push it back to stack
+			ins.addAll(context.push(r10)); //push it back to stack
 			return ins;
 		}
 		

@@ -10,7 +10,9 @@ void testPlus(int a, int b){
 
 void testMinus(int a, int b){
 	gb[1] = a-b;
-	printf("%d - %d = %ld\n", a, b, gb[1]);
+	a = -gb[1];
+	gb[2]=a-b;
+	printf("%d - %d = %ld\n", a, b, gb[2]);
 }
 
 void testMul(int a, int b){
