@@ -1,4 +1,5 @@
 package edu.mit.compilers.codegen;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,17 +129,68 @@ public class Codegen {
 	 * @return
 	 */
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
-		List<Instruction> ins = null;
+		List<Instruction> ins = new ArrayList<Instruction>();
+		List<List<Instruction>> intermediates = new ArrayList<List<Instruction>>();
 		
-		if (expr instanceof IR_Var) {
-			IR_Var var = (IR_Var) expr;
-			ins = generateVarExpr(var, context);
-		} 
+		if (expr instanceof IR_ArithOp){
+			ins = generateArithExpr((IR_ArithOp) expr, context);
+			return ins;
+		}
 		
+		else if(expr instanceof IR_CompareOp){
+			IR_CompareOp compare = (IR_CompareOp) expr;
+			ins = generateCompareOp(compare, context);
+			return ins;
+		}
+		
+		else if (expr instanceof IR_CondOp){
+			IR_CondOp conditional = (IR_CondOp)expr;
+			ins = generateCondOp(conditional, context);
+			return ins;
+		}
+		
+		else if (expr instanceof IR_EqOp){
+			IR_CompareOp equivalence = (IR_CompareOp)expr; //There's no real difference between CondOp and EqOp except operators
+			ins = generateCompareOp(equivalence, context); //I've combined all the comparison operations in my one method; it can take and resolve EqOp operators.
+			return ins;
+		}
+		
+		else if (expr instanceof IR_Negate){
+			IR_Negate negation = (IR_Negate)expr;
+			LocReg r10 = new LocReg(Regs.R10);
+			ins = generateExpr(negation.getExpr(), context);
+			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
+			ins.add(new Instruction("not", r10)); //negate it
+			ins.add(new Instruction("push", r10)); //push it back to stack
+			return ins;
+		}
+		
+		else if (expr instanceof IR_Ternary){
+			IR_Ternary ternary = (IR_Ternary)expr;
+			ins = generateTernaryOp(ternary, context);
+			return ins;
+		}
+		
+		
+		if(expr instanceof IR_Var){
+			IR_Var var = (IR_Var)expr;
+			ins=generateVarExpr(var, context);
+			return ins;
+		}
+
 		else if (expr instanceof IR_Literal) {
 			IR_Literal literal = (IR_Literal) expr;
 			ins = generateLiteral(literal, context);
+			return ins;
 		}
+		
+		else{
+			System.err.println("Unexpected Node type passed to generateExpr.");
+			System.err.println("The node passed in was of type " + expr.getType().toString());
+		}
+		ins = null; 
+		
+		
 	
 		return ins;
 	}
@@ -159,6 +211,28 @@ public class Codegen {
 			}
 		}
 		return ins;
+	}
+
+	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		String labelForFalse = context.genLabel();
+		Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+		String labelForDone = context.genLabel();
+		Instruction doneHere = Instruction.labelInstruction(labelForDone);
+		
+		List<Instruction> ins = new ArrayList<Instruction>();
+		ins.addAll(generateExpr(ternary.getCondition(), context)); //Get result of conditional onto the stack by resolving it. 
+		ins.add(new Instruction("pop", r10)); //pop result into r10.
+		ins.add(new Instruction("mov", new LocLiteral(1), r11)); // put 1, or true, into r11
+		ins.add(new Instruction("cmp", r10, r11)); //Compare r10 against truth
+		ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //If result isn't equal, r10 is 0, meaning we take the false branch.
+		ins.addAll(generateExpr(ternary.getTrueExpr(), context)); //If we don't jump, resolve the true branch 
+		ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //jump to being done
+		ins.add(wasFalse); //If we jump, we jump here.
+		ins.addAll(generateExpr(ternary.getFalseExpr(), context)); //Resolve the false branch. 
+		ins.add(doneHere); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
+		return ins; //We're done, return the list.
 	}
 
 	public static LocationMem generateVarLoc(IR_Var var, CodegenContext context, List<Instruction> ins) {
@@ -197,6 +271,1049 @@ public class Codegen {
 		return ins;
 	}
 
+	public static List<Instruction> handleRHSisIR_Var(List<Instruction> ins, CodegenContext context, IR_Node right, String operation)
+	{
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		List<Instruction> rhs = generateVarExpr((IR_Var)right, context);
+		ins.addAll(rhs);
+		ins.add(new Instruction("pop", r11)); //Pop rhs value into r11
+		ins.add(new Instruction("pop", r10)); //pop lhs value into r10
+		
+		if (operation != "idiv"){
+			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
+			if (!operation.startsWith("cmp")){
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
+		}
+		
+		else{ //Instruction is idiv
+			LocReg rdx = new LocReg(Regs.RDX);
+			LocReg rax = new LocReg(Regs.RAX);
+	
+			ins.add(new Instruction("mov", r10, rax));
+			ins.add(new Instruction("push", rdx));
+			ins.add(new Instruction("cqto"));
+			ins.add(new Instruction("idiv", r11)); //Divide rdx:rax by r11 contents - i.e divide lhs by rhs.
+			//Restoration of rdx and pushing of the proper result is done back in the main method. 
+		}
+		return ins; //Result is in R10 and on the stack.
+	}
+	
+	public static List<Instruction> handleRHSisIR_ArithOp(List<Instruction> ins, CodegenContext context, IR_Node right, String operation)
+	{
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		List<Instruction> rhs = generateArithExpr((IR_ArithOp)right, context);
+		ins.addAll(rhs); //Will be in R10 and on stack
+		ins.add(new Instruction("pop", r11)); //Pop rhs value into r11
+		ins.add(new Instruction("pop", r10)); //pop lhs value into r10
+		if (operation != "idiv")
+		{
+			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
+			if (!operation.startsWith("cmp"))
+			{
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
+		}
+		
+		else{
+			LocReg rdx = new LocReg(Regs.RDX);
+			LocReg rax = new LocReg(Regs.RAX);
+	
+			ins.add(new Instruction("mov", r10, rax));
+			ins.add(new Instruction("push", rdx));
+			ins.add(new Instruction("cqto"));
+			ins.add(new Instruction("idiv", r11)); //Divide rdx:rax by r11 contents - i.e divide lhs by rhs.
+			//Restoration of rdx and pushing of the proper result is done back in the main method. 
+		}
+		return ins; //Result is in R10 and on the stack.
+	}
+	
+	public static List<Instruction> handleRHSisIR_Literal(List<Instruction> ins, CodegenContext context, IR_Node right, String operation)
+	{
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		IR_Literal.IR_IntLiteral rhs = (IR_Literal.IR_IntLiteral)right;
+		ins.add(new Instruction("pop", r10)); //put lhs result in r10
+		ins.add(new Instruction("mov", new LocLiteral(rhs.getValue()), r11)); //Put literal in r11
+		if (operation != "idiv"){
+			ins.add(new Instruction(operation, r11, r10)); // Use the operator on the two and put result in r10
+			if (!operation.startsWith("cmp")){
+				ins.add(new Instruction("push", r10)); //put r10 contents on stack
+			}
+			
+			else
+			{ 	//Instruction is cmpXX
+				LocReg rax = new LocReg(Regs.RAX);
+				//IMPORTANT: FOR "mov**" commands, THE OPERANDS MUST BE TWO REGISTERS.
+				switch(operation){
+					case "cmpeq":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpne":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovne", r11, rax)); //If not equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmove", r11, rax)); //If equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmpgt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovle", r11, rax)); //If less than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmpge":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovl", r11, rax)); //If less than, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+						
+					case "cmplt":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovl", r11, rax)); //If less, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovge", r11, rax)); //If greater than or equal, result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+					
+					case "cmple":
+						ins.add(new Instruction("mov", new LocLiteral(1), r11)); //Overwrite r11 with 1
+						ins.add(new Instruction("cmovle", r11, rax)); //If less or equal, result is "1"
+						ins.add(new Instruction("mov", new LocLiteral(0), r11)); //Overwrite r11 with 0
+						ins.add(new Instruction("cmovg", r11, rax)); //If greater than , result is "0"
+						ins.add(new Instruction("push", rax)); //Push the result to the stack.
+						return ins;
+				}
+			}
+		}
+		
+		else{
+			LocReg rdx = new LocReg(Regs.RDX);
+			LocReg rax = new LocReg(Regs.RAX);
+	
+			ins.add(new Instruction("mov", r10, rax));
+			ins.add(new Instruction("push", rdx));
+			ins.add(new Instruction("cqto"));
+			ins.add(new Instruction("idiv", r11)); //Divide rdx:rax by r11 contents - i.e divide lhs by rhs.
+			//Restoration of rdx and pushing of the proper result is done back in the main method. 
+		}
+		return ins; //Result is in R10 and on the stack.
+	}
+	
+	public static List<Instruction> restoreRDXForDiv(List<Instruction> ins)
+	{
+		//Since division, result is stored in RAX.
+		//RDX is currently floating on top of stack. Recover it!
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg rdx = new LocReg(Regs.RDX);
+		LocReg rax = new LocReg(Regs.RAX);
+		ins.add(new Instruction("mov", rax, r10)); //put quotient into r10
+		ins.add(new Instruction("pop", rdx));
+		ins.add(new Instruction("push", r10));
+		return ins;
+	}
+	
+	public static List<Instruction> restoreRDXForMod(List<Instruction> ins)
+	{
+		//Since mod, result is stored in RDX.
+		//RDX is currently floating on top of stack. Recover it!
+				LocReg r10 = new LocReg(Regs.R10);
+				LocReg rdx = new LocReg(Regs.RDX);
+				ins.add(new Instruction("mov", rdx, r10)); //Put mod in r10
+				ins.add(new Instruction("pop", rdx)); //restore rdx
+				ins.add(new Instruction("push", r10)); //put mod on stack
+				return ins;
+	}
+	
+	public static List<Instruction> generateArithExpr(IR_ArithOp arith, CodegenContext context){
+		
+		List<Instruction> ins = new ArrayList<Instruction>();
+		
+		Ops op = arith.getOp();
+		if (arith.getLeft().getType() != Type.INT || arith.getRight().getType() != Type.INT){
+			System.err.println("Non integer arguments detected in generateArithExpr. Returning null list.");
+			ins = null;
+			return ins;
+		}
+		IR_Node left = arith.getLeft();
+		IR_Node right = arith.getRight();
+		
+		switch (op){ //PLUS, MINUS, TIMES, DIVIDE, MOD
+		
+			case PLUS:
+				if (left instanceof IR_Var)
+				{
+					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "add");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "add");
+					}
+				
+				
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "add");
+					}
+				}
+				
+				if (left instanceof IR_ArithOp) 
+				{
+					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "add");
+					}
+					
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "add");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "add");
+					}
+				}
+				
+					
+				
+				if (left instanceof IR_Literal)
+				{
+					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "add");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "add");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "add");
+					}
+				}
+				break;
+				
+			case MINUS:
+				if (left instanceof IR_Var)
+				{
+					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "sub");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "sub");
+					}
+				
+				
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "sub");
+					}
+				}
+				
+				if (left instanceof IR_ArithOp) 
+				{
+					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "sub");
+					}
+					
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "sub");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "sub");
+					}
+				}
+				
+					
+				
+				if (left instanceof IR_Literal)
+				{
+					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "sub");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "sub");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "sub");
+					}
+				}
+				
+				break;
+				
+			case TIMES:
+				if (left instanceof IR_Var)
+				{
+					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "imul");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "imul");
+					}
+				
+				
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "imul");
+					}
+				}
+				
+				if (left instanceof IR_ArithOp) 
+				{
+					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "imul");
+					}
+					
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "imul");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "imul");
+					}
+				}
+				
+					
+				
+				if (left instanceof IR_Literal)
+				{
+					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+					
+					if (right instanceof IR_Var){
+						return handleRHSisIR_Var(ins, context, right, "imul");
+					}
+				
+					if (right instanceof IR_ArithOp){
+						return handleRHSisIR_ArithOp(ins, context, right, "imul");
+					}
+					
+					if (right instanceof IR_Literal){
+						return handleRHSisIR_Literal(ins, context, right, "imul");
+					}
+				}
+				break;
+				
+			case DIVIDE:
+				if (left instanceof IR_Var)
+				{
+					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						ins =  handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				
+				
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				}
+				
+				if (left instanceof IR_ArithOp) 
+				{
+					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						ins = handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+					
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+					
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				}
+				
+					
+				
+				if (left instanceof IR_Literal)
+				{
+					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+					
+					if (right instanceof IR_Var){
+						ins = handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+					
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForDiv(ins);
+					}
+				}
+				break;
+				
+			case MOD:
+				if (left instanceof IR_Var)
+				{
+					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						ins =  handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				
+				
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				}
+				
+				if (left instanceof IR_ArithOp) 
+				{
+					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+					ins.addAll(lhs);
+					
+					if (right instanceof IR_Var){
+						ins = handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+					
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+					
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				}
+				
+					
+				
+				if (left instanceof IR_Literal)
+				{
+					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+					
+					if (right instanceof IR_Var){
+						ins = handleRHSisIR_Var(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				
+					if (right instanceof IR_ArithOp){
+						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+					
+					if (right instanceof IR_Literal){
+						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
+						return restoreRDXForMod(ins);
+					}
+				}
+				break;
+			
+				default:
+					System.err.println("Somehow, no cases matched. Debug the switch statement!");
+					return null;
+		}
+		
+		return ins;
+		
+	}
+	
+	//TODO SHOULD THIS BE CREATING AN IR_BOOL OR SOMETHING? JUST WONDERING...
+	private static List<Instruction> generateCompareOp(IR_CompareOp compare, CodegenContext context) {
+			List<Instruction> ins = new ArrayList<Instruction>();
+			IR_Node left = compare.getLeft();
+			IR_Node right = compare.getRight();
+			if (left.getType() != right.getType()){
+				System.err.println("Incomparable arguments passed into generateCompareOp.");
+				return null;
+			}
+			
+			Ops op = compare.getOp();
+			String operator;
+			switch(op){
+			case GT:
+				operator = "cmpgt";
+				break;
+			case GTE:
+				operator = "cmpge";
+				break;
+			case EQUALS:
+				operator = "cmpeq";
+				break;
+			case NOT_EQUALS:
+				operator = "cmpne";
+				break;
+			case LT:
+				operator = "cmplt";
+				break;
+			case LTE:
+				operator = "cmple";
+				break;
+			default:
+				return null; //Irrecoverable, can't compare with an incorrect op
+			}
+			
+			
+			if (left instanceof IR_Var)
+			{
+				List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
+				ins.addAll(lhs);
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
+				}
+
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
+				}
+			}
+
+			if (left instanceof IR_ArithOp) 
+			{
+				List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
+				ins.addAll(lhs);
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
+				}
+			}
+
+
+			if (left instanceof IR_Literal)
+			{
+				IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
+				ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
+
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
+				}
+			}
+			
+			
+			if (left instanceof IR_CompareOp){
+				List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
+				ins.addAll(lhs);
+				
+				if (right instanceof IR_Var){
+					return handleRHSisIR_Var(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_ArithOp){
+					return handleRHSisIR_ArithOp(ins, context, right, operator);
+				}
+
+				if (right instanceof IR_Literal){
+					return handleRHSisIR_Literal(ins, context, right, operator);
+				}
+				
+				if (right instanceof IR_CompareOp){
+					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
+					return ins;
+				}
+			}
+			
+			return ins;
+	}
+			
+	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
+		// TODO Auto-generated method stub
+		List<Instruction> ins = new ArrayList<Instruction>();
+		IR_Node left = conditional.getLeft();
+		IR_Node right = conditional.getRight();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		LocReg rax = new LocReg(Regs.RAX);
+		Ops op = conditional.getOp();
+		
+		if( left instanceof IR_CompareOp)
+		{
+			List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
+			ins.addAll(lhs);
+			ins.add(new Instruction("pop", r10)); //Get value of comparison from stack. 1 = true, 0 = false.
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
+			switch(op){
+			
+			case AND: //Try to short-circuit on left.
+				String labelForTrue = context.genLabel(); //Label for if left is true
+				Instruction wasTrue = Instruction.labelInstruction(labelForTrue); //turn label for true into an instruction
+				ins.add(new Instruction("mov", new LocLiteral(0), r11)); 
+				ins.add(new Instruction("cmp", r10, r11)); //Compare result of lhs and 0
+				ins.add(new Instruction("jne", new LocLabel(labelForTrue))); //If it's not 0, it was true, so jump to label for eval rhs
+				ins.add(new Instruction("push", new LocLiteral(0))); //If we didn't jump past this, it was false, so push 0 on the stack.
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Jump to done, no need to even try looking at the right. 
+				ins.add(wasTrue); //We need to evaluate the right, so worry about what it could be. 
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have True && False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+				
+				
+				ins.add(doneHere);
+				return ins;
+			
+			
+			
+			//TODO? What other cases are there? What do we need to worry about comparing?
+			
+			case OR:
+				String labelForFalse = context.genLabel();
+				Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+				ins.add(new Instruction("mov", new LocLiteral(1), r11));
+				ins.add(new Instruction("cmp", r10, r11));
+				ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //IF it was false, we need to check the right hand side.
+				ins.add(new Instruction("push", new LocLiteral(1))); //If we didn't jump, it was true, so don't even bother with the rhs
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Push one to stack and be done. 
+				ins.add(wasFalse);
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have False || False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+			
+				ins.add(doneHere);
+				return ins;
+				
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
+			}
+		}
+		
+		
+		else if (left instanceof IR_Literal.IR_BoolLiteral){
+			IR_Literal.IR_BoolLiteral lhs = (IR_Literal.IR_BoolLiteral) left;
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
+			boolean valCheckLeft = lhs.getValue();
+			switch(op)
+			{
+			case AND:
+				
+				if (!valCheckLeft){//If false, we have False && stuff. Ignore rhs. Push 0 and be done. 
+					ins.add(new Instruction("push", new LocLiteral(0)));
+					return ins;
+				}
+				
+				else{ //valCheck was True, so answer depends on rhs alone.
+					if (right instanceof IR_Literal.IR_BoolLiteral){
+						IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+						boolean valCheck = rhs.getValue(); //handle it here in the Java code
+						if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+							ins.add(new Instruction("push", new LocLiteral(1)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						else{ //Else we have True && False, push a 0 and be done
+							ins.add(new Instruction("push", new LocLiteral(0)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						
+					}
+					
+					else if (right instanceof IR_CompareOp){
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						
+					}
+					
+					else if (right instanceof IR_CondOp){
+						List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+						ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
+				}
+
+				ins.add(doneHere);
+				return ins;
+				
+			
+			case OR:
+				if (valCheckLeft){ //We have True || stuff. Ignore rhs and return True.
+					ins.add(new Instruction("push", new LocLiteral(1)));
+					return ins;
+				}
+				
+				else{//We have False || stuff. Answer is only dependent on stuff.
+					if (right instanceof IR_Literal.IR_BoolLiteral){
+						IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+						boolean valCheck = rhs.getValue(); //handle it here in the Java code
+						if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+							ins.add(new Instruction("push", new LocLiteral(1)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						else{ //Else we have False || False, push a 0 and be done
+							ins.add(new Instruction("push", new LocLiteral(0)));
+							ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+						}
+						
+					}
+					
+					else if (right instanceof IR_CompareOp){
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						
+					}
+					
+					else if (right instanceof IR_CondOp){
+						List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+						ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
+				}
+			ins.add(doneHere);
+			return ins;
+			
+			
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
+			}
+		}
+		
+		else if (left instanceof IR_CondOp){
+			List<Instruction> lhs = generateCondOp((IR_CondOp) left, context);
+			ins.add(new Instruction("pop", r10)); //Result of lhs was on stack, get it off and into r10. From here on, it's a copy of what I did before for comp op.
+			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
+			Instruction doneHere = Instruction.labelInstruction(labelForDone);
+			switch(op){
+			
+			case AND: //Try to short-circuit on left.
+				String labelForTrue = context.genLabel(); //Label for if left is true
+				Instruction wasTrue = Instruction.labelInstruction(labelForTrue); //turn label for true into an instruction
+				ins.add(new Instruction("mov", new LocLiteral(0), r11)); 
+				ins.add(new Instruction("cmp", r10, r11)); //Compare result of lhs and 0
+				ins.add(new Instruction("jne", new LocLabel(labelForTrue))); //If it's not 0, it was true, so jump to label for eval rhs
+				ins.add(new Instruction("push", new LocLiteral(0))); //If we didn't jump past this, it was false, so push 0 on the stack.
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Jump to done, no need to even try looking at the right. 
+				ins.add(wasTrue); //We need to evaluate the right, so worry about what it could be. 
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have True  && True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have True && False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+				
+				
+				ins.add(doneHere);
+				return ins;
+			
+			
+			//TODO? What other cases are there? What do we need to worry about comparing? Did we miss something?!?! Still an issue! 
+			
+			case OR:
+				String labelForFalse = context.genLabel();
+				Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
+				ins.add(new Instruction("mov", new LocLiteral(1), r11));
+				ins.add(new Instruction("cmp", r10, r11));
+				ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //IF it was false, we need to check the right hand side.
+				ins.add(new Instruction("push", new LocLiteral(1))); //If we didn't jump, it was true, so don't even bother with the rhs
+				ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //Push one to stack and be done. 
+				ins.add(wasFalse);
+				
+				if (right instanceof IR_Literal.IR_BoolLiteral){
+					IR_Literal.IR_BoolLiteral rhs = (IR_Literal.IR_BoolLiteral)right;
+					boolean valCheck = rhs.getValue(); //handle it here in the Java code
+					if(valCheck){ //if right is true, we have False || True, push a 1 and be done
+						ins.add(new Instruction("push", new LocLiteral(1)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					else{ //Else we have False || False, push a 0 and be done
+						ins.add(new Instruction("push", new LocLiteral(0)));
+						ins.add(new Instruction("jmp", new LocLabel(labelForDone)));
+					}
+					
+				}
+				
+				else if (right instanceof IR_CompareOp){
+					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
+					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					
+				}
+				
+				else if (right instanceof IR_CondOp){
+					List<Instruction> rhs = generateCondOp((IR_CondOp)right, context);
+					ins.addAll(rhs); //instruction results will be on stack; don't need to know the result of lhs anymore.
+				}
+				
+			
+				ins.add(doneHere);
+				return ins;
+
+				
+			
+			default:
+				System.err.println("Should never reach here - a non AND or OR was passed into CondOp.");
+				return null;
+			}
+		}
+		
+		return ins;
+	}
+	
 	public static List<Instruction> generateBlock(IR_Seq block, CodegenContext context){
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> stmt = block.getStatements();
