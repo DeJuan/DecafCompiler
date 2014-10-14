@@ -20,4 +20,10 @@ for file in `dirname $0`/custom_tests/*.dcf; do
   fi
 done
 
+if [ "$fail" -eq 0 ] ; then
+  echo "All tests passed!";
+else
+  echo "Not all tests passed.";
+fi
+
 exit $fail;

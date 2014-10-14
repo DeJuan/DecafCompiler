@@ -6,9 +6,9 @@ int A[100];
 
 // Reads \'len\' elements from input file to the array \'A\' and sorts the array 
 void read_and_sort(int len) {
-	printf ( "creating random array of %d elements\n", length );
+ 	int i, temp;
+	printf ( "creating random array of %d elements\n", len );
  	srandom ( 17 );
- 	int i;
  	for ( i = 0, len ) {
    		temp = random();
     	        A[i] = temp;
