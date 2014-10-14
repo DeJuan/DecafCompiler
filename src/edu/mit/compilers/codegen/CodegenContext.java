@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
+import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.SymbolTable;
 
 /**@brief Information used throughout codegen
@@ -92,7 +95,34 @@ public class CodegenContext {
 	 */
 	public void printInstructions(PrintStream ps){
 		//header
-		
+		//global variables
+		boolean firstField = true;
+		//get the global table.
+		HashMap<String, Descriptor> globals = symbol.getTable(0);
+		for(Descriptor d: globals.values()){
+			IR_Node node = d.getIR();
+			if(! (node instanceof IR_FieldDecl)){
+				continue;
+			}
+			IR_FieldDecl decl = (IR_FieldDecl)node;
+			String name = decl.getName();
+			ps.println("\t.global\t" + name);
+			if(firstField){
+				ps.println("\t.bss");
+				firstField = false;
+			}
+			ps.println("\t.align\t" + CodegenConst.ALIGN_SIZE);
+			ps.println("\t.type\t" + name +", @object");
+			//length in bytes
+			long len = CodegenConst.INT_SIZE;
+			IR_IntLiteral ir_len = decl.getLength();
+			if(ir_len!=null){
+				len = CodegenConst.INT_SIZE * ir_len.getValue();
+			}
+			ps.println("\t.size\t" + name +", "+len);
+			ps.println(name+":");
+			ps.println("\t.zero\t"+len);	
+		}
 		//string literals
 		long nString = stringLiterals.keySet().size();
 		if(nString>0){

@@ -1,11 +1,16 @@
 callout printf;
-
+//test globals
+int ga;
+int gb[10];
+boolean gc;
 void testPlus(int a, int b){
-	printf("%d + %d = %d\n", a, b, a+b);
+	ga = a+b;
+	printf("%d + %d = %d\n", a, b, ga);
 }
 
 void testMinus(int a, int b){
-	printf("%d - %d = %ld\n", a, b, a-b);
+	gb[1] = a-b;
+	printf("%d - %d = %ld\n", a, b, gb[1]);
 }
 
 void testMul(int a, int b){
@@ -28,6 +33,7 @@ void main(){
 	b = 6;
 	c = 70;
 	d = 80;
+	printf("init global %d %d\n", gb[8], gb[9]);
 	testPlus(a,c);
 	testMinus(b,d);
 	testMul(c,d);

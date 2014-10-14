@@ -76,6 +76,8 @@ public class Codegen {
 		//instructions for entering a function.
 		LocLiteral loc= new LocLiteral(context.maxLocalSize);
 		Instruction tmpIns;
+		context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
+		context.addIns(new Instruction(".text"));
 		context.addIns(new Instruction(".global", new LocLabel(name)));
 		tmpIns = Instruction.labelInstruction(name);
 		context.addIns(tmpIns);
