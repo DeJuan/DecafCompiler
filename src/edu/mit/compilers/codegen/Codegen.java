@@ -131,6 +131,11 @@ public class Codegen {
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = new ArrayList<Instruction>();
 		
+		if (expr instanceof IR_Call) {
+			ins = generateCall((IR_Call) expr, context);
+			return ins;
+		}
+		
 		if (expr instanceof IR_ArithOp){
 			ins = generateArithExpr((IR_ArithOp) expr, context);
 			return ins;
@@ -155,8 +160,18 @@ public class Codegen {
 			return ins;
 		}
 		
-		else if (expr instanceof IR_Negate){
+		else if (expr instanceof IR_Negate) {
 			IR_Negate negation = (IR_Negate)expr;
+			LocReg r10 = new LocReg(Regs.R10);
+			ins = generateExpr(negation.getExpr(), context);
+			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
+			ins.add(new Instruction("not", r10)); //negate it
+			ins.add(new Instruction("push", r10)); //push it back to stack
+			return ins;
+		}
+		
+		else if (expr instanceof IR_Not) {
+			IR_Not negation = (IR_Not)expr;
 			LocReg r10 = new LocReg(Regs.R10);
 			ins = generateExpr(negation.getExpr(), context);
 			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
@@ -171,7 +186,6 @@ public class Codegen {
 			return ins;
 		}
 		
-		
 		if(expr instanceof IR_Var){
 			IR_Var var = (IR_Var)expr;
 			ins=generateVarExpr(var, context);
@@ -184,8 +198,8 @@ public class Codegen {
 			return ins;
 		}
 		
-		else{
-			System.err.println("Unexpected Node type passed to generateExpr.");
+		else {
+			System.err.println("Unexpected Node type passed to generateExpr: " + expr.getClass().getSimpleName());
 			System.err.println("The node passed in was of type " + expr.getType().toString());
 		}
 		ins = null; 
@@ -694,7 +708,7 @@ public class Codegen {
 			} else {
 				System.err.println("Should not reach here");
  			}
-			if (ins != null) {
+			if (stIns != null) {
 				ins.addAll(stIns);
 			}
 		}
