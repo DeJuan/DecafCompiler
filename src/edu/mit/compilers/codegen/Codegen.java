@@ -161,53 +161,39 @@ public class Codegen {
 		return ins;
 	}
 
-	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
-		List<Instruction> ins = null;
+	public static LocationMem generateVarLoc(IR_Var var, CodegenContext context, List<Instruction> ins) {
 		Descriptor d = context.findSymbol(var.getName());
 		switch (d.getIR().getType()) {
 		case INT:
-			ins = context.push(d.getLocation());
-			break;
 		case BOOL:
-			ins = context.push(d.getLocation());
-			break;
+			return d.getLocation();
 		case INTARR:
-			IR_Node index = var.getIndex();
-			if (index instanceof IR_IntLiteral) {
-				IR_IntLiteral index_int = (IR_IntLiteral)var.getIndex();
-				LocArray loc_array = new LocArray(d.getLocation(), 
-						new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
-				ins = context.push(loc_array);
-			} else {
-				// evaluate index and push index location to stack
-				ins = generateExpr(index, context);
-				LocReg r11 = new LocReg(Regs.R11);
-				// saves offset at R11
-				ins.add(new Instruction("pop", r11));
-				LocArray loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
-				ins.addAll(context.push(loc_array));
-			}
-			break;
 		case BOOLARR:
-			index = var.getIndex();
+			IR_Node index = var.getIndex();
+			LocArray loc_array = null;
 			if (index instanceof IR_IntLiteral) {
 				IR_IntLiteral index_int = (IR_IntLiteral)var.getIndex();
-				LocArray loc_array = new LocArray(d.getLocation(), 
+				loc_array = new LocArray(d.getLocation(), 
 						new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
-				ins = context.push(loc_array);
 			} else {
 				// evaluate index and push index location to stack
-				ins = generateExpr(index, context);
+				ins.addAll(generateExpr(index, context));
+				//must use r11 here since in assign, r10 is used for rhs
 				LocReg r11 = new LocReg(Regs.R11);
 				// saves offset at R11
 				ins.add(new Instruction("pop", r11));
-				LocArray loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
-				ins.addAll(context.push(loc_array));
+				loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
 			}
-			break;
+			return loc_array;
 		default:
-			break;
+			return null;
 		}
+	}		
+	
+	public static List<Instruction> generateVarExpr(IR_Var var, CodegenContext context) {
+		List<Instruction> ins = new ArrayList<Instruction>();
+		LocationMem loc = generateVarLoc(var, context, ins);
+		ins.addAll(context.push(loc));
 		return ins;
 	}
 
@@ -224,10 +210,47 @@ public class Codegen {
 			}else if(st instanceof IR_FieldDecl){
 				IR_FieldDecl decl =(IR_FieldDecl) st;
 				stIns = generateFieldDecl(decl,context);
+			}else if(st instanceof IR_Assign){
+				IR_Assign assign = (IR_Assign) st;
+				stIns = generateAssign(assign,context);				
 			}
 			ins.addAll(stIns);
 		}
 		context.decScope();
+		return ins;
+	}
+	
+	static List<Instruction>generateAssign(IR_Assign assign, CodegenContext context){
+		ArrayList<Instruction> ins = new ArrayList<Instruction>();
+		Ops op = assign.getOp();
+		IR_Var lhs = assign.getLhs();
+		IR_Node rhs = assign.getRhs();
+		LocationMem dst= generateVarLoc(lhs, context, ins);
+		
+		ins.addAll(generateExpr(rhs,context));
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		
+		ins.addAll(context.pop(r10));
+		
+		if(op != Ops.ASSIGN){
+			String cmd = null;
+			switch(op){
+			case ASSIGN_PLUS:
+				cmd = "addq";
+				break;
+			case ASSIGN_MINUS:
+				cmd = "subq";
+				break;
+			default:
+				break;
+			}
+			ins.add(new Instruction("movq", dst, r11));
+			ins.add(new Instruction(cmd, r10, r11));
+			ins.add(new Instruction("movq", r11, dst));
+		}else{
+			ins.add(new Instruction("movq", r10, dst));
+		}
 		return ins;
 	}
 	
@@ -261,7 +284,7 @@ public class Codegen {
 		if(decl.getType() == Type.CALLOUT){
 			//# of floating point registers is stored in rax
 			//need to zero it for callouts.
-			ins.add(new Instruction("mov ", new LocLiteral(0),  new LocReg(Regs.RAX)));			
+			ins.add(new Instruction("movq", new LocLiteral(0),  new LocReg(Regs.RAX)));			
 		}
 		ins.add(new Instruction("call ", new LocLabel(call.getName()) ));
 		
@@ -296,7 +319,7 @@ public class Codegen {
 		ArrayList<Instruction> ins=new ArrayList<Instruction>();
 		if(idx<CodegenConst.N_REG_ARG){
 			LocationMem argDst = argLoc(idx);
-			ins.add(new Instruction("mov", argSrc, argDst));
+			ins.add(new Instruction("movq", argSrc, argDst));
 		}else{
 			ins.addAll(context.push(argSrc));
 		}

@@ -6,6 +6,14 @@ public class IR_Assign extends IR_Node {
 	IR_Node rhs;
 	Ops op;
 
+	public IR_Var getLhs(){
+		return lhs;
+	}
+	
+	public IR_Node getRhs(){
+		return rhs;
+	}
+	
 	public IR_Assign(IR_Var l, IR_Node r, Ops o){
 		lhs = l;
 		rhs = r;

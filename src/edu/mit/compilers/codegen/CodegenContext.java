@@ -181,7 +181,7 @@ public class CodegenContext {
 	 */
 	public List<Instruction> push(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
-		il.add(new Instruction("push", loc));
+		il.add(new Instruction("pushq", loc));
 		rsp.setValue(rsp.getValue() - CodegenConst.INT_SIZE);
 		return il;
 	}
@@ -191,7 +191,7 @@ public class CodegenContext {
 	 */
 	public List<Instruction> pop(LocationMem loc){
 		ArrayList<Instruction> il = new ArrayList<Instruction>();
-		il.add(new Instruction("pop", loc));
+		il.add(new Instruction("popq", loc));
 		rsp.setValue(rsp.getValue() + CodegenConst.INT_SIZE);
 		return il;
 	}
