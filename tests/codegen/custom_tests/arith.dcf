@@ -29,7 +29,7 @@ void testExpr(int a, int b, int c, int d){
 
 void main(){
 	int a,b,c,d;
-	a = 9;
+	a = -9;
 	b = 6;
 	c = 70;
 	d = 80;
