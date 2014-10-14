@@ -149,8 +149,9 @@ public class Codegen {
 		}
 		
 		else if (expr instanceof IR_EqOp){
-			IR_CompareOp equivalence = (IR_CompareOp)expr; //There's no real difference between CondOp and EqOp except operators
-			ins = generateCompareOp(equivalence, context); //I've combined all the comparison operations in my one method; it can take and resolve EqOp operators.
+			IR_EqOp eq= (IR_EqOp)expr; //There's no real difference between CondOp and EqOp except operators
+			IR_CompareOp cmp = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+			ins = generateCompareOp(cmp, context); //I've combined all the comparison operations in my one method; it can take and resolve EqOp operators.
 			return ins;
 		}
 		
@@ -593,135 +594,46 @@ public class Codegen {
 	
 	//TODO SHOULD THIS BE CREATING AN IR_BOOL OR SOMETHING? JUST WONDERING...
 	private static List<Instruction> generateCompareOp(IR_CompareOp compare, CodegenContext context) {
-			List<Instruction> ins = new ArrayList<Instruction>();
-			IR_Node left = compare.getLeft();
-			IR_Node right = compare.getRight();
-			if (left.getType() != right.getType()){
-				System.err.println("Incomparable arguments passed into generateCompareOp.");
-				return null;
-			}
-			
-			Ops op = compare.getOp();
-			String operator;
-			switch(op){
-			case GT:
-				operator = "cmpgt";
-				break;
-			case GTE:
-				operator = "cmpge";
-				break;
-			case EQUALS:
-				operator = "cmpeq";
-				break;
-			case NOT_EQUALS:
-				operator = "cmpne";
-				break;
-			case LT:
-				operator = "cmplt";
-				break;
-			case LTE:
-				operator = "cmple";
-				break;
-			default:
-				return null; //Irrecoverable, can't compare with an incorrect op
-			}
-			
-			
-			if (left instanceof IR_Var)
-			{
-				List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-				ins.addAll(lhs);
-
-				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, operator);
-				}
-
-
-				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, operator);
-				}
-				
-				if (right instanceof IR_CompareOp){
-					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
-					return ins;
-				}
-			}
-
-			if (left instanceof IR_ArithOp) 
-			{
-				List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-				ins.addAll(lhs);
-
-				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, operator);
-				}
-				
-				if (right instanceof IR_CompareOp){
-					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
-					return ins;
-				}
-			}
-
-
-			if (left instanceof IR_Literal)
-			{
-				IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-				ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-
-				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, operator);
-				}
-				
-				if (right instanceof IR_CompareOp){
-					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
-					return ins;
-				}
-			}
-			
-			
-			if (left instanceof IR_CompareOp){
-				List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
-				ins.addAll(lhs);
-				
-				if (right instanceof IR_Var){
-					return handleRHSisIR_Var(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_ArithOp){
-					return handleRHSisIR_ArithOp(ins, context, right, operator);
-				}
-
-				if (right instanceof IR_Literal){
-					return handleRHSisIR_Literal(ins, context, right, operator);
-				}
-				
-				if (right instanceof IR_CompareOp){
-					ins.addAll(generateCompareOp((IR_CompareOp)right, context));
-					return ins;
-				}
-			}
-			
-			return ins;
+		List<Instruction> ins = new ArrayList<Instruction>();
+		Ops op = compare.getOp();
+		IR_Node left = compare.getLeft();
+		IR_Node right = compare.getRight();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		ins.addAll(generateExpr(left,context));
+		ins.addAll(generateExpr(right, context));
+		ins.addAll(context.pop(r11));
+		ins.addAll(context.pop(r10));
+		String cmd = "";
+		switch(op){
+		case GT:
+			cmd = "setg";
+			break;
+		case GTE:
+			cmd = "setge";
+			break;
+		case EQUALS:
+			cmd = "sete";
+			break;
+		case NOT_EQUALS:
+			cmd = "setne";
+			break;
+		case LT:
+			cmd = "setl";
+			break;
+		case LTE:
+			cmd = "setle";
+			break;
+		default:
+			return null; //Irrecoverable, can't compare with an incorrect op
+		}
+		ins.add(new Instruction("cmpq", r11,r10));
+		LocReg al = new LocReg(Regs.AL);
+		ins.add(new Instruction(cmd, al));
+		//zero bit extension
+		ins.add(new Instruction("movzbq", al, r10));
+		ins.addAll(context.push(r10));
+		return ins;
 	}
 			
 	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
