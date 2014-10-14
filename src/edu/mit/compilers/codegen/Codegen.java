@@ -550,339 +550,47 @@ public class Codegen {
 	public static List<Instruction> generateArithExpr(IR_ArithOp arith, CodegenContext context){
 		
 		List<Instruction> ins = new ArrayList<Instruction>();
-		
 		Ops op = arith.getOp();
-		if (arith.getLeft().getType() != Type.INT || arith.getRight().getType() != Type.INT){
-			System.err.println("Non integer arguments detected in generateArithExpr. Returning null list.");
-			ins = null;
-			return ins;
-		}
 		IR_Node left = arith.getLeft();
 		IR_Node right = arith.getRight();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		ins.addAll(generateExpr(left,context));
+		ins.addAll(generateExpr(right, context));
+		ins.addAll(context.pop(r11));
+		ins.addAll(context.pop(r10));
 		
-		switch (op){ //PLUS, MINUS, TIMES, DIVIDE, MOD
-		
+		if(!(op == Ops.DIVIDE || op==Ops.MOD)){
+			String cmd = "";
+			switch (op){ //PLUS, MINUS, TIMES
 			case PLUS:
-				if (left instanceof IR_Var)
-				{
-					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "add");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "add");
-					}
-				
-				
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "add");
-					}
-				}
-				
-				if (left instanceof IR_ArithOp) 
-				{
-					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "add");
-					}
-					
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "add");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "add");
-					}
-				}
-				
-					
-				
-				if (left instanceof IR_Literal)
-				{
-					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "add");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "add");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "add");
-					}
-				}
+				cmd = "addq";
 				break;
-				
 			case MINUS:
-				if (left instanceof IR_Var)
-				{
-					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "sub");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "sub");
-					}
-				
-				
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "sub");
-					}
-				}
-				
-				if (left instanceof IR_ArithOp) 
-				{
-					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "sub");
-					}
-					
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "sub");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "sub");
-					}
-				}
-				
-					
-				
-				if (left instanceof IR_Literal)
-				{
-					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "sub");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "sub");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "sub");
-					}
-				}
-				
+				cmd = "subq";
 				break;
-				
 			case TIMES:
-				if (left instanceof IR_Var)
-				{
-					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "imul");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "imul");
-					}
-				
-				
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "imul");
-					}
-				}
-				
-				if (left instanceof IR_ArithOp) 
-				{
-					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "imul");
-					}
-					
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "imul");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "imul");
-					}
-				}
-				
-					
-				
-				if (left instanceof IR_Literal)
-				{
-					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-					
-					if (right instanceof IR_Var){
-						return handleRHSisIR_Var(ins, context, right, "imul");
-					}
-				
-					if (right instanceof IR_ArithOp){
-						return handleRHSisIR_ArithOp(ins, context, right, "imul");
-					}
-					
-					if (right instanceof IR_Literal){
-						return handleRHSisIR_Literal(ins, context, right, "imul");
-					}
-				}
+				cmd = "imulq";
 				break;
-				
-			case DIVIDE:
-				if (left instanceof IR_Var)
-				{
-					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						ins =  handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				
-				
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				}
-				
-				if (left instanceof IR_ArithOp) 
-				{
-					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						ins = handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-					
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-					
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				}
-				
-					
-				
-				if (left instanceof IR_Literal)
-				{
-					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-					
-					if (right instanceof IR_Var){
-						ins = handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-					
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForDiv(ins);
-					}
-				}
+			default:
 				break;
-				
-			case MOD:
-				if (left instanceof IR_Var)
-				{
-					List<Instruction> lhs = generateVarExpr((IR_Var)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						ins =  handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				
-				
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				}
-				
-				if (left instanceof IR_ArithOp) 
-				{
-					List<Instruction> lhs = generateArithExpr((IR_ArithOp)left, context);
-					ins.addAll(lhs);
-					
-					if (right instanceof IR_Var){
-						ins = handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-					
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-					
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				}
-				
-					
-				
-				if (left instanceof IR_Literal)
-				{
-					IR_Literal.IR_IntLiteral lhs = (IR_Literal.IR_IntLiteral)left;
-					ins.add(new Instruction("push", new LocLiteral(lhs.getValue()))); //Push the literal onto the stack so helpers can pop it
-					
-					if (right instanceof IR_Var){
-						ins = handleRHSisIR_Var(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				
-					if (right instanceof IR_ArithOp){
-						ins = handleRHSisIR_ArithOp(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-					
-					if (right instanceof IR_Literal){
-						ins = handleRHSisIR_Literal(ins, context, right, "idiv");
-						return restoreRDXForMod(ins);
-					}
-				}
-				break;
-			
-				default:
-					System.err.println("Somehow, no cases matched. Debug the switch statement!");
-					return null;
+			}
+			ins.add(new Instruction(cmd, r11, r10));
+			ins.addAll(context.push(r10));
+		}else{
+			LocReg rdx = new LocReg(Regs.RDX);
+			LocReg rax = new LocReg(Regs.RAX);
+			ins.addAll(context.push(rdx));
+			ins.add(new Instruction("movq", r10, rax));
+			ins.add(new Instruction("cqto"));
+			ins.add(new Instruction("idivq", r11));//Divide rdx:rax by r11 contents - i.e divide lhs by rhs.
+			if(op==Ops.MOD){
+				ins.add(new Instruction("movq", rdx, rax));
+			}
+			ins.addAll(context.pop(rdx));
+			ins.addAll(context.push(rax));			
 		}
-		
 		return ins;
-		
 	}
 	
 	//TODO SHOULD THIS BE CREATING AN IR_BOOL OR SOMETHING? JUST WONDERING...
