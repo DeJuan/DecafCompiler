@@ -1,5 +1,5 @@
 package edu.mit.compilers.codegen;
-import java.io.PrintStream;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,7 +130,6 @@ public class Codegen {
 	 */
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = new ArrayList<Instruction>();
-		List<List<Instruction>> intermediates = new ArrayList<List<Instruction>>();
 		
 		if (expr instanceof IR_ArithOp){
 			ins = generateArithExpr((IR_ArithOp) expr, context);
