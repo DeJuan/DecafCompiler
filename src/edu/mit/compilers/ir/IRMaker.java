@@ -483,7 +483,7 @@ public class IRMaker {
 				valid = false;
 				return null;
 			}
-			return new IR_Minus(expr);
+			return new IR_Negate(expr);
 		case DecafScannerTokenTypes.BANG:
 			lhs = root.getFirstChild();
 			expr = null;
