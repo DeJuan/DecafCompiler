@@ -124,6 +124,11 @@ public class Codegen {
 	public static List<Instruction> generateExpr(IR_Node expr, CodegenContext context){
 		List<Instruction> ins = new ArrayList<Instruction>();
 		
+		if (expr instanceof IR_Call) {
+			ins = generateCall((IR_Call) expr, context);
+			return ins;
+		}
+		
 		if (expr instanceof IR_ArithOp){
 			ins = generateArithExpr((IR_ArithOp) expr, context);
 			return ins;
@@ -148,8 +153,18 @@ public class Codegen {
 			return ins;
 		}
 		
-		else if (expr instanceof IR_Negate){
+		else if (expr instanceof IR_Negate) {
 			IR_Negate negation = (IR_Negate)expr;
+			LocReg r10 = new LocReg(Regs.R10);
+			ins = generateExpr(negation.getExpr(), context);
+			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
+			ins.add(new Instruction("not", r10)); //negate it
+			ins.add(new Instruction("push", r10)); //push it back to stack
+			return ins;
+		}
+		
+		else if (expr instanceof IR_Not) {
+			IR_Not negation = (IR_Not)expr;
 			LocReg r10 = new LocReg(Regs.R10);
 			ins = generateExpr(negation.getExpr(), context);
 			ins.add(new Instruction("pop", r10)); //Get whatever that expr was off stack
@@ -164,7 +179,6 @@ public class Codegen {
 			return ins;
 		}
 		
-		
 		if(expr instanceof IR_Var){
 			IR_Var var = (IR_Var)expr;
 			ins=generateVarExpr(var, context);
@@ -177,8 +191,8 @@ public class Codegen {
 			return ins;
 		}
 		
-		else{
-			System.err.println("Unexpected Node type passed to generateExpr.");
+		else {
+			System.err.println("Unexpected Node type passed to generateExpr: " + expr.getClass().getSimpleName());
 			System.err.println("The node passed in was of type " + expr.getType().toString());
 		}
 		ins = null; 
@@ -656,23 +670,46 @@ public class Codegen {
 		for(int ii = 0;ii<stmt.size(); ii++){
 			IR_Node st = stmt.get(ii);
 			List<Instruction> stIns =null;
-			if (st instanceof IR_Call){
-				IR_Call call = (IR_Call)st;
-				stIns = generateCall(call,context);
-			}else if(st instanceof IR_FieldDecl){
+			if (st instanceof IR_FieldDecl) {
 				IR_FieldDecl decl =(IR_FieldDecl) st;
 				stIns = generateFieldDecl(decl,context);
-			}else if(st instanceof IR_Assign){
+			} else if (st instanceof IR_Call){
+				IR_Call call = (IR_Call)st;
+				stIns = generateCall(call,context);
+			} else if (st instanceof IR_Assign) {
 				IR_Assign assign = (IR_Assign) st;
 				stIns = generateAssign(assign,context);				
+ 		    // TODO: Generate logic for these control flow statements
+			} else if (st instanceof IR_If) {
+				IR_If if_st = (IR_If) st;
+				stIns = generateIf(if_st, context);
+			} else if (st instanceof IR_For) {
+   			        IR_For for_st = (IR_For) st;
+				stIns = generateFor(for_st, context);
+                        } else if (st instanceof IR_While) {
+				IR_While while_st = (IR_While) st;
+				stIns = generateWhile(while_st, context);
+			} else if (st instanceof IR_Return) {
+   			        IR_Return return_st = (IR_Return) st;
+				stIns = generateReturn(return_st, context);
+			} else if (st instanceof IR_Break) {
+   			        IR_Break break_st = (IR_Break) st;
+				stIns = generateBreak(break_st, context);
+			} else if (st instanceof IR_Continue) {
+   			        IR_Continue continue_st = (IR_Continue) st;
+				stIns = generateContinue(continue_st, context);
+			} else {
+				System.err.println("Should not reach here");
+ 			}
+			if (stIns != null) {
+				ins.addAll(stIns);
 			}
-			ins.addAll(stIns);
 		}
 		context.decScope();
 		return ins;
 	}
 	
-	static List<Instruction>generateAssign(IR_Assign assign, CodegenContext context){
+	static List<Instruction> generateAssign(IR_Assign assign, CodegenContext context) {
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		Ops op = assign.getOp();
 		IR_Var lhs = assign.getLhs();
@@ -706,7 +743,7 @@ public class Codegen {
 		return ins;
 	}
 	
-	public static List<Instruction>  generateCall(IR_Call call, CodegenContext context ){
+	public static List<Instruction> generateCall(IR_Call call, CodegenContext context) {
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> args = call.getArgs();
 		for(int ii = args.size()-1; ii>=0; ii--){
@@ -747,6 +784,51 @@ public class Codegen {
 		}
 		return ins;
 	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateIf(IR_If if_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateFor(IR_For for_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateWhile(IR_While while_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateBreak(IR_Break break_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+
+	// TODO: Implement
+	public static List<Instruction> generateContinue(IR_Continue continue_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	public static List<Instruction> generateReturn(IR_Return return_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		IR_Node expr = return_st.getExpr();
+		// We only have instructions to add if return value is not void.
+		if (expr != null) {
+			LocReg r10 = new LocReg(Regs.R10);
+			stIns = generateExpr(expr, context);
+			stIns.add(new Instruction("pop", r10));
+			stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
+		}
+		return stIns;
+	}
+	
+	
 	/**@brief registers used for function arguments.
 	 * 
 	 */
