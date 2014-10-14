@@ -1,0 +1,36 @@
+callout printf;
+
+void testPlus(int a, int b){
+	printf("%d + %d = %d\n", a, b, a+b);
+}
+
+void testMinus(int a, int b){
+	printf("%d - %d = %ld\n", a, b, a-b);
+}
+
+void testMul(int a, int b){
+	printf("%d * %d = %d\n", a, b, a*b);
+}
+
+void testDiv(int a, int b){
+	printf("%d + %d = %d...%d\n", a, b, a/b, a%b);
+}
+
+void testExpr(int a, int b, int c, int d){
+	int result;
+	result  = (a-c)*(d%b) + d/b;
+	printf("(%d-%d)*(%dmod %d)+(%d/%d)=%d\n", a,c,d,b,d,b,result);
+}
+
+void main(){
+	int a,b,c,d;
+	a = 9;
+	b = 6;
+	c = 70;
+	d = 80;
+	testPlus(a,c);
+	testMinus(b,d);
+	testMul(c,d);
+	testDiv(d,b);
+	testExpr(a,b,c,d);	
+}

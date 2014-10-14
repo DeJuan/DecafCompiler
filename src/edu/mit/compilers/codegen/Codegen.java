@@ -548,7 +548,6 @@ public class Codegen {
 	}
 	
 	public static List<Instruction> generateArithExpr(IR_ArithOp arith, CodegenContext context){
-		
 		List<Instruction> ins = new ArrayList<Instruction>();
 		Ops op = arith.getOp();
 		IR_Node left = arith.getLeft();
