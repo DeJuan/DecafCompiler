@@ -11,6 +11,10 @@ public class IR_Return extends IR_Node {
 		expr = expression;
 	}
 	
+	public IR_Node getExpr() {
+		return this.expr;
+	}
+	
 	@Override
 	public Type getType() {
 		return Type.VOID;

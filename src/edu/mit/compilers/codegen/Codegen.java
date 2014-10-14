@@ -672,7 +672,7 @@ public class Codegen {
 			} else if (st instanceof IR_Assign) {
 				IR_Assign assign = (IR_Assign) st;
 				stIns = generateAssign(assign,context);				
- 		        // TODO: Generate logic for these control flow statements
+ 		    // TODO: Generate logic for these control flow statements
 			} else if (st instanceof IR_If) {
 				IR_If if_st = (IR_If) st;
 				stIns = generateIf(if_st, context);
@@ -690,17 +690,19 @@ public class Codegen {
 				stIns = generateBreak(break_st, context);
 			} else if (st instanceof IR_Continue) {
    			        IR_Continue continue_st = (IR_Continue) st;
-				stIns = generateFor(continue_st, context);
+				stIns = generateContinue(continue_st, context);
 			} else {
 				System.err.println("Should not reach here");
  			}
-			ins.addAll(stIns);
+			if (ins != null) {
+				ins.addAll(stIns);
+			}
 		}
 		context.decScope();
 		return ins;
 	}
 	
-	static List<Instruction>generateAssign(IR_Assign assign, CodegenContext context){
+	static List<Instruction> generateAssign(IR_Assign assign, CodegenContext context) {
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		Ops op = assign.getOp();
 		IR_Var lhs = assign.getLhs();
@@ -734,7 +736,7 @@ public class Codegen {
 		return ins;
 	}
 	
-	public static List<Instruction>  generateCall(IR_Call call, CodegenContext context ){
+	public static List<Instruction> generateCall(IR_Call call, CodegenContext context) {
 		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		List<IR_Node> args = call.getArgs();
 		for(int ii = args.size()-1; ii>=0; ii--){
@@ -775,6 +777,51 @@ public class Codegen {
 		}
 		return ins;
 	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateIf(IR_If if_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateFor(IR_For for_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateWhile(IR_While while_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	// TODO: Implement
+	public static List<Instruction> generateBreak(IR_Break break_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+
+	// TODO: Implement
+	public static List<Instruction> generateContinue(IR_Continue continue_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		return stIns;
+	}
+	
+	public static List<Instruction> generateReturn(IR_Return return_st, CodegenContext context) {
+		List<Instruction> stIns = null;
+		IR_Node expr = return_st.getExpr();
+		// We only have instructions to add if return value is not void.
+		if (expr != null) {
+			LocReg r10 = new LocReg(Regs.R10);
+			stIns = generateExpr(expr, context);
+			stIns.add(new Instruction("pop", r10));
+			stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
+		}
+		return stIns;
+	}
+	
+	
 	/**@brief registers used for function arguments.
 	 * 
 	 */
