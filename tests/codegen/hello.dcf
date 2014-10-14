@@ -12,7 +12,7 @@ void main(){
   aa = 2;
   cc[0] = 0; cc[1] = 1; cc[2] = 2; cc[3] = 3;
   ee[0] = 0; ee[1] = 1; ee[2] = 2; ee[3] = 3;
-  cc[0] -=5;
+  cc[0] -=5+6;
   ee[0] +=10;
   printf("%d %d %d %d\n", cc[dd], cc[1], ee[aa], ee[2]);
   foo(ee[0],ee[1],ee[2],cc[0],cc[1],cc[2], cc[3]);
