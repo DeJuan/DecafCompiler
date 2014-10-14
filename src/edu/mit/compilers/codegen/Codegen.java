@@ -663,16 +663,37 @@ public class Codegen {
 		for(int ii = 0;ii<stmt.size(); ii++){
 			IR_Node st = stmt.get(ii);
 			List<Instruction> stIns =null;
-			if (st instanceof IR_Call){
-				IR_Call call = (IR_Call)st;
-				stIns = generateCall(call,context);
-			}else if(st instanceof IR_FieldDecl){
+			if (st instanceof IR_FieldDecl) {
 				IR_FieldDecl decl =(IR_FieldDecl) st;
 				stIns = generateFieldDecl(decl,context);
-			}else if(st instanceof IR_Assign){
+			} else if (st instanceof IR_Call){
+				IR_Call call = (IR_Call)st;
+				stIns = generateCall(call,context);
+			} else if (st instanceof IR_Assign) {
 				IR_Assign assign = (IR_Assign) st;
 				stIns = generateAssign(assign,context);				
-			}
+ 		        // TODO: Generate logic for these control flow statements
+			} else if (st instanceof IR_If) {
+				IR_If if_st = (IR_If) st;
+				stIns = generateIf(if_st, context);
+			} else if (st instanceof IR_For) {
+   			        IR_For for_st = (IR_For) st;
+				stIns = generateFor(for_st, context);
+                        } else if (st instanceof IR_While) {
+				IR_While while_st = (IR_While) st;
+				stIns = generateWhile(while_st, context);
+			} else if (st instanceof IR_Return) {
+   			        IR_Return return_st = (IR_Return) st;
+				stIns = generateReturn(return_st, context);
+			} else if (st instanceof IR_Break) {
+   			        IR_Break break_st = (IR_Break) st;
+				stIns = generateBreak(break_st, context);
+			} else if (st instanceof IR_Continue) {
+   			        IR_Continue continue_st = (IR_Continue) st;
+				stIns = generateFor(continue_st, context);
+			} else {
+				System.err.println("Should not reach here");
+ 			}
 			ins.addAll(stIns);
 		}
 		context.decScope();
