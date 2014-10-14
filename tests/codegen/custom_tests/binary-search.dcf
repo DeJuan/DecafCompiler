@@ -11,7 +11,7 @@ void read_and_sort(int len) {
  	int i;
  	for ( i = 0, len ) {
    		temp = random();
-    	A[i] = temp;
+    	        A[i] = temp;
  	}
 }
 
