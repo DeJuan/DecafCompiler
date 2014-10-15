@@ -1,10 +1,13 @@
 callout printf;
+boolean dontcall(){
+	printf("shouldn\'t call\n");
+	return true;
+}
 void main(){
 	int a,b;
-	boolean c;
 	a = 3;
 	b = 4;
-	printf("%d %d\n", 1>2, a>=b);
-	printf("%d %d\n", 1<2, a<=b);
-	printf("%d %d %d %d\n", a==b, a!=b, a==a, a!=a);
+	printf("%d\n", a<=b || dontcall());
+	printf("%d\n", a>=b && dontcall());
+	printf("%d\n", !(a<=b || dontcall()));
 }
