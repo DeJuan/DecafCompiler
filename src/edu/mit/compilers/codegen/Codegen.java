@@ -371,6 +371,7 @@ public class Codegen {
 			
 	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
 		// TODO From Maddie: I am 95% sure this violates our conventions in terms of stack use
+		// TODO From DeJuan to Maddie - Which part of it? What exactly did I do wrong? 
 		List<Instruction> ins = new ArrayList<Instruction>();
 		IR_Node left = conditional.getLeft();
 		IR_Node right = conditional.getRight();
@@ -379,10 +380,20 @@ public class Codegen {
 		LocReg rax = new LocReg(Regs.RAX);
 		Ops op = conditional.getOp();
 		
-		if( left instanceof IR_CompareOp)
+		if( left instanceof IR_CompareOp || left instanceof IR_EqOp)
 		{
+			if(left instanceof IR_CompareOp){
 			List<Instruction> lhs = generateCompareOp((IR_CompareOp)left, context);
 			ins.addAll(lhs);
+			}
+			
+			else if(left instanceof IR_EqOp){
+				IR_EqOp eqLeftTemp= (IR_EqOp)left; //There's no real difference between CondOp and EqOp except operators
+				IR_CompareOp leftEq = new IR_CompareOp(eqLeftTemp.getLeft(), eqLeftTemp.getRight(), eqLeftTemp.getOp());
+				List<Instruction> lhs = generateCompareOp(leftEq, context);
+				ins.addAll(lhs);
+			}
+			
 			ins.add(new Instruction("pop", r10)); //Get value of comparison from stack. 1 = true, 0 = false.
 			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
 			Instruction doneHere = Instruction.labelInstruction(labelForDone);
@@ -412,9 +423,17 @@ public class Codegen {
 					
 				}
 				
-				else if (right instanceof IR_CompareOp){
-					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+				else if (right instanceof IR_CompareOp || right instanceof IR_EqOp){
+					if(right instanceof IR_EqOp){
+						IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+						IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+						List<Instruction> rhs = generateCompareOp(rightEq, context);
+						ins.addAll(rhs);
+					}
+					else{
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
 					
 				}
 				
@@ -456,9 +475,17 @@ public class Codegen {
 					
 				}
 				
-				else if (right instanceof IR_CompareOp){
-					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+				else if (right instanceof IR_CompareOp || right instanceof IR_EqOp){
+					if(right instanceof IR_EqOp){
+						IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+						IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+						List<Instruction> rhs = generateCompareOp(rightEq, context);
+						ins.addAll(rhs);
+					}
+					else{
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
 					
 				}
 				
@@ -507,9 +534,18 @@ public class Codegen {
 						
 					}
 					
-					else if (right instanceof IR_CompareOp){
-						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					else if (right instanceof IR_CompareOp || right instanceof IR_EqOp ){
+						if(right instanceof IR_EqOp){
+							IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+							IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+							List<Instruction> rhs = generateCompareOp(rightEq, context);
+							ins.addAll(rhs);
+						}
+						else{
+							List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+							ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						}
+						
 						
 					}
 					
@@ -544,9 +580,17 @@ public class Codegen {
 						
 					}
 					
-					else if (right instanceof IR_CompareOp){
-						List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					else if (right instanceof IR_CompareOp || right instanceof IR_EqOp ){
+						if(right instanceof IR_EqOp){
+							IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+							IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+							List<Instruction> rhs = generateCompareOp(rightEq, context);
+							ins.addAll(rhs);
+						}
+						else{
+							List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+							ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+						}
 						
 					}
 					
@@ -598,10 +642,17 @@ public class Codegen {
 					
 				}
 				
-				else if (right instanceof IR_CompareOp){
-					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
-					
+				else if (right instanceof IR_CompareOp || right instanceof IR_EqOp){
+					if(right instanceof IR_EqOp){
+						IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+						IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+						List<Instruction> rhs = generateCompareOp(rightEq, context);
+						ins.addAll(rhs);
+					}
+					else{
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
 				}
 				
 				else if (right instanceof IR_CondOp){
@@ -641,10 +692,17 @@ public class Codegen {
 					
 				}
 				
-				else if (right instanceof IR_CompareOp){
-					List<Instruction> rhs = generateCompareOp((IR_CompareOp)left, context);
-					ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
-					
+				else if (right instanceof IR_CompareOp || right instanceof IR_EqOp){
+					if(right instanceof IR_EqOp){
+						IR_EqOp eq= (IR_EqOp)right; //There's no real difference between CondOp and EqOp except operators
+						IR_CompareOp rightEq = new IR_CompareOp(eq.getLeft(), eq.getRight(), eq.getOp());
+						List<Instruction> rhs = generateCompareOp(rightEq, context);
+						ins.addAll(rhs);
+					}
+					else{
+						List<Instruction> rhs = generateCompareOp((IR_CompareOp)right, context);
+						ins.addAll(rhs); // instruction results will be on stack; don't need to know the result of lhs anymore.
+					}
 				}
 				
 				else if (right instanceof IR_CondOp){
