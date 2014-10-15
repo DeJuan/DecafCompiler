@@ -20,4 +20,5 @@ void main(){
 	printf("%d\n", !(a<=b || dontcall()) && dontcall());
 	printf("%d\n", !!!(a==a));
 	printf("%d\n", !!!!(a==a));
+	printf("%d\n", ((!(a>=b || shouldcall()) || shouldcall())==shouldcall()) && shouldcall() || shouldcall() );
 }
