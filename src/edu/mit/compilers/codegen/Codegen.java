@@ -128,6 +128,8 @@ public class Codegen {
 		
 		if (expr instanceof IR_Call) {
 			ins = generateCall((IR_Call) expr, context);
+			LocReg rax = new LocReg(Regs.RAX);
+			ins.addAll(context.push(rax));
 			return ins;
 		}
 		

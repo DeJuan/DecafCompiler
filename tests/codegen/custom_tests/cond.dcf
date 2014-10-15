@@ -3,13 +3,21 @@ boolean dontcall(){
 	printf("shouldn\'t call\n");
 	return true;
 }
+
+boolean shouldcall(){
+	printf("should call\n");
+	return true;
+}
+
 void main(){
 	int a,b;
 	a = 3;
 	b = 4;
+
+	printf("%d\n", !(a>=b || shouldcall()) || shouldcall() && shouldcall() );
 	printf("%d\n", a<=b || dontcall());
 	printf("%d\n", a>=b && dontcall());
-	printf("%d\n", !(a<=b || dontcall()));
+	printf("%d\n", !(a<=b || dontcall()) && dontcall());
 	printf("%d\n", !!!(a==a));
 	printf("%d\n", !!!!(a==a));
 }

@@ -11,6 +11,7 @@ import edu.mit.compilers.ir.Ops;
 public abstract class CFGNode {
 	abstract public List<Instruction> codegen (CodegenContext context);
 	public String jumpLabel;
+	public boolean generated=false;
 	public String getLabel(){
 		return jumpLabel;
 	}
@@ -27,6 +28,7 @@ public abstract class CFGNode {
 		public List<Instruction> codegen(CodegenContext context) {
 			// TODO Auto-generated method stub
 			ArrayList<Instruction> ins = new ArrayList<Instruction>();
+			generated = true;
 			return ins;
 		}
 	}
@@ -43,6 +45,7 @@ public abstract class CFGNode {
 
 		@Override
 		public List<Instruction> codegen(CodegenContext context) {
+			generated = true;
 			// TODO Auto-generated method stub
 			ArrayList<Instruction> ins = new ArrayList<Instruction>();
 			if(jumpLabel != null){
@@ -66,8 +69,12 @@ public abstract class CFGNode {
 			ins.add(new Instruction("cmpq", zero, r10));
 			ins.add(new Instruction("je", flabel));
 			ins.add(new Instruction("jmp", tlabel));
-			ins.addAll(f.codegen(context));
-			ins.addAll(t.codegen(context));
+			if(!f.generated){
+				ins.addAll(f.codegen(context));
+			}
+			if(!t.generated){
+				ins.addAll(t.codegen(context));
+			}
 			return ins;
 		}
 	}
