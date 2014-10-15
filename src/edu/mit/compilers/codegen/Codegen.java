@@ -794,13 +794,17 @@ public class Codegen {
 		String labelForTrue = context.genLabel();
 		String labelForEnd = context.genLabel();
 		List<Instruction> trueInstructs = generateBlock(if_st.getTrueBlock(), context);
-		List<Instruction> falseInstructs = generateBlock(if_st.getFalseBlock(), context);
+		List<Instruction> falseInstructs;
+    if (if_st.getFalseBlock() == null) {
+      falseInstructs = new ArrayList<Instruction>();
+    } else {
+      falseInstructs = generateBlock(if_st.getFalseBlock(), context);
+    }
 		stIns.addAll(generateExpr(if_st.getExpr(), context));
 		LocReg r10 = new LocReg(Regs.R10);
 		stIns.addAll(context.pop(r10));
-		stIns.add(new Instruction("cmp", r10, new LocLiteral(1L)));
+		stIns.add(new Instruction("cmp", new LocLiteral(1L), r10));
 		stIns.add(new Instruction("je", new LocLabel(labelForTrue)));
-		stIns.add(Instruction.labelInstruction(labelForTrue));
 		stIns.addAll(falseInstructs);
 		stIns.add(new Instruction("jmp", new LocLabel(labelForEnd)));
 		stIns.add(Instruction.labelInstruction(labelForTrue));
