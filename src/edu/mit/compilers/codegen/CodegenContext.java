@@ -40,6 +40,13 @@ public class CodegenContext {
 	
 	private int numLabels;
 	
+	/**
+	 * List of pairs of start/end labels
+	 * Used only for for and while loops
+	 * See GenerateFor and GenerateWhile
+	 */
+	List<String[]> loopBookends;
+	
 	public CodegenContext(){
 		stringLiterals = new HashMap<String,Long>();
 		symbol = new SymbolTable<Descriptor>();
@@ -47,6 +54,7 @@ public class CodegenContext {
 		rsp = new LocStack();
 		symbol.incScope();
 		numLabels=0;
+		loopBookends = new ArrayList<String[]>();
 	}
 	
 	/**@brief generate a unique jump label.
@@ -224,5 +232,35 @@ public class CodegenContext {
 		il.add(new Instruction("popq", loc));
 		rsp.setValue(rsp.getValue() + CodegenConst.INT_SIZE);
 		return il;
+	}
+	
+	/**
+	 * To be called by GenerateFor or GenerateWhile upon entering a new loop 
+	 * @param start - the label for the start of the loop
+	 * @param end - the label for the end of the loop
+	 */
+	public void enterLoop(String start, String end) {
+	    loopBookends.add(new String[] {start, end});
+	}
+	
+	/**
+	 * To be called by GenerateFor or GenerateWhile upon exiting a loop
+	 */
+	public void exitLoop() {
+	    loopBookends.remove(loopBookends.size() - 1);
+	}
+	
+	/**
+	 * Returns the label for the start of the innermost for/while loop
+	 */
+	public String getInnermostStart() {
+	    return loopBookends.get(loopBookends.size())[0];
+	}
+	
+	/**
+	 * Returns the label for the end of the innermost for/while loop
+	 */
+	public String getInnermostEnd() {
+	    return loopBookends.get(loopBookends.size())[1];
 	}
 }

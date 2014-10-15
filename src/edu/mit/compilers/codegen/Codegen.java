@@ -370,7 +370,7 @@ public class Codegen {
 	}
 			
 	private static List<Instruction> generateCondOp(IR_CondOp conditional, CodegenContext context) {
-		// TODO Auto-generated method stub
+		// TODO From Maddie: I am 95% sure this violates our conventions in terms of stack use
 		List<Instruction> ins = new ArrayList<Instruction>();
 		IR_Node left = conditional.getLeft();
 		IR_Node right = conditional.getRight();
@@ -567,6 +567,8 @@ public class Codegen {
 		
 		else if (left instanceof IR_CondOp){
 			List<Instruction> lhs = generateCondOp((IR_CondOp) left, context);
+			// TODO: From Maddie: I am 95% sure lhs needs to be added to ins before this, so I added the following line
+			ins.addAll(lhs);
 			ins.add(new Instruction("pop", r10)); //Result of lhs was on stack, get it off and into r10. From here on, it's a copy of what I did before for comp op.
 			String labelForDone = context.genLabel(); //label for end of compare op, want to be consistent across cases.
 			Instruction doneHere = Instruction.labelInstruction(labelForDone);
@@ -787,38 +789,113 @@ public class Codegen {
 		return ins;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateIf(IR_If if_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForTrue = context.genLabel();
+		String labelForEnd = context.genLabel();
+		List<Instruction> trueInstructs = generateBlock(if_st.getTrueBlock(), context);
+		List<Instruction> falseInstructs = generateBlock(if_st.getFalseBlock(), context);
+		stIns.addAll(generateExpr(if_st.getExpr(), context));
+		LocReg r10 = new LocReg(Regs.R10);
+		stIns.addAll(context.pop(r10));
+		stIns.add(new Instruction("cmp", r10, new LocLiteral(1L)));
+		stIns.add(new Instruction("je", new LocLabel(labelForTrue)));
+		stIns.add(Instruction.labelInstruction(labelForTrue));
+		stIns.addAll(falseInstructs);
+		stIns.add(new Instruction("jmp", new LocLabel(labelForEnd)));
+		stIns.add(Instruction.labelInstruction(labelForTrue));
+		stIns.addAll(trueInstructs);
+		stIns.add(Instruction.labelInstruction(labelForEnd));
 		return stIns;
 	}
 	
-	// TODO: Implement
+	
 	public static List<Instruction> generateFor(IR_For for_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForStart = context.genLabel();
+		String labelForEnd = context.genLabel();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		LocationMem loopVar = generateVarLoc(for_st.getVar(), context, stIns);
+        stIns.addAll(generateExpr(for_st.getStart(), context));
+        stIns.addAll(context.pop(r10));
+        stIns.add(new Instruction("movq", r10, loopVar));
+        
+        stIns.addAll(generateExpr(for_st.getEnd(), context));
+        // Start of loop
+		context.enterLoop(labelForStart, labelForEnd);
+		stIns.add(Instruction.labelInstruction(labelForStart));
+		stIns.addAll(generateExpr(for_st.getVar(), context));
+		stIns.addAll(context.pop(r10));  // loop var
+		stIns.addAll(context.pop(r11));  // end
+		stIns.add(new Instruction("cmp", r10, r11));
+		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.addAll(context.push(r11));
+		stIns.addAll(generateBlock(for_st.getBlock(), context));
+		// TODO: Is this legal since loopVar is a memory address?
+		stIns.add(new Instruction("add", new LocLiteral(1L), loopVar));
+		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
+		
+		stIns.add(Instruction.labelInstruction(labelForEnd));
+		stIns.addAll(context.pop(r11));
+		context.exitLoop();
 		return stIns;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateWhile(IR_While while_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForStart = context.genLabel();
+		String labelForEnd = context.genLabel();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		if (while_st.getMaxLoops() != null) {
+		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
+		} else {
+		    // TODO: Is this legal?
+		    stIns.addAll(context.push(new LocLiteral(Long.MAX_VALUE)));
+		}
+		stIns.addAll(context.push(new LocLiteral(0L)));
+		
+		// Start loop here
+		context.enterLoop(labelForStart, labelForEnd);
+		stIns.add(Instruction.labelInstruction(labelForStart));
+		stIns.addAll(generateExpr(while_st.getExpr(), context));
+		stIns.addAll(context.pop(r10));
+		stIns.add(new Instruction("cmp", r10, new LocLiteral(0L)));
+		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.addAll(context.pop(r10));  // loops count
+		stIns.addAll(context.pop(r11));  // max loops
+		stIns.add(new Instruction("cmp", r10, r11));
+		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.add(new Instruction("add", new LocLiteral(1L), r10));  // increment loop count
+		stIns.addAll(context.push(r11));
+		stIns.addAll(context.push(r10));
+		stIns.addAll(generateBlock(while_st.getBlock(), context));
+		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
+		
+		// End loop here
+		stIns.add(Instruction.labelInstruction(labelForEnd));
+		stIns.addAll(context.pop(r10));
+		stIns.addAll(context.pop(r11));
+		context.exitLoop();
+		
 		return stIns;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateBreak(IR_Break break_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		stIns.add(new Instruction("jmp", new LocLabel(context.getInnermostEnd())));
 		return stIns;
 	}
 
-	// TODO: Implement
 	public static List<Instruction> generateContinue(IR_Continue continue_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		stIns.add(new Instruction("jmp", new LocLabel(context.getInnermostStart())));
 		return stIns;
 	}
 	
 	public static List<Instruction> generateReturn(IR_Return return_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
 		IR_Node expr = return_st.getExpr();
 		// We only have instructions to add if return value is not void.
 		if (expr != null) {
