@@ -17,7 +17,7 @@ public abstract class CFGNode {
 	public void setLabel(String l){
 		jumpLabel = l;
 	}
-	/**@brief wrapper for IR*/
+
 	public static class CFGLabel extends CFGNode{
 		
 		public CFGLabel(String label){

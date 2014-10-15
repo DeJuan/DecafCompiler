@@ -11,4 +11,5 @@ void main(){
 	printf("%d\n", a>=b && dontcall());
 	printf("%d\n", !(a<=b || dontcall()));
 	printf("%d\n", !!!(a==a));
+	printf("%d\n", !!!!(a==a));
 }
