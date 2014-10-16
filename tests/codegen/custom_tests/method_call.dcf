@@ -1,0 +1,17 @@
+callout printf;
+
+boolean foo(int five) {
+  boolean b; //  <-- ANY DECLARATION SCREWS UP FIVE
+  printf("Five is now %d \n", five);
+  return false;
+}
+
+void main ( ) {
+  int five;
+  five = 5;
+  if (true) { // putting an if statement changes "five" later
+    printf("Hi");
+  }
+  printf("Five is %d \n", five);
+  foo(five);
+}
