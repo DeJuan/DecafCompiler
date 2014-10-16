@@ -1,0 +1,14 @@
+callout printf;
+void main ( ) {
+  int j; // this gives weird errors for j after the loop
+  //int j, k; // this doesn't give weird errors
+  for ( j = 0, 10) {
+    printf("%d ", j);
+  }
+  printf("\n");
+  printf("j is: %d\n", j);
+  for ( j = 0, 10) {
+    printf("%d ", j);
+  }
+  printf("\n");
+}
