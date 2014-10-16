@@ -202,7 +202,16 @@ public class Codegen {
 		
 		if (literal instanceof IR_IntLiteral) {
 			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
-			ins = context.push(new LocLiteral(int_literal.getValue()));
+			if(int_literal.getValue()>Integer.MAX_VALUE || 
+					int_literal.getValue()<Integer.MIN_VALUE ){
+				LocReg rax = new LocReg(Regs.RAX);
+				ins = new ArrayList<Instruction>(2);
+				ins.add(new Instruction("movabsq",new LocLiteral(int_literal.getValue()),rax));
+				ins.addAll(context.push(rax));
+				
+			}else{
+				ins = context.push(new LocLiteral(int_literal.getValue()));
+			}
 		} 
 		else if (literal instanceof IR_BoolLiteral) {
 			IR_BoolLiteral bool_literal = (IR_BoolLiteral) literal;
