@@ -560,7 +560,7 @@ public class Codegen {
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
 		stIns.add(Instruction.labelInstruction(labelForEnd));
-//		stIns.addAll(context.pop(r11));
+		stIns.addAll(context.pop(r11));
 		context.exitLoop();
 		return stIns;
 	}
