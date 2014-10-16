@@ -1,0 +1,18 @@
+callout printf;
+void main(){
+	int a;
+	a = 0;
+	while(a<100):10{
+		int b;
+		b = a+1;
+		printf("%d\n",b);
+		a +=1;
+	}
+	while(a<20){
+		int b;
+		b = a+1;
+		printf("%d\n",b);
+		a +=1;
+	}
+	printf("a: %d\n",a);
+}
