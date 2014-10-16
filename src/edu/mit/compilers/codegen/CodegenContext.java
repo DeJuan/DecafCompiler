@@ -178,16 +178,13 @@ public class CodegenContext {
 	 * @return
 	 */
 	public LocStack allocLocal(long size){
-		long offset = rsp.getValue();
-		offset-=size;
-		rsp.setValue(offset);
-		
+		totalLocalSize += size;
+		long offset = totalLocalSize;
 		int idx = localVarSize.size()-1;
 		long blockSize = localVarSize.get(idx);
 		blockSize+= size;
 		localVarSize.set(idx, blockSize);
-		totalLocalSize += size;
-		return rsp.clone();
+		return new LocStack(-offset);
 	}
 	
 	/**@brief convenience functions for symbol table.
@@ -207,10 +204,6 @@ public class CodegenContext {
 			maxLocalSize = totalLocalSize;
 		}
 		totalLocalSize -= locals;
-
-		long offset = rsp.getValue();
-		offset+=locals;
-		rsp.setValue(offset);		
 	}
 	
 	/**@brief Push value stored in loc to the stack.
