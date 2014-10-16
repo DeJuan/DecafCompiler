@@ -587,7 +587,7 @@ public class Codegen {
 		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
 		    stIns.addAll(context.push(new LocLiteral(0L)));
 		}
-				
+
 		// Start loop here
 		context.enterLoop(labelForStart, labelForEnd);
 		stIns.add(Instruction.labelInstruction(labelForStart));
