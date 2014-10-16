@@ -552,7 +552,7 @@ public class Codegen {
 		stIns.addAll(context.pop(r10));  // loop var
 		stIns.addAll(context.pop(r11));  // end
 		stIns.add(new Instruction("cmp", r10, r11));
-		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.add(new Instruction("jle", new LocLabel(labelForEnd)));
 		stIns.addAll(context.push(r11));
 		stIns.addAll(generateBlock(for_st.getBlock(), context));
 		// TODO: Is this legal since loopVar is a memory address?
@@ -560,7 +560,7 @@ public class Codegen {
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
 		stIns.add(Instruction.labelInstruction(labelForEnd));
-		stIns.addAll(context.pop(r11));
+//		stIns.addAll(context.pop(r11));
 		context.exitLoop();
 		return stIns;
 	}
