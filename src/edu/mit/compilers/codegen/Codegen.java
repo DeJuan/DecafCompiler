@@ -49,7 +49,19 @@ public class Codegen {
 		context.putSymbol(name, d);
 		context.enterFun();
 		context.incScope();
+
+		Instruction tmpIns;
+		context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
+		context.addIns(new Instruction(".text"));
+		context.addIns(new Instruction(".global", new LocLabel(name)));
+		tmpIns = Instruction.labelInstruction(name);
+		context.addIns(tmpIns);
 		
+		LocReg rbp = new LocReg(Regs.RBP);
+		LocReg rsp = new LocReg(Regs.RSP);
+		context.addIns(new Instruction("pushq", rbp));		
+		context.addIns(new Instruction("movq", rsp, rbp ));
+				
 		//instructions for potentially saving arguments.
 		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
 		context.setRsp(context.maxLocalSize);
@@ -69,22 +81,15 @@ public class Codegen {
 			}
 			argd.setLocation(argDst);
 		}
+		context.addIns(argIns);
 		
 		//generateBlock accumulates static local stack size required. 
 		List<Instruction> blockIns = generateBlock(decl.body, context);
 
 		//instructions for entering a function.
 		LocLiteral loc= new LocLiteral(context.maxLocalSize);
-		Instruction tmpIns;
-		context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
-		context.addIns(new Instruction(".text"));
-		context.addIns(new Instruction(".global", new LocLabel(name)));
-		tmpIns = Instruction.labelInstruction(name);
-		context.addIns(tmpIns);
-		tmpIns = new Instruction("enter", loc, new LocLiteral(0));
-		context.addIns(tmpIns);
-		context.addIns(argIns);
-		
+		context.addIns(new Instruction("subq", loc, rsp));
+
 		//write instructions for function body.
 		context.addIns(blockIns);
 		context.addIns(new Instruction("leave"));
@@ -144,8 +149,7 @@ public class Codegen {
 			return ins;
 		}
 		
-		else if ( (expr instanceof IR_CondOp)
-				|| (expr instanceof IR_Not)){
+		else if ((expr instanceof IR_CondOp) || (expr instanceof IR_Not)) {
 			ins = generateCondOp(expr, context);
 			return ins;
 		}
@@ -199,7 +203,16 @@ public class Codegen {
 		
 		if (literal instanceof IR_IntLiteral) {
 			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
-			ins = context.push(new LocLiteral(int_literal.getValue()));
+			if(int_literal.getValue()>Integer.MAX_VALUE || 
+					int_literal.getValue()<Integer.MIN_VALUE ){
+				LocReg rax = new LocReg(Regs.RAX);
+				ins = new ArrayList<Instruction>(2);
+				ins.add(new Instruction("movabsq",new LocLiteral(int_literal.getValue()),rax));
+				ins.addAll(context.push(rax));
+				
+			}else{
+				ins = context.push(new LocLiteral(int_literal.getValue()));
+			}
 		} 
 		else if (literal instanceof IR_BoolLiteral) {
 			IR_BoolLiteral bool_literal = (IR_BoolLiteral) literal;
@@ -212,25 +225,23 @@ public class Codegen {
 		return ins;
 	}
 
-	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {
-		LocReg r10 = new LocReg(Regs.R10);
-		LocReg r11 = new LocReg(Regs.R11);
-		String labelForFalse = context.genLabel();
-		Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
-		String labelForDone = context.genLabel();
-		Instruction doneHere = Instruction.labelInstruction(labelForDone);
-		
+	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {		
 		List<Instruction> ins = new ArrayList<Instruction>();
+		LocReg r10 = new LocReg(Regs.R10);
+		String labelForFalse = context.genLabel();
+		String labelForDone = context.genLabel();
+		List<Instruction> trueInstructs = generateExpr(ternary.getTrueExpr(), context);
+		List<Instruction> falseInstructs = generateExpr(ternary.getFalseExpr(), context);
+		
 		ins.addAll(generateExpr(ternary.getCondition(), context)); //Get result of conditional onto the stack by resolving it. 
-		ins.add(new Instruction("pop", r10)); //pop result into r10.
-		ins.add(new Instruction("mov", new LocLiteral(1), r11)); // put 1, or true, into r11
-		ins.add(new Instruction("cmp", r10, r11)); //Compare r10 against truth
+		ins.addAll(context.pop(r10)); //pop result into r10.
+		ins.add(new Instruction("cmp", new LocLiteral(1L), r10)); //Compare r10 against truth
 		ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //If result isn't equal, r10 is 0, meaning we take the false branch.
-		ins.addAll(generateExpr(ternary.getTrueExpr(), context)); //If we don't jump, resolve the true branch 
+		ins.addAll(trueInstructs); //If we don't jump, resolve the true branch 
 		ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //jump to being done
-		ins.add(wasFalse); //If we jump, we jump here.
-		ins.addAll(generateExpr(ternary.getFalseExpr(), context)); //Resolve the false branch. 
-		ins.add(doneHere); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
+		ins.add(Instruction.labelInstruction(labelForFalse)); //If we jump, we jump here.
+		ins.addAll(falseInstructs); //Resolve the false branch. 
+		ins.add(Instruction.labelInstruction(labelForDone)); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
 		return ins; //We're done, return the list.
 	}
 
@@ -507,38 +518,117 @@ public class Codegen {
 		return ins;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateIf(IR_If if_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForTrue = context.genLabel();
+		String labelForEnd = context.genLabel();
+		List<Instruction> trueInstructs = generateBlock(if_st.getTrueBlock(), context);
+		List<Instruction> falseInstructs;
+	    if (if_st.getFalseBlock() == null) {
+	      falseInstructs = new ArrayList<Instruction>();
+	    } else {
+	      falseInstructs = generateBlock(if_st.getFalseBlock(), context);
+	    }
+		stIns.addAll(generateExpr(if_st.getExpr(), context));
+		LocReg r10 = new LocReg(Regs.R10);
+		stIns.addAll(context.pop(r10));
+		stIns.add(new Instruction("cmp", new LocLiteral(1L), r10));
+		stIns.add(new Instruction("je", new LocLabel(labelForTrue)));
+		stIns.addAll(falseInstructs);
+		stIns.add(new Instruction("jmp", new LocLabel(labelForEnd)));
+		stIns.add(Instruction.labelInstruction(labelForTrue));
+		stIns.addAll(trueInstructs);
+		stIns.add(Instruction.labelInstruction(labelForEnd));
 		return stIns;
 	}
 	
-	// TODO: Implement
+	
 	public static List<Instruction> generateFor(IR_For for_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForStart = context.genLabel();
+		String labelForEnd = context.genLabel();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		LocationMem loopVar = generateVarLoc(for_st.getVar(), context, stIns);
+        stIns.addAll(generateExpr(for_st.getStart(), context));
+        stIns.addAll(context.pop(r10));
+        stIns.add(new Instruction("movq", r10, loopVar));
+        
+        stIns.addAll(generateExpr(for_st.getEnd(), context));
+        // Start of loop
+		context.enterLoop(labelForStart, labelForEnd);
+		stIns.add(Instruction.labelInstruction(labelForStart));
+		stIns.addAll(generateExpr(for_st.getVar(), context));
+		stIns.addAll(context.pop(r10));  // loop var
+		stIns.addAll(context.pop(r11));  // end
+		stIns.add(new Instruction("cmp", r10, r11));
+		stIns.add(new Instruction("jle", new LocLabel(labelForEnd)));
+		stIns.addAll(context.push(r11));
+		stIns.addAll(generateBlock(for_st.getBlock(), context));
+		// TODO: Is this legal since loopVar is a memory address?
+		stIns.add(new Instruction("add", new LocLiteral(1L), loopVar));
+		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
+		
+		stIns.add(Instruction.labelInstruction(labelForEnd));
+//		stIns.addAll(context.pop(r11));
+		context.exitLoop();
 		return stIns;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateWhile(IR_While while_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		String labelForStart = context.genLabel();
+		String labelForEnd = context.genLabel();
+		LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+		if (while_st.getMaxLoops() != null) {
+		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
+		} else {
+		    // TODO: Is this legal?
+		    stIns.addAll(context.push(new LocLiteral(Long.MAX_VALUE)));
+		}
+		stIns.addAll(context.push(new LocLiteral(0L)));
+		
+		// Start loop here
+		context.enterLoop(labelForStart, labelForEnd);
+		stIns.add(Instruction.labelInstruction(labelForStart));
+		stIns.addAll(generateExpr(while_st.getExpr(), context));
+		stIns.addAll(context.pop(r10));
+		stIns.add(new Instruction("cmp", r10, new LocLiteral(0L)));
+		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.addAll(context.pop(r10));  // loops count
+		stIns.addAll(context.pop(r11));  // max loops
+		stIns.add(new Instruction("cmp", r10, r11));
+		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.add(new Instruction("add", new LocLiteral(1L), r10));  // increment loop count
+		stIns.addAll(context.push(r11));
+		stIns.addAll(context.push(r10));
+		stIns.addAll(generateBlock(while_st.getBlock(), context));
+		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
+		
+		// End loop here
+		stIns.add(Instruction.labelInstruction(labelForEnd));
+		stIns.addAll(context.pop(r10));
+		stIns.addAll(context.pop(r11));
+		context.exitLoop();
+		
 		return stIns;
 	}
 	
-	// TODO: Implement
 	public static List<Instruction> generateBreak(IR_Break break_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		stIns.add(new Instruction("jmp", new LocLabel(context.getInnermostEnd())));
 		return stIns;
 	}
 
-	// TODO: Implement
 	public static List<Instruction> generateContinue(IR_Continue continue_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
+		stIns.add(new Instruction("jmp", new LocLabel(context.getInnermostStart())));
 		return stIns;
 	}
 	
 	public static List<Instruction> generateReturn(IR_Return return_st, CodegenContext context) {
-		List<Instruction> stIns = null;
+		List<Instruction> stIns = new ArrayList<Instruction>();
 		IR_Node expr = return_st.getExpr();
 		// We only have instructions to add if return value is not void.
 		if (expr != null) {

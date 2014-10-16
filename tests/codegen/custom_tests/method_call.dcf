@@ -1,0 +1,14 @@
+callout printf;
+
+boolean foo(int five, int two, int three) {
+  boolean b; //  this should not be pushed to stack
+  int c; // this should not be pushed to stack
+  printf("Five is now %d \n", five);
+  printf("two is now %d \n", two);
+  printf("three is now %d \n", three);
+  return false;
+}
+
+void main ( ) {
+  foo(5, 2, 3);
+}
