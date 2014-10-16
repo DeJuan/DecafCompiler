@@ -581,14 +581,13 @@ public class Codegen {
 		String labelForEnd = context.genLabel();
 		LocReg r10 = new LocReg(Regs.R10);
 		LocReg r11 = new LocReg(Regs.R11);
-		if (while_st.getMaxLoops() != null) {
-		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
-		} else {
-		    // TODO: Is this legal?
-		    stIns.addAll(context.push(new LocLiteral(Integer.MAX_VALUE)));
-		}
-		stIns.addAll(context.push(new LocLiteral(0L)));
 		
+		boolean hasBound = (while_st.getMaxLoops() != null); 
+		if (hasBound) {
+		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
+		    stIns.addAll(context.push(new LocLiteral(0L)));
+		}
+				
 		// Start loop here
 		context.enterLoop(labelForStart, labelForEnd);
 		stIns.add(Instruction.labelInstruction(labelForStart));
@@ -596,20 +595,22 @@ public class Codegen {
 		stIns.addAll(context.pop(r10));
 		stIns.add(new Instruction("cmp", new LocLiteral(0L), r10));
 		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
-		stIns.addAll(context.pop(r10));  // loops count
-		stIns.addAll(context.pop(r11));  // max loops
-		stIns.add(new Instruction("cmp", r10, r11));
-		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
-		stIns.add(new Instruction("add", new LocLiteral(1L), r10));  // increment loop count
-		stIns.addAll(context.push(r11));
-		stIns.addAll(context.push(r10));
+		
+		if(hasBound){
+			stIns.addAll(context.pop(r10));  // loops count
+			stIns.addAll(context.pop(r11));  // max loops
+			stIns.add(new Instruction("cmp", r10, r11));
+			stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+			stIns.add(new Instruction("add", new LocLiteral(1L), r10));  // increment loop count
+			stIns.addAll(context.push(r11));
+			stIns.addAll(context.push(r10));
+		}
+		
 		stIns.addAll(generateBlock(while_st.getBlock(), context));
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
 		// End loop here
 		stIns.add(Instruction.labelInstruction(labelForEnd));
-		stIns.addAll(context.pop(r10));
-		stIns.addAll(context.pop(r11));
 		context.exitLoop();
 		
 		return stIns;
