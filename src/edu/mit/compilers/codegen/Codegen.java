@@ -211,25 +211,23 @@ public class Codegen {
 		return ins;
 	}
 
-	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {
-		LocReg r10 = new LocReg(Regs.R10);
-		LocReg r11 = new LocReg(Regs.R11);
-		String labelForFalse = context.genLabel();
-		Instruction wasFalse = Instruction.labelInstruction(labelForFalse);
-		String labelForDone = context.genLabel();
-		Instruction doneHere = Instruction.labelInstruction(labelForDone);
-		
+	private static List<Instruction> generateTernaryOp(IR_Ternary ternary, CodegenContext context) {		
 		List<Instruction> ins = new ArrayList<Instruction>();
+		LocReg r10 = new LocReg(Regs.R10);
+		String labelForFalse = context.genLabel();
+		String labelForDone = context.genLabel();
+		List<Instruction> trueInstructs = generateExpr(ternary.getTrueExpr(), context);
+		List<Instruction> falseInstructs = generateExpr(ternary.getFalseExpr(), context);
+		
 		ins.addAll(generateExpr(ternary.getCondition(), context)); //Get result of conditional onto the stack by resolving it. 
-		ins.add(new Instruction("pop", r10)); //pop result into r10.
-		ins.add(new Instruction("mov", new LocLiteral(1), r11)); // put 1, or true, into r11
-		ins.add(new Instruction("cmp", r10, r11)); //Compare r10 against truth
+		ins.addAll(context.pop(r10)); //pop result into r10.
+		ins.add(new Instruction("cmp", r10, new LocLiteral(1L))); //Compare r10 against truth
 		ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //If result isn't equal, r10 is 0, meaning we take the false branch.
-		ins.addAll(generateExpr(ternary.getTrueExpr(), context)); //If we don't jump, resolve the true branch 
+		ins.addAll(trueInstructs); //If we don't jump, resolve the true branch 
 		ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //jump to being done
-		ins.add(wasFalse); //If we jump, we jump here.
-		ins.addAll(generateExpr(ternary.getFalseExpr(), context)); //Resolve the false branch. 
-		ins.add(doneHere); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
+		ins.add(Instruction.labelInstruction(labelForFalse)); //If we jump, we jump here.
+		ins.addAll(falseInstructs); //Resolve the false branch. 
+		ins.add(Instruction.labelInstruction(labelForDone)); //This is where we'd jump to if we resolved the true version, which skips over the whole false branch. 
 		return ins; //We're done, return the list.
 	}
 
@@ -512,11 +510,11 @@ public class Codegen {
 		String labelForEnd = context.genLabel();
 		List<Instruction> trueInstructs = generateBlock(if_st.getTrueBlock(), context);
 		List<Instruction> falseInstructs;
-    if (if_st.getFalseBlock() == null) {
-      falseInstructs = new ArrayList<Instruction>();
-    } else {
-      falseInstructs = generateBlock(if_st.getFalseBlock(), context);
-    }
+	    if (if_st.getFalseBlock() == null) {
+	      falseInstructs = new ArrayList<Instruction>();
+	    } else {
+	      falseInstructs = generateBlock(if_st.getFalseBlock(), context);
+	    }
 		stIns.addAll(generateExpr(if_st.getExpr(), context));
 		LocReg r10 = new LocReg(Regs.R10);
 		stIns.addAll(context.pop(r10));
