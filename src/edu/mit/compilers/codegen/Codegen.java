@@ -49,10 +49,21 @@ public class Codegen {
 		context.putSymbol(name, d);
 		context.enterFun();
 		context.incScope();
+
+		Instruction tmpIns;
+		context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
+		context.addIns(new Instruction(".text"));
+		context.addIns(new Instruction(".global", new LocLabel(name)));
+		tmpIns = Instruction.labelInstruction(name);
+		context.addIns(tmpIns);
 		
+		LocReg rbp = new LocReg(Regs.RBP);
+		LocReg rsp = new LocReg(Regs.RSP);
+		context.addIns(new Instruction("pushq", rbp));		
+		context.addIns(new Instruction("movq", rsp, rbp ));
+				
 		//instructions for potentially saving arguments.
 		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
-				
 		//save register parameters to stack
 		for(int ii = 0; ii<decl.args.size(); ii++){
 			IR_FieldDecl a = decl.args.get(ii);
@@ -69,22 +80,15 @@ public class Codegen {
 			}
 			argd.setLocation(argDst);
 		}
+		context.addIns(argIns);
 		
 		//generateBlock accumulates static local stack size required. 
 		List<Instruction> blockIns = generateBlock(decl.body, context);
 
 		//instructions for entering a function.
 		LocLiteral loc= new LocLiteral(context.maxLocalSize);
-		Instruction tmpIns;
-		context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
-		context.addIns(new Instruction(".text"));
-		context.addIns(new Instruction(".global", new LocLabel(name)));
-		tmpIns = Instruction.labelInstruction(name);
-		context.addIns(tmpIns);
-		tmpIns = new Instruction("enter", loc, new LocLiteral(0));
-		context.addIns(tmpIns);
-		context.addIns(argIns);
-		
+		context.addIns(new Instruction("subq", loc, rsp));
+
 		//write instructions for function body.
 		context.addIns(blockIns);
 		context.addIns(new Instruction("leave"));
@@ -556,7 +560,7 @@ public class Codegen {
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
 		stIns.add(Instruction.labelInstruction(labelForEnd));
-		stIns.addAll(context.pop(r11));
+//		stIns.addAll(context.pop(r11));
 		context.exitLoop();
 		return stIns;
 	}
