@@ -267,11 +267,21 @@ public class Codegen {
 		case INTARR:
 		case BOOLARR:
 			IR_Node index = var.getIndex();
+			IR_FieldDecl decl = (IR_FieldDecl)d.getIR();
 			LocArray loc_array = null;
+			long len = decl.getLength().getValue();
 			if (index instanceof IR_IntLiteral) {
 				IR_IntLiteral index_int = (IR_IntLiteral)var.getIndex();
 				loc_array = new LocArray(d.getLocation(), 
 						new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
+				
+				if(index_int.getValue() >= len){
+					//statically throw error
+					ins.add(new Instruction("movq", 
+							new LocLiteral(CodegenConst.ERR_ARRAY_BOUND), new LocReg(Regs.RDI)));
+					ins.add(new Instruction("call", new LocLabel("exit")));
+				}
+				
 			} else {
 				// evaluate index and push index location to stack
 				ins.addAll(generateExpr(index, context));
@@ -280,6 +290,8 @@ public class Codegen {
 				// saves offset at R11
 				ins.add(new Instruction("popq", rax));
 				loc_array = new LocArray(d.getLocation(), rax, CodegenConst.INT_SIZE);
+				ins.add(new Instruction("cmpq", new LocLiteral(len), rax));
+				ins.add(new Instruction("jge", new LocLabel(context.getArrayBoundLabel())));
 			}
 			return loc_array;
 		default:

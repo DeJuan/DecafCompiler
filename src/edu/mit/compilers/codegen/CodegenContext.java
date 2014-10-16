@@ -40,6 +40,7 @@ public class CodegenContext {
 	
 	private int numLabels;
 	
+	private String arrayBoundLabel = null;
 	/**
 	 * List of pairs of start/end labels
 	 * Used only for for and while loops
@@ -145,6 +146,14 @@ public class CodegenContext {
 		
 		for(int ii =0 ;ii<ss.length;ii++){
 			ps.print (StringLiteralLoc(ii) + ": \n.string \"" + ss[ii]+ "\"\n");
+		}
+		
+		//if needs array bound checking
+		if(arrayBoundLabel != null){
+			ins.add(Instruction.labelInstruction(arrayBoundLabel));
+			ins.add(new Instruction("movq", 
+					new LocLiteral(CodegenConst.ERR_ARRAY_BOUND), new LocReg(Regs.RDI)));
+			ins.add(new Instruction("call", new LocLabel("exit")));
 		}
 		
 		for(int ii = 0;ii<ins.size();ii++){
@@ -255,5 +264,12 @@ public class CodegenContext {
 	 */
 	public String getInnermostEnd() {
 	    return loopBookends.get(loopBookends.size())[1];
+	}
+	
+	public String getArrayBoundLabel(){
+		if(arrayBoundLabel == null){
+			arrayBoundLabel = genLabel();
+		}
+		return arrayBoundLabel;
 	}
 }

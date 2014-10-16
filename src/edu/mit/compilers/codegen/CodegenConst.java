@@ -14,4 +14,6 @@ public class CodegenConst {
 	// representing booleans with int
 	public static final int BOOL_FALSE=0;
 	public static final int BOOL_TRUE=1;
+	
+	public static final int ERR_ARRAY_BOUND=255;
 }
