@@ -8,6 +8,6 @@ void main(){
 			b[c] = a+c;
 			printf("%d ",b[c]);
 		}
-		printf("\n");
+		printf(" a:%d, c:%d \n",a, c);
 	}
 }
