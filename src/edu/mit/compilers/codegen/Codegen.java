@@ -91,9 +91,23 @@ public class Codegen {
 
 		//write instructions for function body.
 		context.addIns(blockIns);
-		context.addIns(new Instruction("leave"));
-		context.addIns(new Instruction("ret"));
 		context.decScope();
+
+		//prevent fall through for void functions
+		List <IR_Node> st = decl.body.getStatements();
+		boolean needReturn = false;
+		if(st.size()>0){
+			IR_Node lastStatement = st.get(st.size()-1);
+			if(!(lastStatement instanceof IR_Return)){
+				needReturn = true;
+			}
+		}else{
+			needReturn = true;
+		}
+		if(needReturn){
+			context.addIns(new Instruction("leave"));
+			context.addIns(new Instruction("ret"));
+		}
 	}
 	
 	public static void generateFieldDeclGlobal(IR_FieldDecl decl, CodegenContext context){
@@ -261,11 +275,11 @@ public class Codegen {
 			} else {
 				// evaluate index and push index location to stack
 				ins.addAll(generateExpr(index, context));
-				//must use r11 here since in assign, r10 is used for rhs
-				LocReg r11 = new LocReg(Regs.R11);
+				//must not use r11 or r10 here since in assign, they may be used
+				LocReg rax = new LocReg(Regs.RAX);
 				// saves offset at R11
-				ins.add(new Instruction("pop", r11));
-				loc_array = new LocArray(d.getLocation(), r11, CodegenConst.INT_SIZE);
+				ins.add(new Instruction("popq", rax));
+				loc_array = new LocArray(d.getLocation(), rax, CodegenConst.INT_SIZE);
 			}
 			return loc_array;
 		default:
@@ -446,14 +460,12 @@ public class Codegen {
 		Ops op = assign.getOp();
 		IR_Var lhs = assign.getLhs();
 		IR_Node rhs = assign.getRhs();
-		LocationMem dst= generateVarLoc(lhs, context, ins);
 		
 		ins.addAll(generateExpr(rhs,context));
 		LocReg r10 = new LocReg(Regs.R10);
 		LocReg r11 = new LocReg(Regs.R11);
-		
+		LocationMem dst= generateVarLoc(lhs, context, ins);
 		ins.addAll(context.pop(r10));
-		
 		if(op != Ops.ASSIGN){
 			String cmd = null;
 			switch(op){
@@ -637,6 +649,8 @@ public class Codegen {
 			stIns.add(new Instruction("pop", r10));
 			stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
 		}
+		stIns.add(new Instruction("leave"));
+		stIns.add(new Instruction("ret"));
 		return stIns;
 	}
 	
