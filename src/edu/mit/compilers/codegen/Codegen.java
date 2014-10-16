@@ -221,7 +221,7 @@ public class Codegen {
 		
 		ins.addAll(generateExpr(ternary.getCondition(), context)); //Get result of conditional onto the stack by resolving it. 
 		ins.addAll(context.pop(r10)); //pop result into r10.
-		ins.add(new Instruction("cmp", r10, new LocLiteral(1L))); //Compare r10 against truth
+		ins.add(new Instruction("cmp", new LocLiteral(1L), r10)); //Compare r10 against truth
 		ins.add(new Instruction("jne", new LocLabel(labelForFalse))); //If result isn't equal, r10 is 0, meaning we take the false branch.
 		ins.addAll(trueInstructs); //If we don't jump, resolve the true branch 
 		ins.add(new Instruction("jmp", new LocLabel(labelForDone))); //jump to being done
