@@ -203,8 +203,8 @@ public class Codegen {
 		
 		if (literal instanceof IR_IntLiteral) {
 			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
-			if(int_literal.getValue()>Long.MAX_VALUE || 
-					int_literal.getValue()<Long.MIN_VALUE ){
+			if(int_literal.getValue()>Integer.MAX_VALUE || 
+					int_literal.getValue()<Integer.MIN_VALUE ){
 				LocReg rax = new LocReg(Regs.RAX);
 				ins = new ArrayList<Instruction>(2);
 				ins.add(new Instruction("movabsq",new LocLiteral(int_literal.getValue()),rax));
@@ -585,7 +585,7 @@ public class Codegen {
 		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
 		} else {
 		    // TODO: Is this legal?
-		    stIns.addAll(context.push(new LocLiteral(Long.MAX_VALUE)));
+		    stIns.addAll(context.push(new LocLiteral(Integer.MAX_VALUE)));
 		}
 		stIns.addAll(context.push(new LocLiteral(0L)));
 		
