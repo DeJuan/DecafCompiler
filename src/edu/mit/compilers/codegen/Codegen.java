@@ -64,7 +64,6 @@ public class Codegen {
 				
 		//instructions for potentially saving arguments.
 		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
-		context.setRsp(context.maxLocalSize);
 		//save register parameters to stack
 		for(int ii = 0; ii<decl.args.size(); ii++){
 			IR_FieldDecl a = decl.args.get(ii);
