@@ -203,8 +203,8 @@ public class Codegen {
 		
 		if (literal instanceof IR_IntLiteral) {
 			IR_IntLiteral int_literal = (IR_IntLiteral) literal;
-			if(int_literal.getValue()>Integer.MAX_VALUE || 
-					int_literal.getValue()<Integer.MIN_VALUE ){
+			if(int_literal.getValue()>Long.MAX_VALUE || 
+					int_literal.getValue()<Long.MIN_VALUE ){
 				LocReg rax = new LocReg(Regs.RAX);
 				ins = new ArrayList<Instruction>(2);
 				ins.add(new Instruction("movabsq",new LocLiteral(int_literal.getValue()),rax));
@@ -594,7 +594,7 @@ public class Codegen {
 		stIns.add(Instruction.labelInstruction(labelForStart));
 		stIns.addAll(generateExpr(while_st.getExpr(), context));
 		stIns.addAll(context.pop(r10));
-		stIns.add(new Instruction("cmp", r10, new LocLiteral(0L)));
+		stIns.add(new Instruction("cmp", new LocLiteral(0L), r10));
 		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
 		stIns.addAll(context.pop(r10));  // loops count
 		stIns.addAll(context.pop(r11));  // max loops
