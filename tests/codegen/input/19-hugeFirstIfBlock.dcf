@@ -1,4 +1,5 @@
 callout printf;
+
 int gurp ( int a, int b, boolean c, int d, int e, int f, boolean g, int h ) {
   int i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, a1, a2, a3, a4;
   printf ( "top of gurp\n" );
@@ -38,7 +39,7 @@ int gurp ( int a, int b, boolean c, int d, int e, int f, boolean g, int h ) {
     if ( g ) {
       printf("Going into the if block, but before assigning f, n is currently %d. It should be -42.\n", n);
       f = 3 + ( a - o );
-      printf("Going into the if block, but after assigning f, n is currently %d. It should be -42.\n", n);
+      printf("Going into the if block, but after t assigning f, n is currently %d. It should be -42.\n", n);
       q = 3 - o;
       s = f + q;
     }
@@ -48,6 +49,8 @@ int gurp ( int a, int b, boolean c, int d, int e, int f, boolean g, int h ) {
       f = s + q - q;
     }
   }
+ }
+ 
   
   void main ( ) {
   int y, z, a, b;
