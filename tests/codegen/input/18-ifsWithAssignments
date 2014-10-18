@@ -1,0 +1,39 @@
+callout printf;
+
+boolean not2 ( boolean a ) {
+  boolean b;
+  b = a? false : true;
+  return b;
+}
+
+void main ( ) {
+  int a, result, result2, testVar, testVar2;
+  boolean x, y;
+  x = true;
+  y = false;
+  testVar = 10;
+  //Following should be 15
+  testVar2 = testVar + 5;
+  a = 5;
+  if (a > 4) {
+    testVar = testVar2 - 3;
+    //The above should now be 12
+    //The below should be 12+9 = 21. 
+    testVar2 = testVar + 9;
+    printf("a > 4. This should print\n");
+    printf("testVar should be 12. It is %d\n", testVar);
+    printf("testVar2 should be 21. It is %d\n", testVar2);
+  }
+  if (x && !y) {
+    printf("x is true: this should print\n");
+  }
+  if (!x || y) {
+    printf("ERROR. This should not print\n");
+  }
+  if (not2(x)) {
+    printf("ERROR. not2(x) should be false. This should not print\n");
+  }
+  result = x? 1 : 2;
+  result2 = y? 1 : 2;
+  printf("result is %d (should be 1)\n result2 is %d (should be 2)\n", result, result2); 
+}
