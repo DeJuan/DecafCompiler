@@ -107,8 +107,14 @@ public class Codegen {
 			needReturn = true;
 		}
 		if(needReturn){
-			context.addIns(new Instruction("leave"));
-			context.addIns(new Instruction("ret"));
+			if(decl.getRetType()==Type.VOID){
+				context.addIns(new Instruction("leave"));
+				context.addIns(new Instruction("ret"));
+			}else{
+				context.addIns(new Instruction("movq", 
+						new LocLiteral(CodegenConst.ERR_FUN_RET), new LocReg(Regs.RDI)));
+				context.addIns(new Instruction("call", new LocLabel("exit")));
+			}
 		}
 	}
 	
