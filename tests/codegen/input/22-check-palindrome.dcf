@@ -45,7 +45,7 @@ void main() {
 	
 	else{
 	   //This sets up a palindrome of length 100; it's just 1001001...until 100 numbers.
-	   length = 99;
+	   length = 100;
 	   for(i = 0, length){
 	       if ( (i % 3) == 0){
 	           A[i] = 1;
@@ -56,6 +56,6 @@ void main() {
 	   }
 	is_palindrome1001 = check_if_palindrome(length);
 	printf("This is a deterministic test for the palindrome 1001 replicated 25 times.\n");
-	printf("Is this a palindrome? %d", is_palindrome1001);
+	printf("Is this a palindrome? %d\n", is_palindrome1001);
     }
 }
