@@ -143,10 +143,19 @@ public class Codegen {
 		context.putSymbol(name, d);
 		if(type == Type.INTARR || type == Type.BOOLARR){
 			long location = loc.offset;
-			for (long i = 0L; i < decl.getLength().getValue(); i++){
-				ins.add(new Instruction("movq", new LocLiteral(0), new LocStack(location)));
-				location= location+CodegenConst.INT_SIZE;
-			}
+			LocLiteral lenLoc = new LocLiteral(size/8);
+			//loop variable
+			LocReg rax = new LocReg(Regs.RAX);
+			String ll = context.genLabel();
+			LocLabel jmpLabel = new LocLabel(ll);
+			LocLiteral zero = new LocLiteral(0);
+			ins.add(new Instruction("movq", zero,rax));
+			ins.add(Instruction.labelInstruction(ll));
+			ins.add(new Instruction("movq", zero, new LocArray(loc, rax, CodegenConst.INT_SIZE)));
+			ins.add(new Instruction("addq", new LocLiteral(1), rax));
+			ins.add(new Instruction("cmpq", lenLoc, rax));
+			ins.add(new Instruction("jl", jmpLabel));
+			
 		}
 		else{
 			ins.add(new Instruction("movq", new LocLiteral(0), loc));
