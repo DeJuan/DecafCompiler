@@ -69,7 +69,7 @@ public class Codegen {
 			IR_FieldDecl a = decl.args.get(ii);
 			Descriptor argd = new Descriptor(a);
 			context.putSymbol(a.getName(), argd);
-			
+			//TODO
 			LocationMem argSrc = argLoc(ii);
 			LocationMem argDst = argSrc;
 			if(ii<CodegenConst.N_REG_ARG){
@@ -78,6 +78,7 @@ public class Codegen {
 				argIns.addAll(pushIns);
 				argDst = context.getRsp();
 			}
+			context.allocLocal(CodegenConst.INT_SIZE);
 			argd.setLocation(argDst);
 		}
 		context.addIns(argIns);
@@ -677,7 +678,7 @@ public class Codegen {
 		if(idx<CodegenConst.N_REG_ARG){
 			return new LocReg(regArg[idx]);
 		}
-		long offset = 16+(idx-6)*CodegenConst.INT_SIZE;
+		long offset = 16+(idx-CodegenConst.N_REG_ARG)*CodegenConst.INT_SIZE;
 		return new LocStack(offset);
 	}
 	
