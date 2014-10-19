@@ -88,23 +88,6 @@ int initialize_array(int n) {
 	return input;
 }
 
-void main() {
-	int n;
-	n = 9;
-
-	// deterministic input: 10101010101. Should output the same number.
-	Arr[0] = 1;
-	Arr[1] = 0;
-	Arr[2] = 1;
-	Arr[3] = 0;
-	Arr[4] = 1;
-	Arr[5] = 0;
-	Arr[6] = 1;
-	Arr[7] = 0;
-	Arr[8] = 1;
-
-	// initialize_array(n); // for random inputs
-
 void convert_input(int input, int len) {
 	// convert integer to array of digits; store to Arr.
 	int remaining, digit, index;
