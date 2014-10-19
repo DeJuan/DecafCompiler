@@ -3,7 +3,7 @@ callout printf;
 
 // Finds the longest palindrome in an array of integers.
 
-int Arr[11];
+int Arr[9];
 int max_len;
 int palindrome;
 
@@ -88,8 +88,6 @@ void main() {
 	Arr[6] = 1;
 	Arr[7] = 0;
 	Arr[8] = 1;
-	Arr[9] = 0;
-	Arr[10] = 1;
 
 	// initialize_array(n); // for random inputs
 
