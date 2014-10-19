@@ -141,7 +141,7 @@ public class Codegen {
 			}
 		}
 		else{
-			ins.add(new Instruction("mov", new LocLiteral(0), loc));
+			ins.add(new Instruction("movq", new LocLiteral(0), loc));
 		}
 		return ins;
 	}
