@@ -106,7 +106,7 @@ void main() {
         boolean randomize;
 	n = 9;
         randomize = false;
-	input = 101010101; //124542169; 
+	input = 101010101;  
         
         if (!randomize) { 
 		// deterministic input
@@ -114,6 +114,14 @@ void main() {
         } else {
 		input = initialize_array(n); // for random inputs
         }
+	max_len = 0;
+	find_longest_palindrome(n);
+	
+	printf("Input: %d\n", input);
+	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
+	
+	input = 124542169;
+	convert_input(input, n);
 	max_len = 0;
 	find_longest_palindrome(n);
 	
