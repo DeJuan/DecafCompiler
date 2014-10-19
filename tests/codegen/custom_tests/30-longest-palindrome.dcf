@@ -88,23 +88,6 @@ int initialize_array(int n) {
 	return input;
 }
 
-void main() {
-	int n;
-	n = 9;
-
-	// deterministic input: 10101010101. Should output the same number.
-	Arr[0] = 1;
-	Arr[1] = 0;
-	Arr[2] = 1;
-	Arr[3] = 0;
-	Arr[4] = 1;
-	Arr[5] = 0;
-	Arr[6] = 1;
-	Arr[7] = 0;
-	Arr[8] = 1;
-
-	// initialize_array(n); // for random inputs
-
 void convert_input(int input, int len) {
 	// convert integer to array of digits; store to Arr.
 	int remaining, digit, index;
@@ -123,7 +106,7 @@ void main() {
         boolean randomize;
 	n = 9;
         randomize = false;
-	input = 124542169; //101010101;
+	input = 101010101; //124542169; 
         
         if (!randomize) { 
 		// deterministic input
@@ -133,8 +116,8 @@ void main() {
         }
 	max_len = 0;
 	find_longest_palindrome(n);
-
-        printf("Input: %d\n", input);
+	
+	printf("Input: %d\n", input);
 	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
 }
 
