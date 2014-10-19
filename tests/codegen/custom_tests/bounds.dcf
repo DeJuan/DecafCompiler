@@ -1,7 +1,0 @@
-
-void main(){
-  int a;
-  int b[100];
-  a = 101;
-  b[a] = 1;
-}
