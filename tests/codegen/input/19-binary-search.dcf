@@ -1,0 +1,52 @@
+callout printf;
+
+int A[6];
+
+// Binary search for the element \'value\'
+int bins(int value, int len) {
+	int left;
+	int right;
+	left = 0;
+	right = len - 1;
+	while (left < right) {
+		int mid;
+		mid = (left + right)/2;
+		if (value == A[mid]) { 
+			return mid; 
+		} else { 
+			if (value > A[mid]) { 
+				left = mid + 1; 
+			} else { 
+				right = mid - 1;
+			}
+		}
+	}
+	return -1;
+}
+
+void main () {
+    int res;
+    A[0] = -3;
+    A[1] = 1;
+    A[2] = 3;
+    A[3] = 17;
+    A[4] = 67;
+    A[5] = 100;
+    res = bins(100, 6);
+    if ( res == -1 ) {
+      printf ("Incorrectly failed to find x");
+    } else {
+      printf ("Found x at %d", res);
+    }
+    
+    A[0] = 0;
+    A[1] = 2;
+    A[2] = 6;
+    
+    res = bins(1, 3);
+    if ( bins(1, 3) == -1 ) {
+      printf ("Correctly failed to find x");
+    } else {
+      printf ("Incorrectly found x at %d", res);
+    } 
+}
