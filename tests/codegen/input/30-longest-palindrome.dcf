@@ -1,4 +1,5 @@
 callout random;
+callout printf;
 
 // Finds the longest palindrome in an array of integers.
 
