@@ -81,7 +81,7 @@ void main() {
 	Arr[9] = 0;
 	Arr[10] = 1;
 
-	max_len = 15;
+	max_len = 0;
 	find_longest_palindrome(n);
 	printf("The longest palindrome found was of length %d", palindrome);
 }
