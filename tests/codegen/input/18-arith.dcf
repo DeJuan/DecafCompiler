@@ -20,7 +20,7 @@ void testMul(int a, int b){
 }
 
 void testDiv(int a, int b){
-	printf("%d + %d = %d...%d\n", a, b, a/b, a%b);
+	printf("%d / %d = %d...%d\n", a, b, a/b, a%b);
 }
 
 void testExpr(int a, int b, int c, int d){
