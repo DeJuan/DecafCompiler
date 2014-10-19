@@ -2,7 +2,7 @@ callout random;
 
 // Finds the longest palindrome in an array of integers.
 
-int Arr[100];
+int Arr[11];
 int max_len;
 int palindrome;
 
@@ -63,21 +63,25 @@ int find_longest_palindrome(int len) {
 	expand_from_center(len-1, len-1, len);
 }
 
-// Initialize array with random integers
-void initialize_array(int n) {
-	int i, temp;
-	for (i = 0, n) {
-		temp = random();
-		Arr[i] = temp;
-	}
-}
+
 
 void main() {
 	int n;
-	n = 100;
-	initialize_array(n);
+	n = 11;
+	Arr[0] = 1;
+	Arr[1] = 0;
+	Arr[2] = 1;
+	Arr[3] = 0;
+	Arr[4] = 1;
+	Arr[5] = 0;
+	Arr[6] = 1;
+	Arr[7] = 0;
+	Arr[8] = 1;
+	Arr[9] = 0;
+	Arr[10] = 1;
 
-	max_len = 0;
+	max_len = 15;
 	find_longest_palindrome(n);
+	printf("The longest palindrome found was of length %d", palindrome);
 }
 

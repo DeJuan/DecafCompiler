@@ -1,0 +1,4 @@
+a > 4. This should print
+x is true: this should print
+result is 1 (should be 1)
+result2 is 2 (should be 2)

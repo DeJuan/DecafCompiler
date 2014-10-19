@@ -134,10 +134,11 @@ public class Codegen {
 		LocStack loc = context.allocLocal(size);
 		d.setLocation(loc);
 		context.putSymbol(name, d);
-		LocReg rsp = new LocReg(Regs.RSP);
 		if(type == Type.INTARR || type == Type.BOOLARR){
-			for (long location = rsp.getValue(); location >= rsp.getValue()-size; location= location-CodegenConst.INT_SIZE){
+			long location = loc.offset;
+			for (long i = 0L; i < decl.getLength().getValue(); i++){
 				ins.add(new Instruction("movq", new LocLiteral(0), new LocStack(location)));
+				location= location+CodegenConst.INT_SIZE;
 			}
 		}
 		else{
