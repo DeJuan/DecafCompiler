@@ -1,4 +1,7 @@
-Arr = [1,2,3,4,5,6,7,8,7,6,5,4,3,2,1]
+
+number = 123456789
+Arr = [int(i) for i in str(number)]
+#Arr = [1,2,3,4,5,6,7,8,7,6,5,4,3,2,1]
 max_len = 0
 palindrome = -1
 

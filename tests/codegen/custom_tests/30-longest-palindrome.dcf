@@ -53,7 +53,7 @@ void expand_from_center(int index_l, int index_r, int n) {
 // Expand for each of the 2N-1 centers and finds the longest palindrome
 int find_longest_palindrome(int len) {
 	int i;
-	for (i = 0, len-2) {
+	for (i = 0, len-1) {
 		// expand from center number (odd cases)
 		expand_from_center(i, i, len);
 
@@ -65,10 +65,20 @@ int find_longest_palindrome(int len) {
 }
 
 
+// Initialize array with random integers
+void initialize_array(int n) {
+	int i, temp;
+	for (i = 0, n) {
+		temp = random();
+		Arr[i] = temp;
+	}
+}
 
 void main() {
 	int n;
 	n = 11;
+
+	// deterministic input: 10101010101. Should output the same number.
 	Arr[0] = 1;
 	Arr[1] = 0;
 	Arr[2] = 1;
@@ -81,8 +91,10 @@ void main() {
 	Arr[9] = 0;
 	Arr[10] = 1;
 
+	// initialize_array(n); // for random inputs
+
 	max_len = 0;
 	find_longest_palindrome(n);
-	printf("The longest palindrome found was of length %d", palindrome);
+	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
 }
 
