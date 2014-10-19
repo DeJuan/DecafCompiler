@@ -3,7 +3,7 @@ callout printf;
 
 // Finds the min and max of an array in the least # of comparisons.
 
-int Arr[20];
+int Arr[19];
 int min;
 int max;
 
@@ -76,12 +76,13 @@ void initialize_array(int n) {
 
 void main() {
 	int n, compares;
-	n = 10
+	n = 19
 	initialize_array(n);
    Arr[15] = 234;
    Arr[16] = 243;
    Arr[17] = 200;
-   Arry[18] = 500;
+   Arr[18] = 500000000; //500,000,000
+   
 	min = Arr[0];
 	max = Arr[0];
 
