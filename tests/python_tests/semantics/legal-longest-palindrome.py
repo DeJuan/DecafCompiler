@@ -38,7 +38,7 @@ def expand_from_center(index_l, index_r, n):
 	return None
 
 def find_longest_palindrome(len):
-	for i in range(len-1):
+	for i in range(len):
 		expand_from_center(i, i, len);
 
 		expand_from_center(i, i+1, len);

@@ -1,3 +1,4 @@
+callout srandom;
 callout random;
 callout printf;
 
@@ -26,6 +27,7 @@ int slice_array(int start_index, int end_index) {
 	power_of_ten = end_index - start_index;
 	while (i <= end_index) {
 		palindrome += Arr[i] * power(10, power_of_ten);
+                // printf("%d^%d = %d\n", 10, power_of_ten, power(10, power_of_ten));
 		power_of_ten -= 1;
 		i += 1;
 	}
@@ -46,6 +48,7 @@ void expand_from_center(int index_l, int index_r, int n) {
 	len = index_r - index_l + 1;
 	if (len > 0 && len > max_len) {
 		max_len = len;
+                // printf("left: %d, right: %d\n", index_l, index_r);
 		palindrome = slice_array(index_l, index_r);
 	}
 }
@@ -53,30 +56,41 @@ void expand_from_center(int index_l, int index_r, int n) {
 // Expand for each of the 2N-1 centers and finds the longest palindrome
 int find_longest_palindrome(int len) {
 	int i;
-	for (i = 0, len-1) {
+	for (i = 0, len) {
 		// expand from center number (odd cases)
 		expand_from_center(i, i, len);
+                // printf("%d, odd, %d, %d\n", i, max_len, palindrome);
 
 		// expand from middle two numbers (even cases)
 		expand_from_center(i, i+1, len);
+                // printf("%d, even, %d, %d\n", i, max_len, palindrome);
 	}
 	// for base case of len=1
 	expand_from_center(len-1, len-1, len);
 }
 
 
-// Initialize array with random integers
-void initialize_array(int n) {
-	int i, temp;
+// Initialize array with random integers and returns the input as an int
+int initialize_array(int n) {
+	int input, i, temp;
+	input = 0;
 	for (i = 0, n) {
-		temp = random();
+		// printf("i=%d, n=%d\n", i, n);
+		temp = -1;
+		while (temp < 0):100 {
+			srandom(17);
+			temp = random();
+		}
+		// printf("RANDOM INTEGER: %d\n", temp);
 		Arr[i] = temp;
+		input += temp * power(10, n-i-1);
 	}
+	return input;
 }
 
 void main() {
 	int n;
-	n = 11;
+	n = 9;
 
 	// deterministic input: 10101010101. Should output the same number.
 	Arr[0] = 1;
@@ -91,8 +105,36 @@ void main() {
 
 	// initialize_array(n); // for random inputs
 
+void convert_input(int input, int len) {
+	// convert integer to array of digits; store to Arr.
+	int remaining, digit, index;
+	index = len-1;
+	remaining = input;
+	while (remaining > 0) {
+		digit = remaining % 10;
+		remaining = remaining / 10;
+		Arr[index] = digit;
+		index -= 1;
+	}
+}
+
+void main() {
+	int n, input;
+        boolean randomize;
+	n = 9;
+        randomize = false;
+	input = 124542169; //101010101;
+        
+        if (!randomize) { 
+		// deterministic input
+		convert_input(input, n);
+        } else {
+		input = initialize_array(n); // for random inputs
+        }
 	max_len = 0;
 	find_longest_palindrome(n);
+
+        printf("Input: %d\n", input);
 	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
 }
 
