@@ -1,0 +1,13 @@
+callout printf;
+void main () {
+  boolean cond;
+  int x, y, temp;
+  cond = false;
+  temp = cond ? 2 : 3;
+  printf ( "false ? 2 : 3 evaluates to %d\n", temp);
+  cond = true;
+  x = cond ? 4 : 5;
+  printf ( "true ? 4 : 5 evaluates to %d\n", x);
+  y = (temp < x) ? 6 : 7;
+  printf ( "y should have been 6, was %d\n", y);
+}
