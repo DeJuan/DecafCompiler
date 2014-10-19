@@ -1,6 +1,8 @@
 # Check if an array of integers is a palindrome.
 
-A = [1,2,3,4,5,6,7,8,7,6,5,4,3,2,1]
+number = 101010101
+A = [int(i) for i in str(number)]
+#A = [1,2,3,4,5,6,7,8,7,6,5,4,3,2,1]
 i_A = iter(A)
 
 def get_random():
