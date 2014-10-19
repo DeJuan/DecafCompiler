@@ -1,1 +1,4 @@
-The longest palindrome found was of length 11
+Input: 101010101
+The longest palindrome found was of length 9: 101010101.
+Input: 124542169
+The longest palindrome found was of length 7: 1245421.
