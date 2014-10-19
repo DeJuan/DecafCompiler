@@ -16,4 +16,5 @@ public class CodegenConst {
 	public static final int BOOL_TRUE=1;
 	
 	public static final int ERR_ARRAY_BOUND=255;
+	public static final int ERR_FUN_RET=255;
 }

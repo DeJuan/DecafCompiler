@@ -61,7 +61,8 @@ public class Codegen {
 		LocReg rsp = new LocReg(Regs.RSP);
 		context.addIns(new Instruction("pushq", rbp));		
 		context.addIns(new Instruction("movq", rsp, rbp ));
-				
+		
+		long localArgSize = 0;
 		//instructions for potentially saving arguments.
 		ArrayList<Instruction> argIns = new ArrayList<Instruction>();
 		//save register parameters to stack
@@ -82,12 +83,12 @@ public class Codegen {
 			argd.setLocation(argDst);
 		}
 		context.addIns(argIns);
-		
+		localArgSize = context.maxLocalSize;
 		//generateBlock accumulates static local stack size required. 
 		List<Instruction> blockIns = generateBlock(decl.body, context);
 
 		//instructions for entering a function.
-		LocLiteral loc= new LocLiteral(context.maxLocalSize);
+		LocLiteral loc= new LocLiteral(context.maxLocalSize + localArgSize );
 		context.addIns(new Instruction("subq", loc, rsp));
 
 		//write instructions for function body.
