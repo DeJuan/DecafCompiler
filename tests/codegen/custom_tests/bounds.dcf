@@ -1,7 +1,10 @@
+callout printf;
 
 void main(){
   int a;
   int b[100];
   a = 101;
+  printf("Should see me, I'm right before you should exit for improper array indexing!\n");
   b[a] = 1;
+  printf("ERROR: Should not have reached this point in the program. Array bound checking is broken!);
 }
