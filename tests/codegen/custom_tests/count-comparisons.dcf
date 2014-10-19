@@ -3,7 +3,7 @@ callout printf;
 
 // Finds the min and max of an array in the least # of comparisons.
 
-int Arr[100];
+int Arr[20];
 int min;
 int max;
 
@@ -68,17 +68,20 @@ int find_min_max(int n) {
 
 // Initialize array with random integers
 void initialize_array(int n) {
-	int i, temp;
+	int i;
 	for (i = 0, n) {
-		temp = random();
-		Arr[i] = temp;
+		Arr[i] = i;
 	}
 }
 
 void main() {
 	int n, compares;
+	n = 10
 	initialize_array(n);
-
+   Arr[15] = 234;
+   Arr[16] = 243;
+   Arr[17] = 200;
+   Arry[18] = 500;
 	min = Arr[0];
 	max = Arr[0];
 

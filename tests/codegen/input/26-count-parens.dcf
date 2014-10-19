@@ -18,7 +18,7 @@ int count_paren(int n) {
 
 void main() {
 	int n, ways;
-	n = 20;
+	n = 9;
 
 	ways = count_paren(n);
 	printf("There are %d ways to balance %d sets of parenthesis", ways, n);
