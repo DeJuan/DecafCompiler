@@ -29,7 +29,8 @@ public class LocArray extends LocationMem{
 				sb.append("(," + offset.toString() + ", " + itemSize +")");
 			} else if (offset.getType() == LocType.LITERAL_LOC) {
 				long len = itemSize * offset.getValue();
-				sb.append("+" + len + "(" + Regs.RIP + ")");
+				//sb.append("+" + len + "(" + Regs.RIP + ")");
+        sb.append("+" + len);
 			}
 			break;
 		case STACK_LOC:

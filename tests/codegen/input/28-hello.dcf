@@ -16,8 +16,8 @@ void main(){
   ee[0] +=10;
   printf("%d %d %d %d\n", cc[dd], cc[1], ee[aa], ee[2]);
   foo(ee[0],ee[1],ee[2],cc[0],cc[1],cc[2], cc[3], cc[4]);
-  printf("hello: %d, %d, %d %d %d %d %d\n",dd,ee[5],aa, aa,aa,aa);
+  printf("hello: %d %d %d %d %d %d\n",dd,ee[cc[4]],aa, aa,aa,aa);
   printf("12345\n");
-  printf("hello\t");
+  printf("hello  ");
   printf("hello\n");
 }
