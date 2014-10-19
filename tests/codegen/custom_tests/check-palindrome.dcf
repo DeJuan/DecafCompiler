@@ -30,6 +30,7 @@ void main() {
     boolean deterministic;
 	int length, i, temp;
 	boolean is_palindrome;
+	boolean is_palindrome1001;
 	deterministic = true;
 	if(!deterministic){
 	   length = 50;
