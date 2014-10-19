@@ -28,16 +28,33 @@ boolean check_if_palindrome(int length) {
 }
 
 void main() {
+    boolean deterministic;
 	int length, i, temp;
 	boolean is_palindrome;
-
-	length = 50;
-	srandom(17);
-	for (i=0, length) {
+	deterministic = true;
+	if(!deterministic){
+	   length = 50;
+	   srandom(17);
+	   for (i=0, length) {
 		temp = get_random();
 		A[i] = temp;
+	   }
+	   is_palindrome = check_if_palindrome(length);
+	   printf("Is this a palindrome? %d", is_palindrome);
 	}
-	is_palindrome = check_if_palindrome(length);
-
-	printf("Is this a palindrome? %d", is_palindrome);
+	
+	else{
+	   //This sets up a palindrome of length 100; it's just 1001001...until 100 numbers.
+	   length = 99;
+	   for(i = 0, length){
+	       if ( (i % 3) == 0){
+	           A[i] = 1;
+	       }
+	       else{
+	           A[i] = 0;
+	       }   
+	   }
+	is_palindrome1001 = check_if_palindrome(length);
+	printf("This is a deterministic test for the palindrome 1001 replicated 25 times.\n");
+	printf("Is this a palindrome? %d", is_palindrome1001);
 }
