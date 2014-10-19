@@ -118,6 +118,7 @@ public class Codegen {
 	}
 	
 	public static List<Instruction> generateFieldDecl(IR_FieldDecl decl, CodegenContext context){
+		ArrayList<Instruction> ins = new ArrayList<Instruction>();
 		String name = decl.getName();
 		Descriptor d = new Descriptor(decl);
 		Type type = decl.getType();
@@ -133,7 +134,16 @@ public class Codegen {
 		LocStack loc = context.allocLocal(size);
 		d.setLocation(loc);
 		context.putSymbol(name, d);
-		return new ArrayList<Instruction>();
+		LocReg rsp = new LocReg(Regs.RSP);
+		if(type == Type.INTARR || type == type.BOOLARR){
+			for (long location = rsp.getValue(); location >= rsp.getValue()-size; location= location-CodegenConst.INT_SIZE){
+				ins.add(new Instruction("mov", new LocLiteral(0), new LocStack(location)));
+			}
+		}
+		else{
+			ins.add(new Instruction("mov", new LocLiteral(0), loc));
+		}
+		return ins;
 	}
 		
 	/**@brief expression nodes should return location of the result
