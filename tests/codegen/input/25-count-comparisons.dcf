@@ -76,7 +76,7 @@ void initialize_array(int n) {
 
 void main() {
 	int n, compares;
-	n = 19
+	n = 19;
 	initialize_array(n);
    Arr[15] = 234;
    Arr[16] = 243;
@@ -88,8 +88,8 @@ void main() {
 
 	if (n > 1) {
 		compares = naive_way(n);
-		printf("Naive: There are %d integers. We used %d compares.", n, compares);
+		printf("Naive: There are %d integers. We used %d compares.\n", n, compares);
 		compares = find_min_max(n);
-		printf("Improved: There are %d integers. We used %d compares.", n, compares);
+		printf("Improved: There are %d integers. We used %d compares.\n", n, compares);
 	}
 }
