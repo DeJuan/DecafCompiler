@@ -256,14 +256,14 @@ public class CodegenContext {
 	 * Returns the label for the start of the innermost for/while loop
 	 */
 	public String getInnermostStart() {
-	    return loopBookends.get(loopBookends.size())[0];
+	    return loopBookends.get(loopBookends.size() - 1)[0];
 	}
 	
 	/**
 	 * Returns the label for the end of the innermost for/while loop
 	 */
 	public String getInnermostEnd() {
-	    return loopBookends.get(loopBookends.size())[1];
+	    return loopBookends.get(loopBookends.size() - 1)[1];
 	}
 	
 	public String getArrayBoundLabel(){
