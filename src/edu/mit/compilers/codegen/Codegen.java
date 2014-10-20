@@ -630,11 +630,13 @@ public class Codegen {
 		List<Instruction> stIns = new ArrayList<Instruction>();
 		String labelForStart = context.genLabel();
 		String labelForEnd = context.genLabel();
+		String labelPopTmp = labelForEnd;
 		LocReg r10 = new LocReg(Regs.R10);
 		LocReg r11 = new LocReg(Regs.R11);
 		
 		boolean hasBound = (while_st.getMaxLoops() != null); 
 		if (hasBound) {
+		    labelPopTmp = context.genLabel();
 		    stIns.addAll(generateExpr(while_st.getMaxLoops(), context));
 		    stIns.addAll(context.push(new LocLiteral(0L)));
 		}
@@ -645,7 +647,7 @@ public class Codegen {
 		stIns.addAll(generateExpr(while_st.getExpr(), context));
 		stIns.addAll(context.pop(r10));
 		stIns.add(new Instruction("cmp", new LocLiteral(0L), r10));
-		stIns.add(new Instruction("je", new LocLabel(labelForEnd)));
+		stIns.add(new Instruction("je", new LocLabel(labelPopTmp)));
 		
 		if(hasBound){
 			stIns.addAll(context.pop(r10));  // loops count
@@ -661,6 +663,11 @@ public class Codegen {
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
 		// End loop here
+		if(hasBound){
+			stIns.add(Instruction.labelInstruction(labelPopTmp));
+			stIns.addAll(context.pop(r10));  // loops count
+			stIns.addAll(context.pop(r11));  // max loops
+		}
 		stIns.add(Instruction.labelInstruction(labelForEnd));
 		context.exitLoop();
 		
