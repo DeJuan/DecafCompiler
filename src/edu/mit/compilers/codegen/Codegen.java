@@ -607,7 +607,8 @@ public class Codegen {
         
         stIns.addAll(generateExpr(for_st.getEnd(), context));
         // Start of loop
-		context.enterLoop(labelForStart, labelForEnd);
+		String labelForInc = context.genLabel();
+		context.enterLoop(labelForInc, labelForEnd);
 		stIns.add(Instruction.labelInstruction(labelForStart));
 		stIns.addAll(generateExpr(for_st.getVar(), context));
 		stIns.addAll(context.pop(r10));  // loop var
@@ -616,7 +617,8 @@ public class Codegen {
 		stIns.add(new Instruction("jle", new LocLabel(labelForEnd)));
 		stIns.addAll(context.push(r11));
 		stIns.addAll(generateBlock(for_st.getBlock(), context));
-		// TODO: Is this legal since loopVar is a memory address?
+//end of loop to increment loop var
+		stIns.add(Instruction.labelInstruction(labelForInc));
 		stIns.add(new Instruction("add", new LocLiteral(1L), loopVar));
 		stIns.add(new Instruction("jmp", new LocLabel(labelForStart)));
 		
