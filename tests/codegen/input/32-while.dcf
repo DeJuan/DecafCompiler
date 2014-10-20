@@ -1,6 +1,6 @@
 callout printf;
 void main(){
-	int a;
+	int a, i;
 	a = 0;
 	while(a<100):10{
 		int b;
@@ -13,6 +13,12 @@ void main(){
 		b = a+1;
 		printf("%d\n",b);
 		a +=1;
+	}
+	for (i=1, 6) {
+		while (false):10 {
+			continue;
+		}
+		printf("%d\n", a+i);
 	}
 	printf("a: %d\n",a);
 }
