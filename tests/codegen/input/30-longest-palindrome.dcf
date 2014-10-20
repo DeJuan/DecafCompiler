@@ -75,13 +75,8 @@ int initialize_array(int n) {
 	int input, i, temp;
 	input = 0;
 	for (i = 0, n) {
-		// printf("i=%d, n=%d\n", i, n);
-		temp = -1;
-		while (temp < 0):100 {
-			srandom(17);
-			temp = random();
-		}
-		// printf("RANDOM INTEGER: %d\n", temp);
+		printf("i=%d, n=%d\n", i, n);
+		temp = random() % n;
 		Arr[i] = temp;
 		input += temp * power(10, n-i-1);
 	}
@@ -112,6 +107,7 @@ void main() {
 		// deterministic input
 		convert_input(input, n);
         } else {
+		srandom(4);
 		input = initialize_array(n); // for random inputs
         }
 	max_len = 0;
@@ -120,12 +116,15 @@ void main() {
 	printf("Input: %d\n", input);
 	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
 	
-	input = 124542169;
-	convert_input(input, n);
-	max_len = 0;
-	find_longest_palindrome(n);
+	if (!randomize) {
+		// one more deterministic test
+		input = 124542169;
+		convert_input(input, n);
+		max_len = 0;
+		find_longest_palindrome(n);
 	
-	printf("Input: %d\n", input);
-	printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
+		printf("Input: %d\n", input);
+		printf("The longest palindrome found was of length %d: %d.\n", max_len, palindrome);
+	}
 }
 
