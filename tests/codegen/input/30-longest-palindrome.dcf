@@ -54,7 +54,7 @@ void expand_from_center(int index_l, int index_r, int n) {
 }
 
 // Expand for each of the 2N-1 centers and finds the longest palindrome
-int find_longest_palindrome(int len) {
+void find_longest_palindrome(int len) {
 	int i;
 	for (i = 0, len) {
 		// expand from center number (odd cases)

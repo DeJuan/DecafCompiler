@@ -1,0 +1,25 @@
+callout printf;
+int foo ( boolean check) {
+  if ( check ) {
+    return 1;
+  } else {
+    return 2;
+  }
+}
+
+int bar ( boolean check ) {
+  if ( check ) {
+    return 3;
+  } else {
+  }
+}
+
+void main () {
+  int temp;
+  temp = foo ( true );
+  printf ( "should see me to be 1, was %d\n", temp );
+  temp = bar ( true );
+  printf ( "should see me to be 3, was %d\n", temp );
+  temp = bar ( false );
+  printf ( "should never see me\n" );
+}
