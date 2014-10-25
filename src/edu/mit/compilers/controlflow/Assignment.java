@@ -1,4 +1,4 @@
-package edu.mit.compilers.codegen;
+package edu.mit.compilers.controlflow;
 
 import edu.mit.compilers.ir.Ops;
 

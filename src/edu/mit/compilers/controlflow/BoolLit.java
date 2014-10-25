@@ -1,4 +1,4 @@
-package edu.mit.compilers.codegen;
+package edu.mit.compilers.controlflow;
 
 public class BoolLit extends Expression {
 	private boolean truthValue;

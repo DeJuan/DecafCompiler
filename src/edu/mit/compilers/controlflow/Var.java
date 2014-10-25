@@ -1,4 +1,6 @@
-package edu.mit.compilers.codegen;
+package edu.mit.compilers.controlflow;
+
+import edu.mit.compilers.codegen.Descriptor;
 
 public class Var extends Expression {
 	private Descriptor var;

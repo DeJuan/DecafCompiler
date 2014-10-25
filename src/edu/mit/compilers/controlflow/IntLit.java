@@ -1,4 +1,4 @@
-package edu.mit.compilers.codegen;
+package edu.mit.compilers.controlflow;
 
 public class IntLit extends Expression {
 	private int value;
