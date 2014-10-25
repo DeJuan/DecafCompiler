@@ -1,0 +1,11 @@
+callout printf;
+
+int foo(int i) {
+	return i+1;
+}
+
+void main(){
+	int result;
+	result = foo(foo(foo(foo(foo(1)))));
+	printf("%d", result);
+}
