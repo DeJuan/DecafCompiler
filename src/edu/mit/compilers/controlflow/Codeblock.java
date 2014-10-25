@@ -15,6 +15,7 @@ public class Codeblock extends FlowNode {
 		this.statements = statementList;
 	}
 	
+	public Codeblock(){}
 	
 	@Override
 	public NodeType getType() {
@@ -26,9 +27,17 @@ public class Codeblock extends FlowNode {
 		return parents;
 	}
 
+	public void addParent(FlowNode newParent){
+		parents.add(newParent);
+	}
+	
 	@Override
 	public List<FlowNode> getChildren() {
 		return children;
+	}
+	
+	public void addChild(FlowNode newChild){
+		children.add(newChild);
 	}
 	
 	public int getNextTemp(){
@@ -38,6 +47,10 @@ public class Codeblock extends FlowNode {
 	
 	public List<Statement> getStatements(){
 		return statements;
+	}
+	
+	public void addStatement(Statement newStatement){
+		statements.add(newStatement);
 	}
 
 }

@@ -15,6 +15,7 @@ public abstract class FlowNode {
 	public abstract NodeType getType();
 	public abstract List<FlowNode> getParents();
 	public abstract List<FlowNode> getChildren();
-	
+	public abstract void addParent(FlowNode newParent);
+	public abstract void addChild(FlowNode newChild);
 	
 }
