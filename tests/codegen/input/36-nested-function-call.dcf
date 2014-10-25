@@ -7,5 +7,5 @@ int foo(int i) {
 void main(){
 	int result;
 	result = foo(foo(foo(foo(foo(1)))));
-	printf("%d", result);
+	printf("%d\n", result);
 }

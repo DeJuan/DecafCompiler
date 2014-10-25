@@ -18,6 +18,10 @@ public class IR_MethodDecl extends IR_Node {
 		return args.get(idx).getType();
 	}
 	
+	public String getName() {
+		return name;
+	}
+	
 	public IR_MethodDecl(Type r, String n){
 		retType = r;
 		name = n;

@@ -465,7 +465,6 @@ public class Codegen {
 			} else if (st instanceof IR_Assign) {
 				IR_Assign assign = (IR_Assign) st;
 				stIns = generateAssign(assign,context);				
- 		    // TODO: Generate logic for these control flow statements
 			} else if (st instanceof IR_If) {
 				IR_If if_st = (IR_If) st;
 				stIns = generateIf(if_st, context);
