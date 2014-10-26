@@ -63,7 +63,7 @@ public class END extends FlowNode {
 
 	@Override
 	public void addParent(FlowNode newParent) {
-		throw new UnsupportedOperationException("You can't add another parent. You gave me mommy when you initialized me.");
+		parent.add(newParent);
 	}
 
 	@Override
