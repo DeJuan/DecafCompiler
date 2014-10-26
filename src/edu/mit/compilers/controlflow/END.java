@@ -1,5 +1,6 @@
 package edu.mit.compilers.controlflow;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ import java.util.List;
  */
 public class END extends FlowNode {
 	private Expression returnStatement = null;
-	private List<FlowNode> parent;
+	private List<FlowNode> parent = new ArrayList<FlowNode>();
 	
 	/**
 	 * Constructor for void methods.

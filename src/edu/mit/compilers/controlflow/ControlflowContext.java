@@ -18,9 +18,10 @@ public class ControlflowContext {
 	// Stack implementation that keeps track of which for/while loop we are in.
 	private List<Branch> loopScope;
 	
-	public ControlflowContext(){
+	public ControlflowContext() {
 		symbol = new SymbolTable<Descriptor>();
 		symbol.incScope();
+		loopScope = new ArrayList<Branch>();
 	}
 	
 	/**

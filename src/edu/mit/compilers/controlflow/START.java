@@ -11,6 +11,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
  */
 public class START extends FlowNode {
 	private List<FlowNode> child = new ArrayList<FlowNode>();
+	private List<FlowNode> parent = new ArrayList<FlowNode>();
 	private List<IR_FieldDecl> arguments = new ArrayList<IR_FieldDecl>();
 	
 	/**
@@ -54,7 +55,7 @@ public class START extends FlowNode {
 
 	@Override
 	public List<FlowNode> getParents(){
-		throw new UnsupportedOperationException("The Origin of All has no predecessors.");
+		return parent;
 	}
 
 	@Override
@@ -68,8 +69,7 @@ public class START extends FlowNode {
 
 	@Override
 	public void addParent(FlowNode newParent) {
-		throw new UnsupportedOperationException("You cannot force a START to have parents.");
-		
+		parent.add(newParent);
 	}
 
 	@Override
