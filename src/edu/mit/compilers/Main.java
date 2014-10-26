@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import antlr.ASTFactory;
 import antlr.Token;
@@ -11,6 +14,8 @@ import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
 import edu.mit.compilers.codegen.Codegen;
 import edu.mit.compilers.codegen.CodegenContext;
+import edu.mit.compilers.controlflow.FlowNode;
+import edu.mit.compilers.controlflow.GenerateFlow;
 import edu.mit.compilers.grammar.DecafParser;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
 import edu.mit.compilers.grammar.DecafScanner;
@@ -84,79 +89,67 @@ class Main {
             scanner.consume();
           }
         }
-      } else if (CLI.target == Action.PARSE ||
-                 CLI.target == Action.DEFAULT) {
-        DecafScanner scanner =
-            new DecafScanner(new DataInputStream(inputStream));
-        DecafParser parser = new DecafParser(scanner);
-        parser.setTrace(CLI.debug);
-        
-        ASTFactory factory = new ASTFactory();                         
-        factory.setASTNodeClass(CommonASTWithLines.class);
-        parser.setASTFactory(factory);
-        
-        parser.program();
-        if(parser.getError()) {
-          System.exit(1);
-        }
-      } else if (CLI.target == Action.INTER) {
-    	  DecafScanner scanner =
-    	            new DecafScanner(new DataInputStream(inputStream));
+      } else {
+    	  // =============== PARSE =================
+    	  DecafScanner scanner = new DecafScanner(new DataInputStream(inputStream));
     	  DecafParser parser = new DecafParser(scanner);
     	  parser.setTrace(CLI.debug);
-    	        
+        
     	  ASTFactory factory = new ASTFactory();                         
     	  factory.setASTNodeClass(CommonASTWithLines.class);
     	  parser.setASTFactory(factory);
-    	        
+        
     	  parser.program();
-    	  if(parser.getError()) {
-          System.out.println("parse error");
+    	  if (parser.getError()) {
+    		  System.out.println("Parse error");
     		  System.exit(1);
     	  }
-    	  
-    	  AST ast = parser.getAST();
-//    	  printAst(ast,0);
-    	  IRMaker ir_maker = new IRMaker();
-    	  ir_maker.make(ast);
-    	  if ( !ir_maker.isValid() ) {
-    	      System.exit(1);
+
+    	  if (CLI.target == Action.PARSE) {
+    		  // Stop
+    	  } 
+    	  else {
+    		  // =============== BUILD AST =================
+	    	  AST ast = parser.getAST();
+	    	  // printAst(ast,0);
+	    	  IRMaker ir_maker = new IRMaker();
+	    	  IR_Node root = ir_maker.make(ast);
+	    	  if ( !ir_maker.isValid() ) {
+	    		  System.out.println("symantic error.");
+	    	      System.exit(1);
+	    	  }
+	    	  
+	    	  if (CLI.target == Action.INTER) {
+	    		  // Stop
+	    	  }
+	    	  else {
+	    		  if (CLI.target == Action.ASSEMBLY || CLI.target == Action.DEFAULT) {
+		    		  // =============== GENERATE ASSEMBLY =================
+			    	  String outFile = "a.s";
+			    	  if(CLI.outfile!=null){
+			    		  outFile = CLI.outfile;
+			    	  }
+			    	  CodegenContext context = new CodegenContext();
+			    	  if (CLI.opts[0]) {
+			    		  // temp hack to turn on optimization (by setting --opt=all)
+			    		  // =============== GENERATE LOW-LEVEL IR =================
+			    		  List<IR_Node> callouts = new ArrayList<IR_Node>();
+			    		  List<IR_Node> globals = new ArrayList<IR_Node>();
+			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
+			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
+			    	  } else {
+			    		  // =============== DIRECT TO ASSEMBLY =================
+				    	  Codegen.generateProgram(root, context);
+				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
+				    	  context.printInstructions(ps);
+				    	  ps.close();
+			    	  }
+		    	  }
+	    		  else {
+	    			  System.err.println("Unrecognized command");
+	    		  }
+	    	  }
     	  }
-      }
-      
-      else if (CLI.target == Action.ASSEMBLY) {
-    	  DecafScanner scanner =
-    	            new DecafScanner(new DataInputStream(inputStream));
-    	  DecafParser parser = new DecafParser(scanner);
-    	  parser.setTrace(CLI.debug);
-    	        
-    	  ASTFactory factory = new ASTFactory();                         
-    	  factory.setASTNodeClass(CommonASTWithLines.class);
-    	  parser.setASTFactory(factory);
-    	        
-    	  parser.program();
-    	  if(parser.getError()) {
-    		  System.out.println("parse error.");
-    		  System.exit(1);
-    	  }
-    	  
-    	  AST ast = parser.getAST();
-    	  IRMaker ir_maker = new IRMaker();
-    	  IR_Node root = ir_maker.make(ast);
-    	  if ( !ir_maker.isValid() ) {
-    		  System.out.println("symantic error.");
-    	      System.exit(1);
-    	  }
-    			  
-    	  String outFile = "a.s";
-    	  if(CLI.outfile!=null){
-    		  outFile = CLI.outfile;
-    	  }
-    	  CodegenContext context = new CodegenContext();
-    	  Codegen.generateProgram(root, context);
-    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
-    	  context.printInstructions(ps);
-    	  ps.close();
       }
     } catch(Exception e) {
       // print the error:

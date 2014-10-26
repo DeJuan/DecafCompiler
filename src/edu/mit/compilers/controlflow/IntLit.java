@@ -6,18 +6,18 @@ package edu.mit.compilers.controlflow;
  *
  */
 public class IntLit extends Expression {
-	private int value;
+	private long value;
 	/**
 	 * This constructor simply takes the value that this literal represents. 
 	 * @param val
 	 */
-	public IntLit(int val){
+	public IntLit(long val){
 		this.value = val;
 	}
 	
 	@Override
 	/**
-	 * Tells you that you're working with an int literal.
+	 * Tells you that you're working with an long literal.
 	 * @return ExpressionType : INT_LIT
 	 */
 	public ExpressionType getExprType() {
@@ -26,17 +26,17 @@ public class IntLit extends Expression {
 	
 	/**
 	 * Getter method for the value stored within this literal.
-	 * @return value : int representing the value of the literal
+	 * @return value : long representing the value of the literal
 	 */
-	public int getValue(){
+	public long getValue(){
 		return value;
 	}
 
 	/**
-	 * Update function that lets you change the value of the int literal.
-	 * @param newVal : int that will replace the currently stored value. 
+	 * Update function that lets you change the value of the long literal.
+	 * @param newVal : long that will replace the currently stored value. 
 	 */
-	public void updateValue(int newVal){
+	public void updateValue(long newVal){
 		this.value = newVal;
 	}
 }

@@ -12,18 +12,15 @@ public class END extends FlowNode {
 	private List<FlowNode> parent;
 	
 	/**
-	 * This constructor takes in just the parent of this End node, and is used for void methods. 
-	 * @param parentNode : FlowNode representing predecessor.
+	 * Constructor for void methods.
 	 */
-	public END(FlowNode parentNode){this.parent.add(parentNode);}
+	public END() {}
 	
 	/**
-	 * This constructor takes in the parent of this END node and a return value, used for non-void methods.
-	 * @param parentNode : FlowNode representing predecessor.
+	 * This constructor takes in a return value, used for non-void methods.
 	 * @param returnVal : Expression representing what we will return. 
 	 */
-	public END(FlowNode parentNode, Expression returnVal){
-		this.parent.add(parentNode);
+	public END(Expression returnVal){
 		this.returnStatement = returnVal;
 	}
 	
