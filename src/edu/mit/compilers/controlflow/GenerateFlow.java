@@ -58,7 +58,7 @@ public class GenerateFlow {
 		
 		START start = new START(decl.args);
 		FlowNode returnNode = generateFlow(start, decl.body, context);
-		if (!(returnNode instanceof END)) {
+		if (!(returnNode instanceof END) && (returnNode != null)) {
 			// No specified return value --> assume void
 			END end = new END();
 			returnNode.addChild(end);
@@ -202,7 +202,6 @@ public class GenerateFlow {
 		whileBranch.setTrueBranch(beginWhileBlock);
 		beginWhileBlock.addParent(whileBranch);
 		FlowNode endWhile = generateFlow(beginWhileBlock, whileNode.getBlock(), context);
-		endWhile.addChild(whileBranch);
 		if (!(endWhile instanceof END) && endWhile != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endWhile.addChild(whileBranch);

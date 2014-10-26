@@ -50,7 +50,7 @@ public class NoOp extends FlowNode {
 		if (this.child.isEmpty()){
 			this.child.add(newChild);
 		}
-		else throw new UnsupportedOperationException("NoOp should have more than one child.");
+		else throw new UnsupportedOperationException("NoOp should not have more than one child.");
 	}
 
 }
