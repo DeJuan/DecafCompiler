@@ -69,6 +69,8 @@ public class GenerateFlow {
 	}
 	
 	public static FlowNode generateFlow(FlowNode prevNode, IR_Seq seq, ControlflowContext context) {
+		if (seq == null)
+			return null;
 		context.incScope();
 		List<IR_Node> statements = seq.getStatements();
 		FlowNode curNode = prevNode;

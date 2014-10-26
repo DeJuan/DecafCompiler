@@ -1,5 +1,6 @@
 package edu.mit.compilers.controlflow;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,8 +12,8 @@ public class Branch extends FlowNode {
 	private Expression expr;
 	private FlowNode trueBranch;
 	private FlowNode falseBranch;
-	private List<FlowNode> parents;
-	private List<FlowNode> children;
+	private List<FlowNode> parents = new ArrayList<FlowNode>();
+	private List<FlowNode> children = new ArrayList<FlowNode>();
 	
 	/**
 	 * This is the first of the two constructors for our branch representation. This assumes you know everything about the branch when you try to make it.
