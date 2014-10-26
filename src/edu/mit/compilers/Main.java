@@ -45,7 +45,8 @@ class Main {
   }
   public static void main(String[] args) {
     try {
-      CLI.parse(args, new String[0]);
+      String[] optimizations = {"cse"};
+      CLI.parse(args, optimizations);
       InputStream inputStream = args.length == 0 ?
           System.in : new java.io.FileInputStream(CLI.infile);
       PrintStream outputStream = CLI.outfile == null ? System.out : new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile));
@@ -133,6 +134,7 @@ class Main {
 			    	  if (CLI.opts[0]) {
 			    		  // temp hack to turn on optimization (by setting --opt=all)
 			    		  // =============== GENERATE LOW-LEVEL IR =================
+			    		  System.out.println("Generating low-level IR.");
 			    		  List<IR_Node> callouts = new ArrayList<IR_Node>();
 			    		  List<IR_Node> globals = new ArrayList<IR_Node>();
 			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
