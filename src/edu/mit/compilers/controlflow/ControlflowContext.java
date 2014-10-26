@@ -1,14 +1,13 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.controlflow.Branch;
 import edu.mit.compilers.ir.SymbolTable;
 
-/**@brief Information used throughout controlflow
+/**@brief Information used throughout the control flow.
  */
 public class ControlflowContext {
 	
