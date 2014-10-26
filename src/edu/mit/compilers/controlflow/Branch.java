@@ -35,7 +35,9 @@ public class Branch extends FlowNode {
 	 * This is the second of the constructors for Branch. This assumes you know the bare minimum about the branch, which is its condition.
 	 * @param express : Expression representing the branch condition (i.e. if X >= 5 would have X >= 5 as the expression.
 	 */
-	public Branch(Expression express){this.expr = express;}
+	public Branch(Expression express) {
+		this.expr = express;
+	}
 	
 	@Override
 	/**
@@ -87,7 +89,7 @@ public class Branch extends FlowNode {
 	 * @return trueBranch : FlowNode representing path taken if branch evaluates to True
 	 */
 	public FlowNode getTrueBranch(){
-		return this.trueBranch;
+		return trueBranch;
 	}
 	
 	/**
@@ -95,7 +97,8 @@ public class Branch extends FlowNode {
 	 * @param newTrueBranch : FlowNode representing new path taken if branch evaluates to True
 	 */
 	public void setTrueBranch(FlowNode newTrueBranch){
-		this.trueBranch = newTrueBranch;		
+		trueBranch = newTrueBranch;	
+		children.add(newTrueBranch);
 	}
 	
 	/**
@@ -103,7 +106,7 @@ public class Branch extends FlowNode {
 	 * @return falseBranch : FlowNode representing path taken if branch evaluates to False
 	 */
 	public FlowNode getFalseBranch(){
-		return this.falseBranch;
+		return falseBranch;
 	}
 	
 	/**
@@ -111,7 +114,8 @@ public class Branch extends FlowNode {
 	 * @param newFalseBranch : FlowNode representing new false path taken if branch evaluates to False. 
 	 */
 	public void setFalseBranch(FlowNode newFalseBranch){
-		this.falseBranch = newFalseBranch;
+		falseBranch = newFalseBranch;
+		children.add(newFalseBranch);
 	}
 	
 	/**
@@ -119,7 +123,7 @@ public class Branch extends FlowNode {
 	 * @return expr : Expression representing the condition used to determine whether the true or false path of the branch will be used.
 	 */
 	public Expression getExpr(){
-		return this.expr;
+		return expr;
 	}
 	
 	/**
@@ -128,6 +132,6 @@ public class Branch extends FlowNode {
 	 * @param newExpression : Expression representing condition used to resolve branch direction. 
 	 */
 	public void setExpr(Expression newExpression){
-		this.expr = newExpression;
+		expr = newExpression;
 	}
 }

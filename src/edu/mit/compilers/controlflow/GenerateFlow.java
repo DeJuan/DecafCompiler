@@ -46,17 +46,18 @@ public class GenerateFlow {
 	
 	public static FlowNode generateMethodDecl(IR_Node node, ControlflowContext context) {
 		IR_MethodDecl decl = (IR_MethodDecl) node;
+		List<IR_FieldDecl> args = decl.args;
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(decl.name, d);
 		context.incScope();
 		
-		for (int i = 0; i < decl.args.size(); i++) {
-			IR_FieldDecl a = decl.args.get(i);
+		for (int i = 0; i < args.size(); i++) {
+			IR_FieldDecl a = args.get(i);
 			Descriptor argd = new Descriptor(a);
 			context.putSymbol(a.getName(), argd);
 		}
 		
-		START start = new START(decl.args);
+		START start = new START(args);
 		FlowNode returnNode = generateFlow(start, decl.body, context);
 		if (!(returnNode instanceof END) && (returnNode != null)) {
 			// No specified return value --> assume void

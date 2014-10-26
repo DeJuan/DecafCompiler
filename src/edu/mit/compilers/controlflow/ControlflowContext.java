@@ -1,7 +1,6 @@
 package edu.mit.compilers.controlflow;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
 
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.controlflow.Branch;
@@ -15,12 +14,12 @@ public class ControlflowContext {
 	public SymbolTable<Descriptor> symbol;
 	
 	// Stack implementation that keeps track of which for/while loop we are in.
-	private List<Branch> loopScope;
+	private Stack<Branch> loopScope;
 	
 	public ControlflowContext() {
 		symbol = new SymbolTable<Descriptor>();
 		symbol.incScope();
-		loopScope = new ArrayList<Branch>();
+		loopScope = new Stack<Branch>();
 	}
 	
 	/**
@@ -53,15 +52,15 @@ public class ControlflowContext {
 	}	
 	
 	public Branch getInnermostLoop() {
-		return loopScope.get(loopScope.size() - 1);
+		return loopScope.peek();
 	}
 	
 	public void enterLoop(Branch loop) {
-		loopScope.add(loop);
+		loopScope.push(loop);
 	}
 	
 	public void exitLoop() {
-		loopScope.remove(loopScope.size() - 1);
+		loopScope.pop();
 	}
 	
 }
