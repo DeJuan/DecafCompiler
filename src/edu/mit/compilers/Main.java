@@ -14,6 +14,7 @@ import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
 import edu.mit.compilers.codegen.Codegen;
 import edu.mit.compilers.codegen.CodegenContext;
+import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.GenerateFlow;
 import edu.mit.compilers.grammar.DecafParser;
@@ -130,17 +131,19 @@ class Main {
 			    	  if(CLI.outfile!=null){
 			    		  outFile = CLI.outfile;
 			    	  }
-			    	  CodegenContext context = new CodegenContext();
+			    	  
 			    	  if (CLI.opts[0]) {
-			    		  // temp hack to turn on optimization (by setting --opt=all)
+			    		  // common subexpression elimination optimization is turned on.
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
+			    		  ControlflowContext context = new ControlflowContext();
 			    		  List<IR_Node> callouts = new ArrayList<IR_Node>();
 			    		  List<IR_Node> globals = new ArrayList<IR_Node>();
 			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
 			    	  } else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
+			    		  CodegenContext context = new CodegenContext();
 				    	  Codegen.generateProgram(root, context);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
