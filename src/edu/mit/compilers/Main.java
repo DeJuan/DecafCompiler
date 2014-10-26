@@ -23,6 +23,8 @@ import edu.mit.compilers.grammar.DecafScanner;
 import edu.mit.compilers.grammar.DecafScannerTokenTypes;
 import edu.mit.compilers.ir.IRMaker;
 import edu.mit.compilers.ir.IR_Node;
+import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -137,10 +139,19 @@ class Main {
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
-			    		  List<IR_Node> callouts = new ArrayList<IR_Node>();
-			    		  List<IR_Node> globals = new ArrayList<IR_Node>();
+			    		  List<IR_Node> callouts = new ArrayList<IR_Node>(); // type IR_MethodDecl
+			    		  List<IR_Node> globals = new ArrayList<IR_Node>();  // type IR_FieldDecl
 			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
+					  System.out.println("\nCallouts:");
+					  for (IR_Node callout : callouts)
+						System.out.println(((IR_MethodDecl) callout).getName());
+					  System.out.println("\nGlobal vars:");
+					  for (IR_Node global : globals)
+						System.out.println(((IR_FieldDecl) global).getName());
+				          System.out.println("\nMethods:");
+					  for (String s : flowNodes.keySet())
+ 						System.out.println(s);
 			    	  } else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
 			    		  CodegenContext context = new CodegenContext();
