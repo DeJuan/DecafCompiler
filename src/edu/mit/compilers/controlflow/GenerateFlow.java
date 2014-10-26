@@ -46,9 +46,8 @@ public class GenerateFlow {
 	
 	public static FlowNode generateMethodDecl(IR_Node node, ControlflowContext context) {
 		IR_MethodDecl decl = (IR_MethodDecl) node;
-		String name = decl.name;
 		Descriptor d = new Descriptor(node);
-		context.putSymbol(name, d);
+		context.putSymbol(decl.name, d);
 		context.incScope();
 		
 		for (int i = 0; i < decl.args.size(); i++) {
@@ -193,9 +192,9 @@ public class GenerateFlow {
 		whileBranch.addParent(prevNode);
 		
 		// Flow node when expr evaluates to false.
-		NoOp noOp = new NoOp();
-		noOp.addParent(whileBranch);
-		whileBranch.setFalseBranch(noOp);
+		NoOp exitWhile = new NoOp();
+		exitWhile.addParent(whileBranch);
+		whileBranch.setFalseBranch(exitWhile);
 		
 		START beginWhileBlock = new START();
 		whileBranch.setTrueBranch(beginWhileBlock);
@@ -207,7 +206,7 @@ public class GenerateFlow {
 			endWhile.addChild(whileBranch);
 		}
 		context.exitLoop();
-		return noOp;
+		return exitWhile;
 	}
 	
 	public static Expression generateExpr(IR_Node node, ControlflowContext context) {
