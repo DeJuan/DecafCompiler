@@ -8,7 +8,7 @@ import edu.mit.compilers.ir.Ops;
  * @author DeJuan
  *
  */
-public class BinExpr extends Expression {
+public abstract class BinExpr extends Expression {
 	private Expression leftSide;
 	private Ops operator;
 	private Expression rightSide;
@@ -30,9 +30,8 @@ public class BinExpr extends Expression {
 	 * Tells you this is a binary expression
 	 * @return ExpressionType : BIN_EXPR
 	 */
-	public ExpressionType getExprType() {
-		return ExpressionType.BIN_EXPR;
-	}
+	public abstract ExpressionType getExprType();
+	
 	
 	/**
 	 * Gets you the Expression on the left side of the operator.
