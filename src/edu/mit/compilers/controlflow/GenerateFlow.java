@@ -8,15 +8,22 @@ import edu.mit.compilers.codegen.*;
 import edu.mit.compilers.ir.*;
 import edu.mit.compilers.ir.IR_Literal.*;
 
+/**
+ * Class that is responsible for the conversion of high-level IR to low-level IR.
+ * @author yygu
+ *
+ */
 public class GenerateFlow {
 	
-	/**@brief generate control flow nodes given the root node of IR.
+	/**
+	 * Generate control flow nodes given the root node of IR (representing the 
+	 * beginning of the program).
 	 * 
-	 * @param node: root IR node
-	 * @param context : context object
+	 * @param node: root IR node, containing sequence of methods, callouts, and global field declarations
+	 * @param context : ControlflowContext object
 	 * @param callouts : list of IR nodes containing callouts
 	 * @param globals : list of IR nodes containing global declarations
-	 * @param flowNodes : HashMap of method name to FlowNode
+	 * @param flowNodes : HashMap of method names to FlowNodes
 	 */
 	public static void generateProgram(IR_Node root, ControlflowContext context, 
 			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes) {
@@ -43,7 +50,12 @@ public class GenerateFlow {
 			}
 		}
 	}
-	
+	/**
+	 * Convert a method declaration IR_Node to a FlowNode.
+	 * @param node : IR_Node that represents the method declaration
+	 * @param context : ControlflowContext object
+	 * @return start : START FlowNode object that signals the beginning of a method.
+	 */
 	public static FlowNode generateMethodDecl(IR_Node node, ControlflowContext context) {
 		IR_MethodDecl decl = (IR_MethodDecl) node;
 		List<IR_FieldDecl> args = decl.args;
@@ -60,7 +72,7 @@ public class GenerateFlow {
 		START start = new START(args);
 		FlowNode returnNode = generateFlow(start, decl.body, context);
 		if (!(returnNode instanceof END) && (returnNode != null)) {
-			// No specified return value --> assume void
+			// No specified return value --> return void
 			END end = new END();
 			returnNode.addChild(end);
 			end.addParent(returnNode);
@@ -69,6 +81,13 @@ public class GenerateFlow {
 		return start;	
 	}
 	
+	/**
+	 * Main function that generates the control flow of a code block.
+	 * @param prevNode : parent FlowNode of the current code block.
+	 * @param seq : Code block sequence of IR_Nodes that will be converted to FlowNodes.
+	 * @param context : ControlflowContext object.
+	 * @return curNode : the last FlowNode in the code block.
+	 */
 	public static FlowNode generateFlow(FlowNode prevNode, IR_Seq seq, ControlflowContext context) {
 		if (seq == null)
 			return null;
@@ -87,22 +106,29 @@ public class GenerateFlow {
 	            } else if (st instanceof IR_While) {
 	            	branchEnd = generateWhile(curNode, (IR_While) st, context);
 				}
+				// A Branch object always generates a new FlowNode. So we must replace curNode.
 				curNode = branchEnd;
-				if (curNode == null)
+				if (branchEnd == null)
+					// only occurs when 'if' statement returns, so program will never reach 
+					// anything afterwards. We end the processing here.
 					return null;
 			} 
 			else if (st instanceof IR_Break) {
+				// This is a break. We set the pointer to the exit node  (FalseBranch) of the 
+				// innermost for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br.getFalseBranch());
 				return null;
 			}
 			else if (st instanceof IR_Continue) {
+				// This is a continue. We set the pointer to the Branch object of the innermost 
+				// for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br);
 				return null;
 			}
 			else if (st instanceof IR_Return) {
-				// This is a return.
+				// This is a return. We return a END FlowNode with the return expression.
 				Expression returnExpr = generateExpr(((IR_Return) st).getExpr(), context);
 				END end = new END(returnExpr);	
 				curNode.addChild(end);
@@ -113,9 +139,10 @@ public class GenerateFlow {
 			}
 			else {
 				// This is a FieldDecl, Assignment, or MethodCall. They are all statements that 
-				// belong in a singular Codeblock.
+				// belong in a singular Codeblock object.
 				Statement newStatement = generateStatement(st, context);
 				if (!(curNode instanceof Codeblock)) {
+					// Build new Codeblock if one doesn't exist already.
 					Codeblock newBlock = new Codeblock();
 					curNode.addChild(newBlock);
 					newBlock.addParent(curNode);
@@ -128,13 +155,22 @@ public class GenerateFlow {
 		return curNode;
 	}
 	
+	/**
+	 * Generate an Branch FlowNode representing 'if' from an IR_If node.
+	 * @param prevNode : parent FlowNode of the current code block.
+	 * @param ifNode : IR_Node representing the 'if' statement.
+	 * @param context : ControlflowContext object.
+	 * @return exitIf : null if program will not continue afterwards, a NoOp FlowNode representing 
+	 * the end of the 'if' Branch otherwise.
+	 */
 	public static FlowNode generateIf(FlowNode prevNode, IR_If ifNode, ControlflowContext context) {
-		IR_Node IrExpr = ifNode.getExpr();
-		Expression expr = generateExpr(IrExpr, context);
+		// First initialize Branch object with the condition expression.
+		Expression expr = generateExpr(ifNode.getExpr(), context);
 		Branch ifBranch = new Branch(expr);
 		prevNode.addChild(ifBranch);
 		ifBranch.addParent(prevNode);
 		
+		// Begin recursively generating true and false blocks.
 		START beginTrueBranch = new START();
 		ifBranch.setTrueBranch(beginTrueBranch);
 		beginTrueBranch.addParent(ifBranch);
@@ -145,10 +181,21 @@ public class GenerateFlow {
 		FlowNode endTrueBranch = generateFlow(beginTrueBranch, ifNode.getTrueBlock(), context);
 		FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
 		
-		NoOp exitIf = new NoOp();
 		if ((endTrueBranch == null || endTrueBranch instanceof END) && 
 				(endFalseBranch == null || endFalseBranch instanceof END))
+			// Program will not run beyond the 'if' branch, so we return null.
+			// For example:
+			// if (x)
+			//    continue;
+			// else
+			//    return false;
+			// [code here will never be reached]
 			return null;
+		
+		// We only want to return a single node, but there are two possible exit points 
+		// (true and false blocks). We set the children of both blocks to the NoOp node and 
+		// return it.
+		NoOp exitIf = new NoOp();
 		if (endTrueBranch != null && !(endTrueBranch instanceof END)) {
 			exitIf.addParent(endTrueBranch);
 			endTrueBranch.addChild(exitIf);
@@ -160,9 +207,21 @@ public class GenerateFlow {
 		return exitIf;
 	}
 	
+	/**
+	 * Generate an Branch FlowNode representing 'for' from an IR_for node.
+	 * 
+	 * Note: generateFor never returns null because it is always possible for the program to 
+	 * continue after the 'for' block (e.g. if the cond expr is false).
+	 * @param prevNode : parent FlowNode of the current code block.
+	 * @param forNode : IR_Node representing the 'for' statement.
+	 * @param context : ControlflowContext object.
+	 * @return exitIf : a NoOp FlowNode representing the end of the 'for' Branch (when the 
+	 * condition returns false).
+	 */
 	public static FlowNode generateFor(FlowNode prevNode, IR_For forNode, ControlflowContext context) {
 		// generate the compare IR node for the ending condition.
 		IR_CompareOp comp = new IR_CompareOp(forNode.getVar(), forNode.getEnd(), Ops.LT);
+		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(comp, context);
 		Branch forBranch = new Branch(expr);
 		context.enterLoop(forBranch);
@@ -174,6 +233,7 @@ public class GenerateFlow {
 		exitFor.addParent(forBranch);
 		forBranch.setFalseBranch(exitFor);
 		
+		// Begin recursively generating loop code block.
 		START beginForBlock = new START();
 		forBranch.setTrueBranch(beginForBlock);
 		beginForBlock.addParent(forBranch);
@@ -186,9 +246,20 @@ public class GenerateFlow {
 		return exitFor;
 	}
 
+	/**
+	 * Generate an Branch FlowNode representing 'while' from an IR_while node.
+	 * 
+	 * Note: generateWhile never returns null because it is always possible for the program to 
+	 * continue after the 'while' block (e.g. if the cond expr is false).
+	 * @param prevNode : parent FlowNode of the current code block.
+	 * @param forNode : IR_Node representing the 'while' statement.
+	 * @param context : ControlflowContext object.
+	 * @return exitIf : a NoOp FlowNode representing the end of the 'while' Branch (when the 
+	 * condition returns false).
+	 */
 	public static FlowNode generateWhile(FlowNode prevNode, IR_While whileNode, ControlflowContext context) {
-		IR_Node IrExpr = whileNode.getExpr();
-		Expression expr = generateExpr(IrExpr, context);
+		// First initialize Branch object with the condition expression.
+		Expression expr = generateExpr(whileNode.getExpr(), context);
 		Branch whileBranch = new Branch(expr);
 		context.enterLoop(whileBranch);
 		prevNode.addChild(whileBranch);
@@ -199,6 +270,7 @@ public class GenerateFlow {
 		exitWhile.addParent(whileBranch);
 		whileBranch.setFalseBranch(exitWhile);
 		
+		// Begin recursively generating loop code block.
 		START beginWhileBlock = new START();
 		whileBranch.setTrueBranch(beginWhileBlock);
 		beginWhileBlock.addParent(whileBranch);
@@ -211,6 +283,12 @@ public class GenerateFlow {
 		return exitWhile;
 	}
 	
+	/**
+	 * Generate an Expression FlowNode from an IR_Node.
+	 * @param node : IR_Node representing an expression.
+	 * @param context : ControlflowContext object.
+	 * @return expr : a Expression object representing the expression.
+	 */
 	public static Expression generateExpr(IR_Node node, ControlflowContext context) {
 		if (node == null)
 			return null;

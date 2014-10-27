@@ -108,9 +108,8 @@ class Main {
     		  System.out.println("Parse error");
     		  System.exit(1);
     	  }
-
     	  if (CLI.target == Action.PARSE) {
-    		  // Stop
+    		  // Stop.
     	  } 
     	  else {
     		  // =============== BUILD AST =================
@@ -122,15 +121,14 @@ class Main {
 	    		  System.out.println("symantic error.");
 	    	      System.exit(1);
 	    	  }
-	    	  
 	    	  if (CLI.target == Action.INTER) {
-	    		  // Stop
+	    		  // Stop.
 	    	  }
 	    	  else {
 	    		  if (CLI.target == Action.ASSEMBLY || CLI.target == Action.DEFAULT) {
 		    		  // =============== GENERATE ASSEMBLY =================
 			    	  String outFile = "a.s";
-			    	  if(CLI.outfile!=null){
+			    	  if (CLI.outfile != null) {
 			    		  outFile = CLI.outfile;
 			    	  }
 			    	  
@@ -143,16 +141,22 @@ class Main {
 			    		  List<IR_Node> globals = new ArrayList<IR_Node>();  // type IR_FieldDecl
 			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-					  System.out.println("\nCallouts:");
-					  for (IR_Node callout : callouts)
-						System.out.println(((IR_MethodDecl) callout).getName());
-					  System.out.println("\nGlobal vars:");
-					  for (IR_Node global : globals)
-						System.out.println(((IR_FieldDecl) global).getName());
-				          System.out.println("\nMethods:");
-					  for (String s : flowNodes.keySet())
- 						System.out.println(s);
-			    	  } else {
+			    		  
+			    		  // TODO: Process flowNodes and generate assembly.
+			    		  
+			    		  // Print things for debugging purposes.
+			    		  System.out.println("\nCallouts:");
+						  for (IR_Node callout : callouts)
+							  System.out.println(((IR_MethodDecl) callout).getName());
+						  System.out.println("\nGlobal vars:");
+						  for (IR_Node global : globals)
+							  System.out.println(((IR_FieldDecl) global).getName());
+						  System.out.println("\nMethods:");
+						  for (String s : flowNodes.keySet())
+							  System.out.println(s);
+						  System.out.println("");
+			    	  } 
+			    	  else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
 			    		  CodegenContext context = new CodegenContext();
 				    	  Codegen.generateProgram(root, context);

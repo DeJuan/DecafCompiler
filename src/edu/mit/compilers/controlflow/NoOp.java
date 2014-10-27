@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * Currently serves as a single node that brings multiple parents together so
- * a single node can be returned.
+ * a single node can be returned and processed without requiring knowledge
+ * of later nodes.
  *
  */
 public class NoOp extends FlowNode {
@@ -14,11 +15,6 @@ public class NoOp extends FlowNode {
 	
 	public NoOp(){}
 	
-	@Override
-	/**
-	 * Tells you that you're working with a START.
-	 * @return NodeType : START
-	 */
 	public NodeType getType() {
 		return NodeType.NOOP;
 	}
