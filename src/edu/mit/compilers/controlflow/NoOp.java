@@ -10,18 +10,15 @@ import java.util.List;
  *
  */
 public class NoOp extends FlowNode {
-	private List<FlowNode> child = new ArrayList<FlowNode>();
+	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
+	private boolean visited = false;
 	
 	public NoOp(){}
-	
-	public NodeType getType() {
-		return NodeType.NOOP;
-	}
 
 	@Override
 	public List<FlowNode> getParents(){
-		return this.parents;
+		return parents;
 	}
 
 	@Override
@@ -30,7 +27,7 @@ public class NoOp extends FlowNode {
 	 * @return child : List<FlowNode> of length one containing first meaningful FlowNode in the current method.  
 	 */
 	public List<FlowNode> getChildren() {
-		return this.child;
+		return children;
 	}
 
 	@Override
@@ -43,10 +40,26 @@ public class NoOp extends FlowNode {
 	 * Adder method allowing you to append a child to the list of children. Will error if the list already has a child. 
 	 */
 	public void addChild(FlowNode newChild) {
-		if (this.child.isEmpty()){
-			this.child.add(newChild);
+		if (children.isEmpty()){
+			children.add(newChild);
 		}
 		else throw new UnsupportedOperationException("NoOp should not have more than one child.");
+	}
+	
+	/**
+	 * Traverse this FlowNode and mark visited as true.
+	 */
+	@Override
+	public void visit() {
+		visited = true;
+	}
+	
+	/**
+	 * Returns whether or not this FlowNode has been traversed already.
+	 */
+	@Override
+	public boolean visited() {
+		return visited;
 	}
 
 }

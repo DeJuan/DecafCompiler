@@ -5,8 +5,10 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import antlr.ASTFactory;
 import antlr.Token;
@@ -14,21 +16,14 @@ import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
 import edu.mit.compilers.codegen.Codegen;
 import edu.mit.compilers.codegen.CodegenContext;
-import edu.mit.compilers.controlflow.ControlflowContext;
-import edu.mit.compilers.controlflow.FlowNode;
-import edu.mit.compilers.controlflow.GenerateFlow;
-import edu.mit.compilers.grammar.DecafParser;
-import edu.mit.compilers.grammar.DecafParserTokenTypes;
-import edu.mit.compilers.grammar.DecafScanner;
-import edu.mit.compilers.grammar.DecafScannerTokenTypes;
-import edu.mit.compilers.ir.IRMaker;
-import edu.mit.compilers.ir.IR_Node;
-import edu.mit.compilers.ir.IR_FieldDecl;
-import edu.mit.compilers.ir.IR_MethodDecl;
+import edu.mit.compilers.controlflow.*;
+import edu.mit.compilers.grammar.*;
+import edu.mit.compilers.ir.*;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
 class Main {
+	
   public static void printAst(AST node, int indent){
 	  for(int ii = 0;ii<indent;ii++){
 		  System.out.print("  ");
@@ -46,6 +41,56 @@ class Main {
 		  child = child.getNextSibling();
 	  }
   }
+  
+  public static void printFlowNode(FlowNode node, int indent) {
+	  if (node == null || node.visited())
+		  return;
+	  // generate indents
+	  char[] chars = new char[indent*2];
+	  Arrays.fill(chars, ' ');
+	  String indents = new String(chars);
+	  
+	  node.visit();
+	  System.out.println(indents + "========================");
+	  System.out.println(indents + "Type: " + node.getClass().getSimpleName());
+	  if (node instanceof Codeblock) {
+		  System.out.println(indents + "Statements: " + ((Codeblock) node).getStatements().size());
+	  } else if (node instanceof Branch) {
+		  System.out.println(indents + "Branch type: " + ((Branch) node).getType());
+	  }
+	  List<FlowNode> children = node.getChildren();
+	  if (children != null) {
+		  System.out.println(indents + "Children: " + children.size());
+		  int i = 1;
+		  for (FlowNode child : children) {
+			  System.out.println(indents + "Child " + i);
+			  printFlowNode(child, indent+1);
+			  i++;
+		  }
+	  }
+  }
+  
+  public static void printIR(HashMap<String, FlowNode> irMap) {
+	  for (Map.Entry<String, FlowNode> entry : irMap.entrySet()) {
+		    String key = entry.getKey();
+		    START node = (START) entry.getValue();
+		    
+		    System.out.println("============================ " + key + " ============================");
+		    List<IR_FieldDecl> args = node.getArguments();
+		    if (args.size() == 0) {
+		    	System.out.println("No arguments");
+		    } else {
+		    	System.out.print("Arguments: ");
+			    for (IR_FieldDecl arg : args)
+			    	System.out.print(arg.getName() + " ");
+			    System.out.println("");
+		    }
+		    printFlowNode(node, 0);
+	  }
+	  System.out.println("");
+  }
+  
+  
   public static void main(String[] args) {
     try {
       String[] optimizations = {"cse"};
@@ -142,7 +187,7 @@ class Main {
 			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
 			    		  
-			    		  // TODO: Process flowNodes and generate assembly.
+			    		  // TODO: Process flowNodes and generate assembly code.
 			    		  
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");
@@ -155,6 +200,8 @@ class Main {
 						  for (String s : flowNodes.keySet())
 							  System.out.println(s);
 						  System.out.println("");
+						  // Traverse all FlowNodes and print them.
+						  printIR(flowNodes);
 			    	  } 
 			    	  else {
 			    		  // =============== DIRECT TO ASSEMBLY =================

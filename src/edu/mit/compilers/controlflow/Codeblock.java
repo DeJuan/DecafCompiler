@@ -13,11 +13,12 @@ public class Codeblock extends FlowNode {
 	private List<Statement> statements = new ArrayList<Statement>();
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
+	private boolean visited = false;
 	
 	/**
 	 * This is one of two constructors. It assumes you know all relevant info about the Codeblock at initialization. 
-	 * @param parentList : List<FlowNode> that contains all immediately preceeding flownodes. 
-	 * @param childList : List<FlowNode> containing all immediate successor flownodes.
+	 * @param parentList : List<FlowNode> that contains all immediately preceding FlowNodes. 
+	 * @param childList : List<FlowNode> containing all immediate successor FlowNodes.
 	 * @param statementList : List<Statement> containing all statements in this particular block of code. 
 	 */
 	public Codeblock(List<FlowNode> parentList, List<FlowNode> childList, List<Statement> statementList){
@@ -30,15 +31,6 @@ public class Codeblock extends FlowNode {
 	 * This is the second constructor. It assumes you know nothing about the block and will fill in the relevant information over time. 
 	 */
 	public Codeblock(){}
-	
-	@Override
-	/**
-	 * Tells you you're working with a code block.
-	 * @return NodeType : CODEBLOCK
-	 */
-	public NodeType getType() {
-		return NodeType.CODEBLOCK;
-	}
 
 	@Override
 	/**
@@ -98,6 +90,22 @@ public class Codeblock extends FlowNode {
 	 */
 	public void addStatement(Statement newStatement){
 		statements.add(newStatement);
+	}
+	
+	/**
+	 * Traverse this FlowNode and mark visited as true.
+	 */
+	@Override
+	public void visit() {
+		visited = true;
+	}
+	
+	/**
+	 * Returns whether or not this FlowNode has been traversed already.
+	 */
+	@Override
+	public boolean visited() {
+		return visited;
 	}
 
 }

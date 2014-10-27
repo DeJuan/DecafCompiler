@@ -33,7 +33,7 @@ public class MethodCall extends Expression {
 	
 	/**
 	 * Returns the string given as the name for the method. 
-	 * @return name : String reprsenting method name.
+	 * @return name : String representing method name.
 	 */
 	public String getMethodName(){
 		return name;

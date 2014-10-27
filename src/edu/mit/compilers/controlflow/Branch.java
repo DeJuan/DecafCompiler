@@ -14,13 +14,21 @@ public class Branch extends FlowNode {
 	private FlowNode falseBranch;
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private List<FlowNode> children = new ArrayList<FlowNode>();
+	private BranchType type;
+	private boolean visited = false;
+	
+	public enum BranchType {
+		IF, FOR, WHILE
+	};
 	
 	/**
-	 * This is the first of the two constructors for our branch representation. This assumes you know everything about the branch when you try to make it.
+	 * This is the first of the two constructors for our branch representation. This assumes you know 
+	 * everything about the branch when you try to make it.
 	 * @param parentList : The list of parent FlowNodes who link to this branch.
 	 * @param ifTrue : FlowNode representing the path we take if this branch evaluates to true.
 	 * @param ifFalse : FlowNode representing the path we take if this branch evaluates to false.
-	 * @param express : Expression representing the actual branch condition. (i.e. if Y < 3 would have Y < 3 as the expression.)
+	 * @param express : Expression representing the actual branch condition. 
+	 * (i.e. if Y < 3 would have Y < 3 as the expression.)
 	 */
 	public Branch(List<FlowNode> parentList, FlowNode ifTrue, FlowNode ifFalse, Expression express){
 		this.trueBranch = ifTrue;
@@ -32,20 +40,23 @@ public class Branch extends FlowNode {
 	}
 	
 	/**
-	 * This is the second of the constructors for Branch. This assumes you know the bare minimum about the branch, which is its condition.
-	 * @param express : Expression representing the branch condition (i.e. if X >= 5 would have X >= 5 as the expression.
+	 * This is the second of the constructors for Branch. This assumes you know the bare minimum 
+	 * about the branch, which is its condition and type.
+	 * @param expression : Expression representing the branch condition (i.e. if X >= 5 would 
+	 * have X >= 5 as the expression.
+	 * @param type : BrancType representing what type of branch this is (if, for, or while).
 	 */
-	public Branch(Expression express) {
-		this.expr = express;
+	public Branch(Expression expression, BranchType type) {
+		this.expr = expression;
+		this.type = type;
 	}
 	
-	@Override
 	/**
-	 * Tells you that you're working with a branch.
-	 * @return NodeType : BRANCH
+	 * What type of branch this is (if, for, or while).
+	 * @return BranchType : IF, FOR, or WHILE
 	 */
-	public NodeType getType() {
-		return NodeType.BRANCH;
+	public BranchType getType() {
+		return type;
 	}
 
 	@Override
@@ -67,10 +78,10 @@ public class Branch extends FlowNode {
 	
 	@Override
 	/**
-	 * Getter method for the children of this branch. This is a list that combines both the false and true branches
-	 * in one returned list. 
+	 * Getter method for the children of this branch. This is a list that combines both the 
+	 * false and true branches in one returned list. 
 	 * 
-	 *  @return children : List<FlowNode> that combines the true and false branches. True precedes false. 
+	 *  @return children : List<FlowNode> that combines the true and false branches.
 	 */
 	public List<FlowNode> getChildren() {
 		return children;
@@ -120,7 +131,8 @@ public class Branch extends FlowNode {
 	
 	/**
 	 * Method that allows you to get the conditional used to resolve the branch path taken.
-	 * @return expr : Expression representing the condition used to determine whether the true or false path of the branch will be used.
+	 * @return expr : Expression representing the condition used to determine whether the 
+	 * true or false path of the branch will be used.
 	 */
 	public Expression getExpr(){
 		return expr;
@@ -133,5 +145,21 @@ public class Branch extends FlowNode {
 	 */
 	public void setExpr(Expression newExpression){
 		expr = newExpression;
+	}
+	
+	/**
+	 * Traverse this FlowNode and mark visited as true.
+	 */
+	@Override
+	public void visit() {
+		visited = true;
+	}
+	
+	/**
+	 * Returns whether or not this FlowNode has been traversed already.
+	 */
+	@Override
+	public boolean visited() {
+		return visited;
 	}
 }

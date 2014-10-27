@@ -11,9 +11,10 @@ import edu.mit.compilers.ir.IR_FieldDecl;
  *
  */
 public class START extends FlowNode {
-	private List<FlowNode> child = new ArrayList<FlowNode>();
-	private List<FlowNode> parent = new ArrayList<FlowNode>();
+	private List<FlowNode> children = new ArrayList<FlowNode>();
+	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private List<IR_FieldDecl> arguments = new ArrayList<IR_FieldDecl>();
+	private boolean visited = false;
 	
 	/**
 	 * This constructor assumes you want a blank start that will be updated later. 
@@ -28,13 +29,9 @@ public class START extends FlowNode {
 		this.arguments = args;
 	}
 
-	public NodeType getType() {
-		return NodeType.START;
-	}
-
 	@Override
 	public List<FlowNode> getParents(){
-		return parent;
+		return parents;
 	}
 
 	@Override
@@ -43,12 +40,12 @@ public class START extends FlowNode {
 	 * @return child : List<FlowNode> of length one containing first meaningful FlowNode in the current method.  
 	 */
 	public List<FlowNode> getChildren() {
-		return this.child;
+		return children;
 	}
 
 	@Override
 	public void addParent(FlowNode newParent) {
-		parent.add(newParent);
+		parents.add(newParent);
 	}
 
 	@Override
@@ -56,21 +53,34 @@ public class START extends FlowNode {
 	 * Adder method allowing you to append a child to the list of children. Will error if the list already has a child. 
 	 */
 	public void addChild(FlowNode newChild) {
-		if (this.child.isEmpty()){
-			this.child.add(newChild);
+		if (children.isEmpty()){
+			children.add(newChild);
 		}
 		else throw new UnsupportedOperationException("This START node already has a child. No START should have more than one child.");
 	}
 	
 	/**
 	 * Gives you back the list of IR_FieldDecl objects you initialized this node with. 
-	 * @return
+	 * @return arguments : list of IR_FieldDecl arguments for the method.
 	 */
 	public List<IR_FieldDecl> getArguments(){
-		if(this.arguments.isEmpty()){
-			System.err.println("WARNING: You are getting an empty argument list!");
-		}
-		return this.arguments;
+		return arguments;
+	}
+	
+	/**
+	 * Traverse this FlowNode and mark visited as true.
+	 */
+	@Override
+	public void visit() {
+		visited = true;
+	}
+	
+	/**
+	 * Returns whether or not this FlowNode has been traversed already.
+	 */
+	@Override
+	public boolean visited() {
+		return visited;
 	}
 	
 }

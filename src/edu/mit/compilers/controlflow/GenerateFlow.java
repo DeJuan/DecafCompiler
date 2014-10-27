@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import edu.mit.compilers.codegen.*;
+import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.ir.*;
 import edu.mit.compilers.ir.IR_Literal.*;
 
@@ -166,7 +167,7 @@ public class GenerateFlow {
 	public static FlowNode generateIf(FlowNode prevNode, IR_If ifNode, ControlflowContext context) {
 		// First initialize Branch object with the condition expression.
 		Expression expr = generateExpr(ifNode.getExpr(), context);
-		Branch ifBranch = new Branch(expr);
+		Branch ifBranch = new Branch(expr, BranchType.IF);
 		prevNode.addChild(ifBranch);
 		ifBranch.addParent(prevNode);
 		
@@ -223,20 +224,22 @@ public class GenerateFlow {
 		IR_CompareOp comp = new IR_CompareOp(forNode.getVar(), forNode.getEnd(), Ops.LT);
 		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(comp, context);
-		Branch forBranch = new Branch(expr);
+		Branch forBranch = new Branch(expr, BranchType.FOR);
 		context.enterLoop(forBranch);
 		prevNode.addChild(forBranch);
 		forBranch.addParent(prevNode);
 		
-		// Flow node when expr evaluates to false.
+		// Initiate loop block, when expr evaluates to true.
+		START beginForBlock = new START();
+		beginForBlock.addParent(forBranch);
+		forBranch.setTrueBranch(beginForBlock);
+		
+		// Initiates exit block, when expr evaluates to false.
 		NoOp exitFor = new NoOp();
 		exitFor.addParent(forBranch);
 		forBranch.setFalseBranch(exitFor);
-		
+			
 		// Begin recursively generating loop code block.
-		START beginForBlock = new START();
-		forBranch.setTrueBranch(beginForBlock);
-		beginForBlock.addParent(forBranch);
 		FlowNode endFor = generateFlow(beginForBlock, forNode.getBlock(), context);
 		if (!(endFor instanceof END) && endFor != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
@@ -260,20 +263,22 @@ public class GenerateFlow {
 	public static FlowNode generateWhile(FlowNode prevNode, IR_While whileNode, ControlflowContext context) {
 		// First initialize Branch object with the condition expression.
 		Expression expr = generateExpr(whileNode.getExpr(), context);
-		Branch whileBranch = new Branch(expr);
+		Branch whileBranch = new Branch(expr, BranchType.WHILE);
 		context.enterLoop(whileBranch);
 		prevNode.addChild(whileBranch);
 		whileBranch.addParent(prevNode);
 		
-		// Flow node when expr evaluates to false.
+		// Initiate loop block, when expr evaluates to true.
+		START beginWhileBlock = new START();
+		beginWhileBlock.addParent(whileBranch);
+		whileBranch.setTrueBranch(beginWhileBlock);
+				
+		// Initiates exit block, when expr evaluates to false.
 		NoOp exitWhile = new NoOp();
 		exitWhile.addParent(whileBranch);
 		whileBranch.setFalseBranch(exitWhile);
-		
+					
 		// Begin recursively generating loop code block.
-		START beginWhileBlock = new START();
-		whileBranch.setTrueBranch(beginWhileBlock);
-		beginWhileBlock.addParent(whileBranch);
 		FlowNode endWhile = generateFlow(beginWhileBlock, whileNode.getBlock(), context);
 		if (!(endWhile instanceof END) && endWhile != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
