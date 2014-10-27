@@ -24,6 +24,11 @@ import edu.mit.compilers.tools.CLI.Action;
 
 class Main {
 	
+  /**
+   * Function that recursively prints the AST.
+   * @param node : AST root node.
+   * @param indent : what level we are relative to the root node of the program.
+   */
   public static void printAst(AST node, int indent){
 	  for(int ii = 0;ii<indent;ii++){
 		  System.out.print("  ");
@@ -42,6 +47,11 @@ class Main {
 	  }
   }
   
+  /**
+   * Function that recursively prints a FlowNode.
+   * @param node : FlowNode object.
+   * @param indent : what level we are relative to the root node (method declaration).
+   */
   public static void printFlowNode(FlowNode node, int indent) {
 	  if (node == null || node.visited())
 		  return;
@@ -63,19 +73,24 @@ class Main {
 		  System.out.println(indents + "Children: " + children.size());
 		  int i = 1;
 		  for (FlowNode child : children) {
-			  System.out.println(indents + "Child " + i);
+			  System.out.println(indents + "Child #" + i);
 			  printFlowNode(child, indent+1);
 			  i++;
 		  }
 	  }
   }
   
+  /**
+   * Given a map of method names to method FlowNodes, print each FlowNode.
+   * @param irMap : map of method names to method FlowNodes.
+   */
   public static void printIR(HashMap<String, FlowNode> irMap) {
 	  for (Map.Entry<String, FlowNode> entry : irMap.entrySet()) {
 		    String key = entry.getKey();
 		    START node = (START) entry.getValue();
 		    
 		    System.out.println("============================ " + key + " ============================");
+		    // Print arguments.
 		    List<IR_FieldDecl> args = node.getArguments();
 		    if (args.size() == 0) {
 		    	System.out.println("No arguments");
@@ -85,11 +100,11 @@ class Main {
 			    	System.out.print(arg.getName() + " ");
 			    System.out.println("");
 		    }
+		    // Recursively print FlowNode.
 		    printFlowNode(node, 0);
 	  }
 	  System.out.println("");
   }
-  
   
   public static void main(String[] args) {
     try {
