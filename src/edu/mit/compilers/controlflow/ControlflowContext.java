@@ -11,15 +11,13 @@ import edu.mit.compilers.ir.SymbolTable;
 public class ControlflowContext {
 	
 	/**@brief symbol table for locations of variables*/
-	public SymbolTable<Descriptor> symbol;
+	public SymbolTable<Descriptor> symbol = new SymbolTable<Descriptor>();
 	
 	// Stack implementation that keeps track of which for/while loop we are in.
-	private Stack<Branch> loopScope;
+	private Stack<Branch> loopScope = new Stack<Branch>();
 	
 	public ControlflowContext() {
-		symbol = new SymbolTable<Descriptor>();
 		symbol.incScope();
-		loopScope = new Stack<Branch>();
 	}
 	
 	/**
@@ -51,14 +49,17 @@ public class ControlflowContext {
 		symbol.decScope();
 	}	
 	
+	// Returns the Branch object for the innermost loop we are in. Used for continue/break.
 	public Branch getInnermostLoop() {
 		return loopScope.peek();
 	}
 	
+	// Entering a 'for' or 'while' loop; push to stack.
 	public void enterLoop(Branch loop) {
 		loopScope.push(loop);
 	}
 	
+	// Exiting a 'for' or 'while' loop; pop from stack.
 	public void exitLoop() {
 		loopScope.pop();
 	}

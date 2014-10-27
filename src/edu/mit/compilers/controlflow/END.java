@@ -10,7 +10,8 @@ import java.util.List;
  */
 public class END extends FlowNode {
 	private Expression returnStatement = null;
-	private List<FlowNode> parent = new ArrayList<FlowNode>();
+	private List<FlowNode> parents = new ArrayList<FlowNode>();
+	private boolean visited = false;
 	
 	/**
 	 * Constructor for void methods.
@@ -24,23 +25,13 @@ public class END extends FlowNode {
 	public END(Expression returnVal){
 		this.returnStatement = returnVal;
 	}
-	
-	
-	@Override
-	/**
-	 * Tells you you're working with an END.
-	 * @return NodeType : END
-	 */
-	public NodeType getType() {
-		return NodeType.END;
-	}
 
 	@Override
 	/**
 	 * Gets the parent list of length 1 containing the lone parent to this node.
 	 */
 	public List<FlowNode> getParents() {
-		return parent;
+		return parents;
 	}
 	
 	/**
@@ -59,18 +50,34 @@ public class END extends FlowNode {
 	}
 	@Override
 	public List<FlowNode> getChildren(){
-		throw new UnsupportedOperationException("The End of Nodes bears no children, mortal.");
+		return null;
 	}
 
 	@Override
 	public void addParent(FlowNode newParent) {
-		parent.add(newParent);
+		parents.add(newParent);
 	}
 
 	@Override
 	public void addChild(FlowNode newChild) {
 		throw new UnsupportedOperationException("I already warned you. No mere programmer can force me to have a child. I am the END!");
 		
+	}
+	
+	/**
+	 * Traverse this FlowNode and mark visited as true.
+	 */
+	@Override
+	public void visit() {
+		visited = true;
+	}
+	
+	/**
+	 * Returns whether or not this FlowNode has been traversed already.
+	 */
+	@Override
+	public boolean visited() {
+		return visited;
 	}
 	
 }
