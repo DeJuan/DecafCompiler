@@ -32,7 +32,9 @@ public class Optimizer {
 				BinExpr bin = (BinExpr)expr;
 				switch(bin.getOperator()){
 					case TIMES:
-						if(bin.getRightSide().getType == ExpressionType.INT_LIT)
+						if(bin.getRightSide().getExprType() == ExpressionType.INT_LIT){
+							IntLit rhs = (IntLit)bin.getRightSide();
+						}
 				}
 				
 			default:
@@ -48,8 +50,7 @@ public class Optimizer {
 	 */
 	public List<Var> checkVariablesAssigned(FlowNode node){
 		List<Var> assignedVars = new ArrayList<Var>();
-		NodeType checkFlowType = node.getType();
-		if (checkFlowType == NodeType.CODEBLOCK){
+		if (node instanceof Codeblock){
 			Codeblock codeblock = (Codeblock)node;
 			List<Statement> statementList = codeblock.getStatements();
 			for (Statement currentStatement : statementList){
@@ -63,17 +64,49 @@ public class Optimizer {
 	}
 	
 	/**
+	 * This is a method to get all expressions from a given FlowNode. 
+	 * If the node is a Codeblock, it is scanned for assignments. 
+	 * For all assignments, the right hand side, which is an expression, is recorded in a list.
+	 * At the end of the block, this list is returned. 
+	 * 
+	 * If the node is a Branch, the branch condition, which is itself an expression, is added to the list.
+	 * The list is then returned.
+	 * 
+	 * Note that this does not get all expressions for an entire graph, but only one node. 
+	 * 
+	 * @param node : A single FlowNode whose expressions you wish to discover.
+	 * @return allExprs : A List<Expression> of all expressions found within the single FlowNode given.
+	 */
+	public List<Expression> getAllExpressions(FlowNode node){
+		List<Expression> allExprs = new ArrayList<Expression>();
+		if (node instanceof Codeblock){
+			Codeblock cblock = (Codeblock)node;
+			List<Statement> stateList = cblock.getStatements();
+			for (Statement currentStatement : stateList){
+				if (currentStatement.getStatementType() == StatementType.ASSIGNMENT){
+					Assignment currentAssign = (Assignment) currentStatement;
+					allExprs.add(currentAssign.getValue());
+				}	
+			}
+		}
+		else if (node instanceof Branch){
+			Branch splitNode = (Branch)node;
+			allExprs.add(splitNode.getExpr());
+		}
+		return allExprs;
+	}
+	
+	/**
 	 * This is a helper method designed to allow an easy way to check if a given 
 	 * FlowNode is a Codeblock without having to repeatedly write the code needed to do so.
+	 * It is now deprecated. 
+	 * 
 	 * @param node : The FlowNode whose type you want to confirm.
 	 * @return boolean : true if the given node is a Codeblock, false otherwise. 
 	 */
 	public boolean checkIfCodeblock(FlowNode node){
-		switch(node.getType()){
-		case CODEBLOCK:
+		if(node instanceof Codeblock){
 			return true;
-		default:
-			break;
 		}
 		return false;
 	}
@@ -95,15 +128,22 @@ public class Optimizer {
 	}
 	
 	/**
-	 * This is a helper method allowing us to deep copy any Collection.
+	 * This is a helper method allowing us to deep copy a HashMap.
+	 * It is written using generic types so passing any valid HashMap will work.
+	 * 
+	 * @param setToCopy : The HashMap<T, K> that you want to copy, where T and K are some types.
+	 * @return copy : A HashMap<T, K> that is a deep copy of the parameter to this method. 
 	 */
-	public <T> LinkedHashSet<T> deepCopyHashSet(HashMap<T, T> setToCopy){
-		LinkedHashSet<T> copy = new LinkedHashSet<T>();
-		for (T element : setToCopy){
-			copy.add(element);
+	public <T, K> HashMap<T, K> deepCopyHashMap(HashMap<T, K> setToCopy){
+		HashMap<T, K> copy = new HashMap<T, K>();
+		Set<T> setToCopyKeys = setToCopy.keySet();
+		for (T key : setToCopyKeys){
+			copy.put(key, setToCopy.get(key));
 		}
 		return copy;
 	}
+	
+
 	
 	/**
 	 * This is a rough first attempt at finding the statements that were killed in a given Codeblock.
