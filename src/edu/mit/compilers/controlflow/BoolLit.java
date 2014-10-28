@@ -6,14 +6,14 @@ package edu.mit.compilers.controlflow;
  *
  */
 public class BoolLit extends Expression {
-	private boolean truthValue;
+	private boolean value;
 	
 	/**
 	 * This is the constructor for a BoolLiteral. It accepts the value for the boolean.
 	 * @param trueFalseValue : A boolean which is the truth value for this literal.
 	 */
-	public BoolLit(boolean trueFalseValue){
-		this.truthValue = trueFalseValue;
+	public BoolLit(boolean value){
+		this.value = value;
 	}
 	
 	@Override
@@ -29,16 +29,16 @@ public class BoolLit extends Expression {
 	 * Returns the boolean truth value for this literal.
 	 * @return boolean : True or False depending on the value given when this literal was constructed, assuming no overwrites.
 	 */
-	public boolean getTruthValue(){
-		return truthValue;
+	public boolean getValue(){
+		return value;
 	}
 	
 	/**
 	 * Allows you to override the original value given to this literal with a new value. 
 	 * @param newVal : The new truth value for this boolean literal. 
 	 */
-	public void updateTruthValue(boolean newVal){
-		this.truthValue = newVal;
+	public void updateValue(boolean newVal){
+		this.value = newVal;
 	}
 
 }

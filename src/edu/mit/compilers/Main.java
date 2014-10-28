@@ -100,8 +100,12 @@ class Main {
 			    	System.out.print(arg.getName() + " ");
 			    System.out.println("");
 		    }
+		    // Print return type.
+		    System.out.println("Return type: " + node.getRetType());
 		    // Recursively print FlowNode.
 		    printFlowNode(node, 0);
+		    // Must reset all the visited flags of the FlowNode.
+		    node.resetVisit();
 	  }
 	  System.out.println("");
   }

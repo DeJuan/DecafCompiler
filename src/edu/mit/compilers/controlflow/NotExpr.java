@@ -3,7 +3,7 @@ package edu.mit.compilers.controlflow;
 import edu.mit.compilers.ir.Type;
 
 public class NotExpr extends Expression {
-	boolean truthValue;
+	boolean value;
 	Expression express;
 	
 	public NotExpr(Expression expr){
@@ -27,9 +27,9 @@ public class NotExpr extends Expression {
 			this.express = comExpr; 
 			break;
 		case BOOL_LIT:
-			BoolLit value = (BoolLit)expr;
-			this.truthValue = !value.getTruthValue();
-			this.express = value;
+			BoolLit truthValue = (BoolLit)expr;
+			this.value = !truthValue.getValue();
+			this.express = truthValue;
 			break;
 		default:
 			throw new UnsupportedOperationException("Tried to NOT something that couldn't possibly resolve to a boolean.");

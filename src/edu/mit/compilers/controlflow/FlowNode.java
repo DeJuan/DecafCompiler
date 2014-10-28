@@ -10,5 +10,6 @@ public abstract class FlowNode {
 	public abstract void addChild(FlowNode newChild);
 	public abstract void visit();
 	public abstract boolean visited();
+	public abstract void resetVisit();
 	
 }

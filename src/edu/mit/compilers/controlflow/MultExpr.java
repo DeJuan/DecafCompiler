@@ -12,6 +12,7 @@ public class MultExpr extends BinExpr {
 		super(lhs, op, rhs);
 		opChecker.add(Ops.TIMES);
 		opChecker.add(Ops.DIVIDE);
+		opChecker.add(Ops.MOD);
 		if (!opChecker.contains(op)){
 			throw new UnsupportedOperationException("You tried to initialize a MultExpr with an invalid operator.");
 		}
