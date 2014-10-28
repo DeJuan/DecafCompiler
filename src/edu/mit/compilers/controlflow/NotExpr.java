@@ -26,10 +26,18 @@ public class NotExpr extends Expression {
 			// TODO : Can't resolve the expr as implemented, would need to look up somehow. So just store it.
 			this.express = comExpr; 
 			break;
+		case EQ_EXPR:
+			EqExpr eqExpr = (EqExpr) expr;
+			// TODO : same as above
+			this.express = eqExpr;
+			break;
 		case BOOL_LIT:
 			BoolLit truthValue = (BoolLit)expr;
 			this.value = !truthValue.getValue();
 			this.express = truthValue;
+			break;
+		case NOT:
+			this.express = (NotExpr) expr;
 			break;
 		default:
 			throw new UnsupportedOperationException("Tried to NOT something that couldn't possibly resolve to a boolean.");
