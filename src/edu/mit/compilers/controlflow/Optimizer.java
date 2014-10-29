@@ -5,12 +5,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
-import edu.mit.compilers.controlflow.FlowNode.NodeType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
+import edu.mit.compilers.ir.Ops;
 
 /**
  * This class represents an object we can create to call our optimization methods. 
@@ -34,6 +36,9 @@ public class Optimizer {
 					case TIMES:
 						if(bin.getRightSide().getExprType() == ExpressionType.INT_LIT){
 							IntLit rhs = (IntLit)bin.getRightSide();
+							if(rhs.getValue() == 2){
+								simplifiedExprs.add(new AddExpr(bin.getLeftSide(), Ops.PLUS, bin.getLeftSide()));
+							}
 						}
 				}
 				
@@ -96,6 +101,7 @@ public class Optimizer {
 		return allExprs;
 	}
 	
+	
 	/**
 	 * This is a helper method designed to allow an easy way to check if a given 
 	 * FlowNode is a Codeblock without having to repeatedly write the code needed to do so.
@@ -143,7 +149,33 @@ public class Optimizer {
 		return copy;
 	}
 	
-
+	public Set<Expression> computePlusSets(FlowNode node){
+		Set<Expression> plusSet = new LinkedHashSet<Expression>();
+		if(node instanceof Codeblock){
+			Codeblock cblock = (Codeblock)node;
+			List<Expression> exprsInBlock = getAllExpressions(cblock);
+			for (Expression expr : exprsInBlock){
+				if (expr instanceof AddExpr){
+					AddExpr adding = (AddExpr)expr;
+					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? DO WE NEED TO RECURSE AND COMPUTE GRANULARITY OR THINK OF THEM AS COMMUTABLE BLOCKS?
+					//If we think of them as commutable blocks of code, then this works; otherwise we need to add the recursive logic. 
+					plusSet.add(adding.getLeftSide());
+					plusSet.add(adding.getRightSide()); 
+				}
+			}
+		}
+		else if(node instanceof Branch){
+			Branch branch = (Branch)node;
+			Expression expr = branch.getExpr();
+			if (expr instanceof AddExpr){
+				AddExpr adding = (AddExpr)expr;
+				// TODO : Same as what's written under the codeblock branch. 
+				plusSet.add(adding.getLeftSide());
+				plusSet.add(adding.getRightSide());
+			}
+		}
+		return plusSet;
+	}
 	
 	/**
 	 * This is a rough first attempt at finding the statements that were killed in a given Codeblock.
@@ -161,9 +193,9 @@ public class Optimizer {
 	 * @param node : FlowNode (really should be a Codeblock) that we want to investigate for killed statements.
 	 * @return killedStatements : Set<Statement> containing all statements that were killed by later assignments in this Codeblock.
 	 */
-	public Set<Statement> getKilledStatements(FlowNode node){
-		Set<Statement> killedStatements = new LinkedHashSet<Statement>();
-		HashMap<Var, Statement> availableStatements = new HashMap<Var, Statement>();
+	public Set<Expression> getKilledExpressions(FlowNode node){
+		Set<Expression> killedExpressions = new LinkedHashSet<Expression>();
+		HashMap<Var, Expression> availableExpressions = new HashMap<Var, Expression>();
 		if(checkIfCodeblock(node)){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> statementList = cblock.getStatements();
@@ -171,21 +203,35 @@ public class Optimizer {
 				if(checkIfAssignment(currentState)){
 					Assignment currentAssign = (Assignment)currentState;
 					Var currentDestVar = currentAssign.getDestVar();
-					if(availableStatements.containsKey(currentDestVar)){
-						killedStatements.add(availableStatements.get(currentDestVar));
-						availableStatements.put(currentDestVar, currentState);
+					Expression currentExpr = currentAssign.getValue();
+					if(availableExpressions.containsKey(currentDestVar)){
+						killedExpressions.add(availableExpressions.get(currentDestVar));
+						availableExpressions.put(currentDestVar, currentExpr);
 						continue;
 					}
 					else{
-						availableStatements.put(currentDestVar, currentState);
+						availableExpressions.put(currentDestVar, currentExpr);
 					}
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					//TODO : Set all global variables to a killed state
+					LinkedList<FlowNode> parentChainNodes = new LinkedList<FlowNode>();
+					while(!parentChainNodes.isEmpty()){
+						FlowNode currentParentInChain = parentChainNodes.pop();
+						if(!(currentParentInChain instanceof START)){
+							parentChainNodes.addAll(currentParentInChain.getParents());
+							continue;
+						}
+						else{
+							START origin = (START)currentParentInChain;
+							origin.getArguments() // TODO : The arguments are IR_FieldDecls; I can't parse them. We need to change that. 
+						}
+					}
+					
 				}
 			}
 		}
-		return killedStatements;
+		return killedExpressions;
 	}
 	
 	/**
@@ -207,15 +253,15 @@ public class Optimizer {
 	 * @return Set<Expression> : A set of the available expressions for the given method flownodes.
 	 */
 	public Set<Expression> calculateAvailableExpressions(Set<FlowNode> currentMethodFlownodes){
-		HashMap<FlowNode, Set<Statement>> OUT = new HashMap<FlowNode, Set<Statement>>();
-		HashMap<FlowNode, Set<Statement>> IN = new HashMap<FlowNode, Set<Statement>>();
-		Set<FlowNode> Changed = new LinkedHashSet<FlowNode>();
+		HashMap<FlowNode, Set<Expression>> OUT = new HashMap<FlowNode, Set<Expression>>();
+		HashMap<FlowNode, Set<Expression>> IN = new HashMap<FlowNode, Set<Expression>>();
+		LinkedList<FlowNode> Changed = new LinkedList<FlowNode>();
 		for(FlowNode n: currentMethodFlownodes){ //First, set up the output: OUT[node] = all expressions in the node
 			if (checkIfCodeblock(n)){
 				Codeblock cblock = (Codeblock)n;
-				LinkedHashSet<Statement> statementSet = new LinkedHashSet<Statement>(cblock.getStatements());
+				LinkedHashSet<Expression> exprSet = new LinkedHashSet<Expression>(getAllExpressions(cblock));
 				// TODO Add getting righthand side if assignment and downcast to Expression
-				OUT.put(n, statementSet); //Out[node] = set of all statements in node
+				OUT.put(n, exprSet); //Out[node] = set of all statements in node
 				Changed.add(cblock); //Put the codeblock in the Changed set we'll use to do fixed point.
 			}
 		}
@@ -223,24 +269,26 @@ public class Optimizer {
 		//Next, actually carry out the changed iteration part of the algorithm.
 		//This part is most likely so full of bugs it is scary and I am scared looking at it. 
 		while(!Changed.isEmpty()){
-			Object[] changedArray = Changed.toArray(); //Can't get a member of a set, so change it to an array
-			Codeblock currentNode = (Codeblock) changedArray[0]; //Get whatever the first codeblock in the set is. 
-			Changed.remove(currentNode); //TODO : MAY CAUSE MODIFICATION ERROR AND NEED ITERATOR USE, but take that codeblock out of the set.
-			Set<Statement> currentStatementSet = IN.get(currentNode); //TODO : Check if type change causes get to fail. This is trying to do IN[node] = E
+			Codeblock currentNode = (Codeblock)Changed.pop(); //Get whatever the first codeblock in the set is. 
+			Set<Expression> currentExpressionSet = IN.get(currentNode); //TODO : Check if type change causes get to fail. This is trying to do IN[node] = E
 			for (FlowNode parentNode : currentNode.getParents()){
 				if(checkIfCodeblock(parentNode)){
 					Codeblock parent = (Codeblock)parentNode;
-					currentStatementSet.retainAll(parent.getStatements()); //Set intersection
-					IN.put(currentNode, currentStatementSet);
+					currentExpressionSet.retainAll(getAllExpressions(parent)); //Set intersection
+					IN.put(currentNode, currentExpressionSet);
 				}	
 			}
-			Set<Expression> genUnisonFactor = deepCopyHashSet(IN);
-			Set<Expression> genUnisonFactor= IN.get(currentNode).removeAll(getKilledStatements(currentNode)); // This is IN[Node] - KILL[Node]
+			HashMap<FlowNode, Set<Expression>> genUnisonFactor = deepCopyHashMap(IN); 
+			genUnisonFactor.get(currentNode).removeAll(getKilledExpressions(currentNode)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
 			
-			if(OUT.get(currentNode).addAll(IN.get(currentNode))){ //That addAll gives a boolean that is true if the set changed as a result of the add.
+			//The below combines OUT[n] = GEN[n] UNION (IN[n] - KILL[n]) and the check for whether or not this changed OUT in one line.  
+			if(OUT.get(currentNode).addAll(genUnisonFactor.get(currentNode))){ //That addAll gives a boolean that is true if the set changed as a result of the add. 
 				for (FlowNode childNode : currentNode.getChildren()){
 					if(checkIfCodeblock(childNode)){
 						Codeblock child = (Codeblock)childNode;
+						if (Changed.contains(child)){
+							continue;
+						}
 						Changed.add(child);
 					}
 				}
@@ -248,12 +296,12 @@ public class Optimizer {
 		}
 		
 		//Now we have to get all the statements in OUT into one set so we can finally return it..
-		Set<Statement> availableStatements = new HashSet<Statement>();
+		Set<Expression> availableExpressions = new HashSet<Expression>();
 		Set<FlowNode> listOfOutKeys = OUT.keySet();
 		for(FlowNode key : listOfOutKeys){
-			availableStatements.addAll(OUT.get(key));
+			availableExpressions.addAll(OUT.get(key));
 		}
 		
-		return availableStatements; //Probably really buggy at this point, need to show group and debug 
+		return availableExpressions; //Probably really buggy at this point, need to show group and debug 
 	}
 }
