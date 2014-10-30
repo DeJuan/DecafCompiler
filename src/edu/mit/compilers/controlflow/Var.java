@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.ir.IR_FieldDecl;
 
 /**
  * This class represents variables. 
@@ -9,13 +10,18 @@ import edu.mit.compilers.codegen.Descriptor;
  */
 public class Var extends Expression {
 	private Descriptor var;
+	private String name;
+	private Expression index;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
 	 * @param variable
 	 */
-	public Var(Descriptor variable){
+	public Var(Descriptor variable, Expression index){
 		this.var = variable;
+		IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+		this.name = ir.getName();
+		this.index = index;
 	}
 	
 	@Override
@@ -41,5 +47,13 @@ public class Var extends Expression {
 	 */
 	public void setNewDescriptor(Descriptor newVar){
 		this.var = newVar;
+	}
+	
+	public String getName(){
+		return name;
+	}
+	
+	public Expression getIndex(){
+		return index;
 	}
 }

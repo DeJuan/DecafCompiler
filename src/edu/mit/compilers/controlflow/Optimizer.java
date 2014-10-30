@@ -12,6 +12,7 @@ import java.util.Set;
 
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
+import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Ops;
 
@@ -203,22 +204,16 @@ public class Optimizer {
 		return copy;
 	}
 	
-	
-	public Set<SPSet> computePlusSets(FlowNode node){
-		Set<SPSet> plusSet = new LinkedHashSet<SPSet>();
+	public Set<SPSet> computeAllSets(FlowNode node){
+		Set<SPSet> allSets = new LinkedHashSet<SPSet>();
 		if(node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Expression> exprsInBlock = getAllExpressions(cblock);
 			for (Expression expr : exprsInBlock){
-				if (expr instanceof AddExpr){
-					AddExpr adding = (AddExpr)expr;
-					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? WE NEED TO RECURSE AND COMPUTE GRANULARITY. 
-					if(adding.getLeftSide() instanceof Var){
-						
-					}
-				}
-				if (expr instanceof MultExpr){
-					plusSet.add(computeMulSets(expr))
+				switch(expr.getExprType()){
+				case ADD_EXPR:
+					allSets.add(computePlusSets((AddExpr)expr));
+					break;
 				}
 			}
 		}
@@ -226,11 +221,64 @@ public class Optimizer {
 			Branch branch = (Branch)node;
 			Expression expr = branch.getExpr();
 			if (expr instanceof AddExpr){
-				AddExpr adding = (AddExpr)expr;
-				// TODO : Same as what's written under the codeblock branch. 
-				plusSet.add(adding.getLeftSide());
-				plusSet.add(adding.getRightSide());
+				
 			}
+		}
+	}
+	
+	public SPSet analyzeAndDispatch(Expression expr){
+		switch(expr.getExprType()){
+		case ADD_EXPR:
+			return computePlusSets((AddExpr)expr);
+		case COMP_EXPR: 
+			return computeComparisonSet((CompExpr)expr);
+		case COND_EXPR: 
+			// TODO : Split Cond into AndExpr and OrExpr, check for instance, call respective maker
+		case MOD_EXPR:
+			return computeModSet((ModExpr)expr);
+		case MULT_EXPR:
+			return computeMultSet((MultExpr)expr);
+		case DIV_EXPR: 
+			return computeDivSet((DivExpr)expr);
+		default:
+			break;
+		}
+		return null;
+	}
+	
+	public SPSet computePlusSets(AddExpr adding){
+		SPSet plusSet = new SPSet(Ops.PLUS);
+
+		Expression lhs = adding.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			plusSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof AddExpr){
+			AddExpr lhsAdd = (AddExpr)lhs;
+			SPSet recursiveSPSet = computePlusSets(lhsAdd);
+			plusSet.SPSets.addAll(recursiveSPSet.SPSets);
+			plusSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			plusSet.SPSets.add(analyzeAndDispatch(lhs).SPSets);
+			plusSet.varSet.add(analyzeAndDispatch(lhs).varSet);
+		}
+		
+		Expression rhs = adding.getRightSide();
+		if(rhs instanceof Var){
+			Var variaR = (Var) rhs;
+			plusSet.varSet.add((IR_FieldDecl) variaR.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof AddExpr){
+			AddExpr rhsAdd = (AddExpr)rhs;
+			SPSet recursiveSPSet = computePlusSets(rhsAdd);
+			plusSet.SPSets.addAll(recursiveSPSet.SPSets);
+			plusSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			plusSet.SPSets.add(analyzeAndDispatch(rhs).SPSets);
+			plusSet.varSet.add(analyzeAndDispatch(rhs).varSet);
 		}
 		return plusSet;
 	}

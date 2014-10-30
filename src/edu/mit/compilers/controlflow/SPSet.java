@@ -5,17 +5,18 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.Ops;
 
 public class SPSet {
 	public Set<SPSet> SPSets;
-	public Set<VarSet> varSets;
+	public Set<IR_FieldDecl> varSet;
 	private List<Ops> opsChecker = Arrays.asList(Ops.MINUS, Ops.PLUS, Ops.DIVIDE, Ops.TIMES, Ops.MOD, Ops.AND, Ops.OR);
 	public Ops operator;
 	
 	public SPSet(Ops op){
 		SPSets =  new LinkedHashSet<SPSet>();
-		varSets = new LinkedHashSet<VarSet>();
+		varSet = new LinkedHashSet<IR_FieldDecl>();
 		if(this.opsChecker.contains(op)){
 			this.operator = op;
 		}
@@ -24,9 +25,9 @@ public class SPSet {
 		}
 	}
 	
-	public SPSet(Set<SPSet> initialSPSet, Set<VarSet> initialVarSet, Ops op){
+	public SPSet(Set<SPSet> initialSPSet, Set<IR_FieldDecl> initialVarSet, Ops op){
 		this.SPSets = initialSPSet;
-		this.varSets = initialVarSet;
+		this.varSet = initialVarSet;
 		if(this.opsChecker.contains(op)){
 			this.operator = op;
 		}
@@ -35,12 +36,12 @@ public class SPSet {
 		}
 	}
 	
-	public void addToSPSet(SPSet newSP){
+	public void addToSPSets(SPSet newSP){
 		this.SPSets.add(newSP);
 	}
 	
-	public void addToVarSet(VarSet newVar){
-		this.varSets.add(newVar);
+	public void addToVarSet(IR_FieldDecl newVar){
+		this.varSet.add(newVar);
 	}
 	
 	public boolean contains(Expression expr){
@@ -48,21 +49,10 @@ public class SPSet {
 			if (currentSP.contains(expr)){
 				return true;
 			}
-			else{
-				continue;
-			}
-		}
-		
-		for (VarSet currentVarSet : varSets){
-			if (currentVarSet.contains(expr)){
-				return true;
-			}
-			else{
-				continue;
-			}
+		}	
+		if (varSet.contains(expr)){
+			return true;
 		}
 		return false;
 	}
-	
-	
 }
