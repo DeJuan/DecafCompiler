@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -12,6 +13,7 @@ public class END extends FlowNode {
 	private Expression returnStatement = null;
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private boolean visited = false;
+	private String label;
 	
 	/**
 	 * Constructor for void methods.
@@ -50,7 +52,7 @@ public class END extends FlowNode {
 	}
 	@Override
 	public List<FlowNode> getChildren(){
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
@@ -91,5 +93,19 @@ public class END extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // Enforce called once?
+        this.label = label;
+    }
 	
 }

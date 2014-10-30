@@ -16,6 +16,8 @@ public class Branch extends FlowNode {
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private BranchType type;
 	private boolean visited = false;
+	private String label;
+	private boolean isLimitedWhile;
 	
 	public enum BranchType {
 		IF, FOR, WHILE
@@ -89,10 +91,11 @@ public class Branch extends FlowNode {
 	
 	/**
 	 * Adder method that allows you to add a new child to the child list.
+	 * Not allowed for branches
 	 * @param newChild : FlowNode that will be appended to the child list.  
 	 */
 	public void addChild(FlowNode newChild){
-		children.add(newChild);
+		throw new UnsupportedOperationException("Lo, the Branch shall have exactly two children, the true and the false");
 	}
 	
 	/**
@@ -109,7 +112,7 @@ public class Branch extends FlowNode {
 	 */
 	public void setTrueBranch(FlowNode newTrueBranch){
 		trueBranch = newTrueBranch;	
-		children.add(newTrueBranch);
+		children.set(0, newTrueBranch);
 	}
 	
 	/**
@@ -126,7 +129,7 @@ public class Branch extends FlowNode {
 	 */
 	public void setFalseBranch(FlowNode newFalseBranch){
 		falseBranch = newFalseBranch;
-		children.add(newFalseBranch);
+		children.set(1, newFalseBranch);
 	}
 	
 	/**
@@ -145,6 +148,14 @@ public class Branch extends FlowNode {
 	 */
 	public void setExpr(Expression newExpression){
 		expr = newExpression;
+	}
+	
+	public void setIsLimitedWhile(boolean val){
+	    isLimitedWhile = val;
+	}
+	
+	public boolean getIsLimitedWhile() {
+	    return isLimitedWhile;
 	}
 	
 	/**
@@ -180,5 +191,19 @@ public class Branch extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // TODO Enforce called once
+        this.label = label;
+    }
 	
 }

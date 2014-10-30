@@ -14,6 +14,8 @@ public class Codeblock extends FlowNode {
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private boolean visited = false;
+	private String label;
+	private boolean isBreak = false;;
 	
 	/**
 	 * This is one of two constructors. It assumes you know all relevant info about the Codeblock at initialization. 
@@ -25,6 +27,9 @@ public class Codeblock extends FlowNode {
 		this.parents = parentList;
 		this.children = childList;
 		this.statements = statementList;
+		if (children.size() > 1) {
+            throw new RuntimeException("Codeblocks shall have no more than one child");
+        }
 	}
 	
 	/**
@@ -64,6 +69,9 @@ public class Codeblock extends FlowNode {
 	 */
 	public void addChild(FlowNode newChild){
 		children.add(newChild);
+		if (children.size() > 1) {
+		    throw new RuntimeException("Codeblocks shall have no more than one child");
+		}
 	}
 	
 	/**
@@ -90,6 +98,14 @@ public class Codeblock extends FlowNode {
 	 */
 	public void addStatement(Statement newStatement){
 		statements.add(newStatement);
+	}
+	
+	public void setIsBreak(boolean isBreak) {
+	    this.isBreak = isBreak;
+	}
+	
+	public boolean getIsBreak() {
+	    return isBreak;
 	}
 	
 	/**
@@ -125,5 +141,19 @@ public class Codeblock extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // TODO Enforce called once
+        this.label = label;
+    }
 
 }

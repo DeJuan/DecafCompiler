@@ -28,7 +28,7 @@ public class MethodCallStatement extends Statement {
 	 * Getter method for the MethodCall object we stored on construction.
 	 * @return method : MethodCall representing the call statement we'll be using. 
 	 */
-	public MethodCall getMethodCallStatement(){
+	public MethodCall getMethodCall(){
 		return this.method;
 	}
 	

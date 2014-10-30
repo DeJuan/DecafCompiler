@@ -4,7 +4,7 @@ import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 
 public class IR_FieldDecl extends IR_Node {
 	Type type;
-	public IR_IntLiteral len;
+	IR_IntLiteral len;
 	String name;
 	
 	public IR_FieldDecl(Type t, String n){

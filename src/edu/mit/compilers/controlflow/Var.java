@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.ir.IR_FieldDecl;
 
 /**
  * This class represents variables. 
@@ -9,13 +10,19 @@ import edu.mit.compilers.codegen.Descriptor;
  */
 public class Var extends Expression {
 	private Descriptor var;
+	private String name;
+	private Expression index;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
 	 * @param variable
+	 * @param index : the index into an array, or null if int/bool
 	 */
-	public Var(Descriptor variable){
-		this.var = variable;
+	public Var(Descriptor variable, Expression index) {
+	    this.var = variable;
+	    IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+	    this.name = ir.getName();
+	    this.index = index;
 	}
 	
 	@Override
@@ -34,12 +41,20 @@ public class Var extends Expression {
 	public Descriptor getVarDescriptor(){
 		return var;
 	}
-
+	
 	/**
-	 * Allows you to set a new descriptor in case an optimization changes what a variable's descriptor should be. 
-	 * @param newVar : The new descriptor for the variable this object represents. 
+	 * Gets the index into an array
+	 * @return Expression: index into the array, or null if an int/bool
 	 */
-	public void setNewDescriptor(Descriptor newVar){
-		this.var = newVar;
+	public Expression getIndex() {
+	    return index;
+	}
+	
+	/**
+	 * Returns the name of the variable
+	 * @return String: the name of the variable
+	 */
+	public String getName(){
+	    return name;
 	}
 }

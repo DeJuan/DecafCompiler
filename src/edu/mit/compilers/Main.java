@@ -84,10 +84,10 @@ class Main {
    * Given a map of method names to method FlowNodes, print each FlowNode.
    * @param irMap : map of method names to method FlowNodes.
    */
-  public static void printIR(HashMap<String, FlowNode> irMap) {
-	  for (Map.Entry<String, FlowNode> entry : irMap.entrySet()) {
+  public static void printIR(HashMap<String, START> irMap) {
+	  for (Map.Entry<String, START> entry : irMap.entrySet()) {
 		    String key = entry.getKey();
-		    START node = (START) entry.getValue();
+		    START node = entry.getValue();
 		    
 		    System.out.println("============================ " + key + " ============================");
 		    // Print arguments.
@@ -203,7 +203,7 @@ class Main {
 			    		  ControlflowContext context = new ControlflowContext();
 			    		  List<IR_Node> callouts = new ArrayList<IR_Node>(); // type IR_MethodDecl
 			    		  List<IR_Node> globals = new ArrayList<IR_Node>();  // type IR_FieldDecl
-			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
+			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
 			    		  
 			    		  // TODO: Process flowNodes and generate assembly code.

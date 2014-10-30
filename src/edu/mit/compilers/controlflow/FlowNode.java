@@ -11,5 +11,7 @@ public abstract class FlowNode {
 	public abstract void visit();
 	public abstract boolean visited();
 	public abstract void resetVisit();
+	public abstract String getLabel();
+	public abstract void setLabel(String label);
 	
 }
