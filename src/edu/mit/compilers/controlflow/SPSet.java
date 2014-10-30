@@ -23,5 +23,34 @@ public class SPSet {
 		}
 	}
 	
+	public void addToSPSet(SPSet newSP){
+		this.SPSets.add(newSP);
+	}
+	
+	public void addToVarSet(VarSet newVar){
+		this.varSets.add(newVar);
+	}
+	
+	public boolean contains(Expression expr){
+		for (SPSet currentSP : SPSets){
+			if (currentSP.contains(expr)){
+				return true;
+			}
+			else{
+				continue;
+			}
+		}
+		
+		for (VarSet currentVarSet : varSets){
+			if (currentVarSet.contains(expr)){
+				return true;
+			}
+			else{
+				continue;
+			}
+		}
+		return false;
+	}
+	
 	
 }

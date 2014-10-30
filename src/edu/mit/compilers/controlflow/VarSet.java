@@ -23,4 +23,12 @@ public class VarSet {
 		}
 	}
 	
+	public boolean contains(Expression express){
+		Var variable = (Var)express; // Not sure if needed or if this breaks things because I'm not doing certain checks. May need try/catch block. 
+		if(this.variables.contains(variable)){
+			return true;
+		}
+		return false;
+	}
+	
 }

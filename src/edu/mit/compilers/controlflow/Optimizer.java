@@ -144,7 +144,7 @@ public class Optimizer {
 				}
 				else if(currentStatement.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					MethodCallStatement mcState = (MethodCallStatement) currentStatement;
-					mcState. // TODO : FIX THIS WITH UPDATED VERSION, u
+					mcState. // TODO : FIX THIS WITH UPDATED VERSION, using new set code
 				}
 			}
 		}
@@ -204,8 +204,8 @@ public class Optimizer {
 	}
 	
 	
-	public Set<Expression> computePlusSets(FlowNode node){
-		Set<Expression> plusSet = new LinkedHashSet<Expression>();
+	public Set<SPSet> computePlusSets(FlowNode node){
+		Set<SPSet> plusSet = new LinkedHashSet<SPSet>();
 		if(node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Expression> exprsInBlock = getAllExpressions(cblock);
@@ -213,10 +213,9 @@ public class Optimizer {
 				if (expr instanceof AddExpr){
 					AddExpr adding = (AddExpr)expr;
 					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? WE NEED TO RECURSE AND COMPUTE GRANULARITY. 
-					plusSet.addAllForSPSets());
-					plusSet.addAllForVarSets(computePlusSets(adding.getRightSide()); 
+					
 				}
-				if (expr instanceof MulExpr){
+				if (expr instanceof MultExpr){
 					plusSet.add(computeMulSets(expr))
 				}
 			}
