@@ -12,6 +12,7 @@ import java.util.Set;
 
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
+import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Ops;
 
 /**
@@ -21,11 +22,13 @@ import edu.mit.compilers.ir.Ops;
  */
 public class Optimizer {
 	/**
-	 * This is an empty constructor. For now, I was thinking of using just new Optimizer() and calling its methods on FlowNodes, etc. 
+	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
+	 *  
 	 */
-	public Optimizer(){}
+	public Optimizer(ControlflowContext context, 
+			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes){}
 	
-	
+	/*
 	public List<Expression> simpleAlgebraicSimplifier(List<Expression> exprList){
 		List<Expression> simplifiedExprs = new ArrayList<Expression>();
 		for (Expression expr : exprList){
@@ -47,6 +50,53 @@ public class Optimizer {
 			}
 		}
 	}
+	*/
+	
+	/**
+	 * For handling commutativity. Use sets; write a class, SPSet, that is a class which has three fields. These fields are a Set<SPSet>, an Op, and a Set<IR_FieldDecl>.
+	 * SPSet is used for any other set that doesn't contain IR_FieldDecls. So we can recursively store sets that are commutative.
+	 * Write new methods for compute Mul, Div, Mod, Set, And, Or
+	 * When you go to compute the set of commutativity for something, say, A + B + X + Y, do the following.
+	 * The tree structure for the above looks like:
+	 * 
+	 *                  +           Level 1
+ 	 *                /   \
+	 *               +     +        Level 2
+	 *              / \   / \ 
+	 *             A   B X   Y      Level 3
+	 *               
+	 *   So call computePlusSets on it. computePlusSets locally holds a Set<SPSet>, call it rootSP.
+	 *   It will return this SP<Set> when it is done.
+	 *   This would create an SPSet with the Level 2 expressions inside of it.
+	 *   Since both Lv. 2 expression are plus, we make a recursive call:
+	 *    rootSP.SPSets.addAll(computePlusSets(Level 2 LHS))
+	 *    rootSP.SPSets.addAll(computePlusSets(Level 2 RHS))
+	 *    
+	 *    In that recursive call, we need to hit a check for whether or not the LHS and RHS are Vars.
+	 *    If they are, then do:
+	 *    rootSP.VarSets.add(LHS.getDescriptor); //The descriptors are IR_FieldDecls 
+	 *    rootSP.VarSets.add(RHS.getDescriptor);
+	 *    
+	 *    What if the tree is uneven? EX: X + Y + Z
+	 *    
+	 *                  +           Level 1
+ 	 *                /   \
+	 *               X     +        Level 2
+	 *                    / \ 
+	 *                   Y   Z      Level 3
+	 *                   
+	 *   Then at Lv. 1, we check LHS for VarSet. it is, so:
+	 *   rootSP.VarSets.add(LHS.getDescriptor); 
+	 *   
+	 *   However, the RHS is an SPSet, so we fall back to the above behavior, since it is a plus.
+	 *   rootSP.SPSets.addAll(computePlusSets(Level 2 RHS));
+	 *   
+	 *   If it were a multiply, we would do:
+	 *   rootSP.SPSets.add(computeMultiplySets(Level 2 RHS));
+	 *   
+	 *   and so on.
+	 */        
+ 	
 	
 	/**
 	 * This method takes in a FlowNode and allows you to check all variables assigned within the FlowNode.
@@ -91,7 +141,11 @@ public class Optimizer {
 				if (currentStatement.getStatementType() == StatementType.ASSIGNMENT){
 					Assignment currentAssign = (Assignment) currentStatement;
 					allExprs.add(currentAssign.getValue());
-				}	
+				}
+				else if(currentStatement.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
+					MethodCallStatement mcState = (MethodCallStatement) currentStatement;
+					mcState. // TODO : FIX THIS WITH UPDATED VERSION, u
+				}
 			}
 		}
 		else if (node instanceof Branch){
@@ -149,6 +203,7 @@ public class Optimizer {
 		return copy;
 	}
 	
+	
 	public Set<Expression> computePlusSets(FlowNode node){
 		Set<Expression> plusSet = new LinkedHashSet<Expression>();
 		if(node instanceof Codeblock){
@@ -157,10 +212,12 @@ public class Optimizer {
 			for (Expression expr : exprsInBlock){
 				if (expr instanceof AddExpr){
 					AddExpr adding = (AddExpr)expr;
-					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? DO WE NEED TO RECURSE AND COMPUTE GRANULARITY OR THINK OF THEM AS COMMUTABLE BLOCKS?
-					//If we think of them as commutable blocks of code, then this works; otherwise we need to add the recursive logic. 
-					plusSet.add(adding.getLeftSide());
-					plusSet.add(adding.getRightSide()); 
+					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? WE NEED TO RECURSE AND COMPUTE GRANULARITY. 
+					plusSet.addAllForSPSets());
+					plusSet.addAllForVarSets(computePlusSets(adding.getRightSide()); 
+				}
+				if (expr instanceof MulExpr){
+					plusSet.add(computeMulSets(expr))
 				}
 			}
 		}
@@ -224,7 +281,7 @@ public class Optimizer {
 						}
 						else{
 							START origin = (START)currentParentInChain;
-							origin.getArguments() // TODO : The arguments are IR_FieldDecls; I can't parse them. We need to change that. 
+							origin.getArguments() 
 						}
 					}
 					
@@ -270,19 +327,19 @@ public class Optimizer {
 		//This part is most likely so full of bugs it is scary and I am scared looking at it. 
 		while(!Changed.isEmpty()){
 			Codeblock currentNode = (Codeblock)Changed.pop(); //Get whatever the first codeblock in the set is. 
-			Set<Expression> currentExpressionSet = IN.get(currentNode); //TODO : Check if type change causes get to fail. This is trying to do IN[node] = E
+			Set<Expression> currentExpressionSet = IN.get(currentNode); 
 			for (FlowNode parentNode : currentNode.getParents()){
 				if(checkIfCodeblock(parentNode)){
 					Codeblock parent = (Codeblock)parentNode;
-					currentExpressionSet.retainAll(getAllExpressions(parent)); //Set intersection
+					currentExpressionSet.retainAll(OUT.get(parent)); //Set intersection
 					IN.put(currentNode, currentExpressionSet);
 				}	
 			}
-			HashMap<FlowNode, Set<Expression>> genUnisonFactor = deepCopyHashMap(IN); 
-			genUnisonFactor.get(currentNode).removeAll(getKilledExpressions(currentNode)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
+			Set<Expression> genUnisonFactor = new LinkedHashSet<Expression>(IN.get(currentNode)); 
+			genUnisonFactor.removeAll(getKilledExpressions(currentNode)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
 			
 			//The below combines OUT[n] = GEN[n] UNION (IN[n] - KILL[n]) and the check for whether or not this changed OUT in one line.  
-			if(OUT.get(currentNode).addAll(genUnisonFactor.get(currentNode))){ //That addAll gives a boolean that is true if the set changed as a result of the add. 
+			if(OUT.get(currentNode).addAll(genUnisonFactor)){ //That addAll gives a boolean that is true if the set changed as a result of the add. 
 				for (FlowNode childNode : currentNode.getChildren()){
 					if(checkIfCodeblock(childNode)){
 						Codeblock child = (Codeblock)childNode;
