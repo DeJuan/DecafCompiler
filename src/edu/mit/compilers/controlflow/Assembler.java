@@ -258,6 +258,7 @@ public class Assembler {
                     throw new RuntimeException("This ought not have occurred");
                 }
             }
+            ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
             context.decScope();
         } else if (begin.getType() == BranchType.WHILE) {
             FlowNode next;
@@ -298,6 +299,7 @@ public class Assembler {
                     throw new RuntimeException("This ought not have occurred");
                 }
             }
+            ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
             context.decScope();
         }
         return ins;
