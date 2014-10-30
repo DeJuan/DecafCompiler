@@ -10,9 +10,7 @@ public class CondExpr extends BinExpr {
 	
 	public CondExpr(Expression lhs, Ops op, Expression rhs) {
 		super(lhs, op, rhs);
-		opChecker.add(Ops.AND);
-		opChecker.add(Ops.OR);
-		if(!opChecker.contains(op)){
+		if(op != Ops.AND && op != Ops.OR){
 			throw new UnsupportedOperationException("You initialized a CondExpr without an AND or OR operator.");
 		}
 	}

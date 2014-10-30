@@ -213,7 +213,9 @@ public class Optimizer {
 				if (expr instanceof AddExpr){
 					AddExpr adding = (AddExpr)expr;
 					// TODO : WHAT IF THE BELOW ARE THEMSELVES COMPLEX EXPRESSIONS? WE NEED TO RECURSE AND COMPUTE GRANULARITY. 
-					
+					if(adding.getLeftSide() instanceof Var){
+						
+					}
 				}
 				if (expr instanceof MultExpr){
 					plusSet.add(computeMulSets(expr))

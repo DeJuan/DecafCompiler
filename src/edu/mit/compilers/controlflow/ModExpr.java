@@ -1,7 +1,5 @@
 package edu.mit.compilers.controlflow;
 
-
-
 import edu.mit.compilers.ir.Ops;
 
 public class ModExpr extends BinExpr {
@@ -18,5 +16,4 @@ public class ModExpr extends BinExpr {
 	public ExpressionType getExprType() {
 		return ExpressionType.MOD_EXPR;
 	}
-
 }
