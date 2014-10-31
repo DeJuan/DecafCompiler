@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -466,6 +467,9 @@ public class Optimizer {
 	 * was an assignment. 
 	 * 
 	 * CURRENTLY DOES NOTHING IF A STATEMENT IS NOT AN ASSIGNMENT.
+	 * Think:  a = x + y. what should be stored is x+y
+	 * x = 4; What should be killed is x+y
+	 * 
 	 * 
 	 * If it was an assignment, downcast, and check the variable being assigned.
 	 * If we've already seen it being assigned, then the statement just killed the previous assignment, so look up in the map
@@ -477,22 +481,28 @@ public class Optimizer {
 	 */
 	public Set<Expression> getKilledExpressions(FlowNode node){
 		Set<Expression> killedExpressions = new LinkedHashSet<Expression>();
-		HashMap<Var, Expression> availableExpressions = new HashMap<Var, Expression>();
+		List<Expression> notYetKilledExprs = new LinkedList<Expression>();
+		HashMap<Expression, List<Expression>> lookupToKillMap = new HashMap<Expression, List<Expression>>();
 		if(checkIfCodeblock(node)){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> statementList = cblock.getStatements();
 			for (Statement currentState : statementList){
 				if(checkIfAssignment(currentState)){
 					Assignment currentAssign = (Assignment)currentState;
-					Var currentDestVar = currentAssign.getDestVar();
 					Expression currentExpr = currentAssign.getValue();
-					if(availableExpressions.containsKey(currentDestVar)){
-						killedExpressions.add(availableExpressions.get(currentDestVar));
-						availableExpressions.put(currentDestVar, currentExpr);
-						continue;
+					if(!notYetKilledExprs.contains(currentExpr)){
+						notYetKilledExprs.add(currentExpr);
+						if(currentExpr instanceof BinExpr){
+							BinExpr bin = (BinExpr)currentExpr;
+							lookupToKillMap.put(bin.getLeftSide(), new ArrayList<Expression>(Arrays.asList(currentExpr)));
+							lookupToKillMap.put(bin.getRightSide(), new ArrayList<Expression>(Arrays.asList(currentExpr)));
+						}
+						// TODO : Add checks for Not/Negate. 
 					}
 					else{
-						availableExpressions.put(currentDestVar, currentExpr);
+						killedExpressions.add(notYetKilledExprs.get(notYetKilledExprs.indexOf(currentExpr)));
+						notYetKilledExprs.add(currentExpr);
+						continue;
 					}
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
