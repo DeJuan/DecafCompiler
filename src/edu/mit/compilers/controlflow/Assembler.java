@@ -60,6 +60,16 @@ public class Assembler {
         }
         return context;
     }
+    
+    public static void generateProgram(ControlflowContext context, List<IR_Node> callouts, List<IR_Node> globals, Map<String, START> methods){
+        setUp(context, callouts, globals, methods);
+        for (IR_Node node : callouts) {
+            generateCallout(node, context);
+        }
+        for (Map.Entry<String, START> entry : methods.entrySet()) {
+            generateMethodDecl(entry, context);
+        }
+    }
 
     public static void generateCallout(IR_Node node, ControlflowContext context){
         IR_MethodDecl decl = (IR_MethodDecl)node;

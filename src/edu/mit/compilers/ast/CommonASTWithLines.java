@@ -3,7 +3,11 @@ import antlr.CommonAST;
 import antlr.Token;
 
 public class CommonASTWithLines extends CommonAST {
-     private int line = 0;
+     /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    private int line = 0;
      private int column = 0;
      
      public void initialize(Token tok) {
