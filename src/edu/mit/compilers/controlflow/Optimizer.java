@@ -145,8 +145,9 @@ public class Optimizer {
 				}
 				else if(currentStatement.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					MethodCallStatement mcState = (MethodCallStatement) currentStatement;
-					mcState. // TODO : FIX THIS WITH UPDATED VERSION, using new set code
+					allExprs.addAll(mcState.getMethodCallStatement().getArguments());// TODO : FIX THIS WITH UPDATED VERSION, using new set code
 				}
+				//else if(currentStatement.getStatementType() == StatementType.DECLARATION)
 			}
 		}
 		else if (node instanceof Branch){
@@ -203,7 +204,7 @@ public class Optimizer {
 		}
 		return copy;
 	}
-	
+	/*
 	public Set<SPSet> computeAllSets(FlowNode node){
 		Set<SPSet> allSets = new LinkedHashSet<SPSet>();
 		if(node instanceof Codeblock){
@@ -225,27 +226,29 @@ public class Optimizer {
 			}
 		}
 	}
-	
+	*/
 	public SPSet analyzeAndDispatch(Expression expr){
 		switch(expr.getExprType()){
 		case ADD_EXPR:
 			return computePlusSets((AddExpr)expr);
 		case COMP_EXPR: 
-			return computeComparisonSet((CompExpr)expr);
+			return computeComparisonSets((CompExpr)expr);
 		case COND_EXPR: 
-			// TODO : Split Cond into AndExpr and OrExpr, check for instance, call respective maker
+			return computeCondSets((CondExpr) expr);
 		case MOD_EXPR:
-			return computeModSet((ModExpr)expr);
+			return computeModSets((ModExpr)expr);
 		case MULT_EXPR:
-			return computeMultSet((MultExpr)expr);
+			return computeMultSets((MultExpr)expr);
 		case DIV_EXPR: 
-			return computeDivSet((DivExpr)expr);
+			return computeDivSets((DivExpr)expr);
 		default:
 			break;
 		}
 		return null;
 	}
 	
+	
+
 	public SPSet computePlusSets(AddExpr adding){
 		SPSet plusSet = new SPSet(Ops.PLUS);
 
@@ -261,8 +264,7 @@ public class Optimizer {
 			plusSet.varSet.addAll(recursiveSPSet.varSet);
 		}
 		else{
-			plusSet.SPSets.add(analyzeAndDispatch(lhs).SPSets);
-			plusSet.varSet.add(analyzeAndDispatch(lhs).varSet);
+			plusSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
 		
 		Expression rhs = adding.getRightSide();
@@ -277,12 +279,186 @@ public class Optimizer {
 			plusSet.varSet.addAll(recursiveSPSet.varSet);
 		}
 		else{
-			plusSet.SPSets.add(analyzeAndDispatch(rhs).SPSets);
-			plusSet.varSet.add(analyzeAndDispatch(rhs).varSet);
+			plusSet.SPSets.add(analyzeAndDispatch(rhs));
 		}
 		return plusSet;
 	}
 	
+	public SPSet computeModSets(ModExpr modding) {
+		SPSet modSet = new SPSet(Ops.MOD);
+		
+		Expression lhs = modding.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof ModExpr){
+			ModExpr lhsMod = (ModExpr)lhs;
+			SPSet recursiveSPSet = computeModSets(lhsMod);
+			modSet.SPSets.addAll(recursiveSPSet.SPSets);
+			modSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			modSet.SPSets.add(analyzeAndDispatch(lhs));
+		}
+		
+		Expression rhs = modding.getRightSide();
+		if(rhs instanceof Var){
+			Var varia = (Var) rhs;
+			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof ModExpr){
+			ModExpr rhsMod = (ModExpr)rhs;
+			SPSet recursiveSPSet = computeModSets(rhsMod);
+			modSet.SPSets.addAll(recursiveSPSet.SPSets);
+			modSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			modSet.SPSets.add(analyzeAndDispatch(rhs));
+		}
+		return modSet;
+	}
+	
+	public SPSet computeMultSets(MultExpr multing){
+		SPSet multSet = new SPSet(Ops.TIMES);
+		
+		Expression lhs = multing.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof MultExpr){
+			MultExpr lhsMult = (MultExpr)lhs;
+			SPSet recursiveSPSet = computeMultSets(lhsMult);
+			multSet.SPSets.addAll(recursiveSPSet.SPSets);
+			multSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			multSet.SPSets.add(analyzeAndDispatch(lhs));
+		}
+		
+		Expression rhs = multing.getRightSide();
+		if(rhs instanceof Var){
+			Var varia = (Var) rhs;
+			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof MultExpr){
+			MultExpr rhsMult = (MultExpr)rhs;
+			SPSet recursiveSPSet = computeMultSets(rhsMult);
+			multSet.SPSets.addAll(recursiveSPSet.SPSets);
+			multSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			multSet.SPSets.add(analyzeAndDispatch(rhs));
+		}
+		return multSet;
+	}
+	
+	public SPSet computeDivSets(DivExpr divide){
+		SPSet divSet = new SPSet(Ops.DIVIDE);
+		
+		Expression lhs = divide.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof DivExpr){
+			DivExpr lhsMult = (DivExpr)lhs;
+			SPSet recursiveSPSet = computeDivSets(lhsMult);
+			divSet.SPSets.addAll(recursiveSPSet.SPSets);
+			divSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			divSet.SPSets.add(analyzeAndDispatch(lhs));
+		}
+		
+		Expression rhs = divide.getRightSide();
+		if(rhs instanceof Var){
+			Var varia = (Var) rhs;
+			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof DivExpr){
+			DivExpr rhsMult = (DivExpr)rhs;
+			SPSet recursiveSPSet = computeDivSets(rhsMult);
+			divSet.SPSets.addAll(recursiveSPSet.SPSets);
+			divSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			divSet.SPSets.add(analyzeAndDispatch(rhs));
+		}
+		return divSet;
+	}
+	
+	public SPSet computeComparisonSets(CompExpr comparing){
+		SPSet compSet = new SPSet(comparing.operator);
+		
+		Expression lhs = comparing.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof CompExpr){
+			CompExpr lhsComp = (CompExpr)lhs;
+			SPSet recursiveSPSet = computeComparisonSets(lhsComp);
+			compSet.SPSets.addAll(recursiveSPSet.SPSets);
+			compSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			compSet.SPSets.add(analyzeAndDispatch(lhs));
+		}
+		
+		Expression rhs = comparing.getRightSide();
+		if(rhs instanceof Var){
+			Var varia = (Var) rhs;
+			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof CompExpr){
+			CompExpr rhsComp = (CompExpr)rhs;
+			SPSet recursiveSPSet = computeComparisonSets(rhsComp);
+			compSet.SPSets.addAll(recursiveSPSet.SPSets);
+			compSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			compSet.SPSets.add(analyzeAndDispatch(rhs));
+		}
+		return compSet;
+	}
+	
+	public SPSet computeCondSets(CondExpr conditional){
+		SPSet condSet = new SPSet(conditional.operator);
+		
+		Expression lhs = conditional.getLeftSide();
+		if(lhs instanceof Var){
+			Var varia = (Var) lhs;
+			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof CondExpr){
+			CondExpr lhsCond = (CondExpr)lhs;
+			SPSet recursiveSPSet = computeCondSets(lhsCond);
+			condSet.SPSets.addAll(recursiveSPSet.SPSets);
+			condSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			condSet.SPSets.add(analyzeAndDispatch(lhs));
+		}
+		
+		Expression rhs = conditional.getRightSide();
+		if(rhs instanceof Var){
+			Var varia = (Var) rhs;
+			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof CondExpr){
+			CondExpr rhsCond = (CondExpr)rhs;
+			SPSet recursiveSPSet = computeCondSets(rhsCond);
+			condSet.SPSets.addAll(recursiveSPSet.SPSets);
+			condSet.varSet.addAll(recursiveSPSet.varSet);
+		}
+		else{
+			condSet.SPSets.add(analyzeAndDispatch(rhs));
+		}
+		return condSet;
+	}
+
 	/**
 	 * This is a rough first attempt at finding the statements that were killed in a given Codeblock.
 	 * It checks that the given node is in fact a codeblock, and if it is, downcasts it.
@@ -330,7 +506,7 @@ public class Optimizer {
 						}
 						else{
 							START origin = (START)currentParentInChain;
-							origin.getArguments() 
+							List<IR_FieldDecl> globals = origin.getArguments(); 
 						}
 					}
 					

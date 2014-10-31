@@ -7,6 +7,7 @@ import edu.mit.compilers.ir.Ops;
 
 public class CompExpr extends BinExpr {
 	private List<Ops> opChecker = new ArrayList<Ops>();
+	public Ops operator;
 	
 	public CompExpr(Expression lhs, Ops op, Expression rhs) {
 		super(lhs, op, rhs);
@@ -19,6 +20,7 @@ public class CompExpr extends BinExpr {
 		if (!opChecker.contains(op)){
 			throw new UnsupportedOperationException("You initialized a CompExpr without a comparison operator.");
 		}
+		this.operator = op;
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package edu.mit.compilers.controlflow;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,15 +45,53 @@ public class SPSet {
 		this.varSet.add(newVar);
 	}
 	
+	// *(A,B) + (stuff) 
+	//Looking at Mult(A,B)
+	//Check whether any SPSets contain complete expressions within themselves.
+	//Check each SPSet for a matching operator, and if one is found, then check the equivalence for the lhs and rhs.
 	public boolean contains(Expression expr){
 		for (SPSet currentSP : SPSets){
 			if (currentSP.contains(expr)){
 				return true;
 			}
-		}	
-		if (varSet.contains(expr)){
-			return true;
+		}
+		if(expr instanceof Var){
+			Var varia = (Var)expr;
+			if (varSet.contains(varia.getVarDescriptor())){
+				return true;
+			}
+		}
+		
+		else if(expr instanceof BinExpr){
+			BinExpr binex = (BinExpr)expr;
+			Ops searchOp = binex.getOperator();
+			List<SPSet> matches = new ArrayList<SPSet>();
+			for (SPSet currentSP : SPSets){
+				if (currentSP.operator == searchOp){
+					matches.add(currentSP);
+				}
+			}
+			for (SPSet matchedSP : matches){
+				if(matchedSP.contains(binex.getLeftSide()) && matchedSP.contains(binex.getRightSide())){
+					return true;
+				}
+			}
+		}
+		else if(expr instanceof NotExpr){
+			
+		}
+		
+		else if(expr instanceof Ternary){
+			
+		}
+		
+		else if(expr instanceof NegateExpr){
+			
 		}
 		return false;
+	}
+	
+	public String toString(){
+		return operator.toString() + "(" + "SPSets: " + SPSets.toString() + " | VarSets: " + varSet.toString() + ")" + System.getProperty("line.separator");
 	}
 }
