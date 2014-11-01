@@ -513,7 +513,7 @@ public class Optimizer {
 	public Set<Expression> getKilledExpressions(FlowNode node, List<Expression> notYetKilledExprs){
 		Set<Expression> killedExpressions = new LinkedHashSet<Expression>();
 		if(notYetKilledExprs == null){
-			notYetKilledExprs = new LinkedList<Expression>();
+			notYetKilledExprs = new LinkedList<Expression>(); //Should this maybe be IR_FieldDecls, actually? 
 		}
 		HashMap<IR_FieldDecl, Set<Expression>> lookupToKillMap = new HashMap<IR_FieldDecl, Set<Expression>>();
 		if(node instanceof Codeblock){
@@ -583,13 +583,14 @@ public class Optimizer {
 						
 						else if (currentExpr instanceof MethodCall){
 							notYetKilledExprs.remove(currentExpr); //Get rid of the entire method call statement, can't really use that since we assume methods kill things.
+							// TODO : From here on, this code doesn't make sense because again, methods kill things! Consult with someone else before removing for sanity check.
 							MethodCall mc = (MethodCall)currentExpr;
 							List<IR_FieldDecl> binVarList = new ArrayList<IR_FieldDecl>();
 							for (Expression arg : mc.getArguments()){
 								binVarList.addAll(getVarsFromExpression(arg));
 							}
 							for(IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){
+								if(!lookupToKillMap.containsKey(binVar)){ //Doubt we'd ever find it already in there
 									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
 								}
 								else{
@@ -600,9 +601,9 @@ public class Optimizer {
 					}
 					
 					
-					else{
-						killedExpressions.addAll(lookupToKillMap.get(currentExpr));
-						notYetKilledExprs.remove(currentExpr);
+					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. I.e: If notYetKilled does contain what just got assigned,
+						killedExpressions.addAll(lookupToKillMap.get(currentExpr)); //This flat out doesn't work. I know it doesn't. Consult on how to fix. 
+						notYetKilledExprs.remove(currentExpr); //This part's okay though. 
 						continue;
 					}
 				}
@@ -626,7 +627,7 @@ public class Optimizer {
 							break;
 						}
 					}
-					
+				//Don't have to have a case for declarations, they never kill anything. 	
 				}
 			}
 		}
