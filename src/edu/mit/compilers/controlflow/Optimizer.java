@@ -2,16 +2,13 @@ package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
+import java.util.Map;
 import java.util.Set;
 
-import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_Node;
@@ -191,16 +188,8 @@ public class Optimizer {
 					Assignment currentAssign = (Assignment) currentStatement;
 					allExprs.add(currentAssign.getValue());
 				}
-				else if(currentStatement.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
-					MethodCallStatement mcState = (MethodCallStatement) currentStatement;
-					allExprs.addAll(mcState.getMethodCallStatement().getArguments());// TODO : FIX THIS WITH UPDATED VERSION, using new set code
-				}
-				//else if(currentStatement.getStatementType() == StatementType.DECLARATION)
+				
 			}
-		}
-		else if (node instanceof Branch){
-			Branch splitNode = (Branch)node;
-			allExprs.add(splitNode.getExpr());
 		}
 		return allExprs;
 	}
@@ -604,44 +593,42 @@ public class Optimizer {
 	 * You MUST have the first element in this LinkedList be a START node. 
 	 * @return Set<Expression> : A set of the available expressions for the given method flownodes.
 	 */
-	public Set<Expression> calculateAvailableExpressions(LinkedList<FlowNode> currentMethodFlownodes){
+	public Map<FlowNode, Set<Expression>> calculateAvailableExpressions(START initialNode){
 		HashMap<FlowNode, Set<Expression>> OUT = new HashMap<FlowNode, Set<Expression>>();
 		HashMap<FlowNode, Set<Expression>> IN = new HashMap<FlowNode, Set<Expression>>();
 		LinkedHashSet<Expression> allExprsForInitialization = new LinkedHashSet<Expression>();
-		LinkedList<FlowNode> Changed = new LinkedList<FlowNode>();
-		for(FlowNode n: currentMethodFlownodes){ //First, set up the output: OUT[node] = all expressions 
-			if (n instanceof Codeblock){
-				Codeblock cblock = (Codeblock)n;
+		LinkedList<Codeblock> Changed = new LinkedList<Codeblock>();	
+		List<FlowNode> processing = new ArrayList<FlowNode>();
+		List<FlowNode> nodeList = new ArrayList<FlowNode>();
+		processing.add(initialNode);
+		while(!processing.isEmpty()){
+			FlowNode next = processing.remove(0);
+			nodeList.add(next);
+			for(FlowNode child : next.getChildren()){
+				processing.add(child);
+			}
+			if (next instanceof Codeblock){
+				Codeblock cblock = (Codeblock)next;
 				allExprsForInitialization.addAll(getAllExpressions(cblock));
-				// TODO Add getting righthand side if assignment and downcast to Expression???
 				Changed.add(cblock); //Put the codeblock in the Changed set we'll use to do fixed point.
 			}
-			if(n instanceof Branch){
-				Branch bran = (Branch)n;
-				allExprsForInitialization.add(bran.getExpr());
-				Changed.add(bran);
-			}
-			for (FlowNode c : Changed){
-				OUT.put(c, allExprsForInitialization);
-			}
 		}
-		START entry = (START)currentMethodFlownodes.getFirst();
-		currentMethodFlownodes.remove(entry);
-		IN.put(entry, new LinkedHashSet<Expression>());
-		OUT.put(entry, getAllExpressions(entry));
-		Changed.remove(entry);
+		for (FlowNode c : nodeList){
+			OUT.put(c, allExprsForInitialization);
+		}
+		
 		//Next, actually carry out the changed iteration part of the algorithm.
 		//This part is most likely so full of bugs it is scary and I am scared looking at it. 
 		while(!Changed.isEmpty()){
-			Codeblock currentNode = (Codeblock)Changed.pop(); //Get whatever the first codeblock in the set is. 
+			Codeblock currentNode = Changed.pop(); //Get whatever the first codeblock in the set is. 
 			Set<Expression> currentExpressionINSet = allExprsForInitialization; 
 			for (FlowNode parentNode : currentNode.getParents()){
 				if(parentNode instanceof Codeblock){
 					Codeblock parent = (Codeblock)parentNode;
 					currentExpressionINSet.retainAll(OUT.get(parent)); //Set intersection
-					IN.put(currentNode, currentExpressionINSet);
 				}	
 			}
+			IN.put(currentNode, currentExpressionINSet);
 			Set<Expression> genUnisonFactor = new LinkedHashSet<Expression>(IN.get(currentNode)); 
 			genUnisonFactor.removeAll(getKilledExpressions(currentNode, null)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
 			
@@ -659,13 +646,6 @@ public class Optimizer {
 			}
 		}
 		
-		//Now we have to get all the statements in OUT into one set so we can finally return it..
-		Set<Expression> availableExpressions = new HashSet<Expression>();
-		Set<FlowNode> listOfOutKeys = OUT.keySet();
-		for(FlowNode key : listOfOutKeys){
-			availableExpressions.addAll(OUT.get(key));
-		}
-		
-		return availableExpressions;  
+		return OUT;
 	}
 }
