@@ -2,8 +2,10 @@ package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.CodegenContext;
@@ -33,10 +35,14 @@ public class Assembler {
         for (START node : methods.values()) {
             processing.add(node);
         }
+        Set<FlowNode> seen = new HashSet<FlowNode>();
         while (processing.size() > 0) {
             FlowNode next = processing.remove(0);
             for (FlowNode child : next.getChildren()) {
-                processing.add(child);
+                seen.add(child);
+                if (!seen.contains(child)) {
+                    processing.add(child);
+                }
             }
             next.setLabel(context.genLabel());
         }
