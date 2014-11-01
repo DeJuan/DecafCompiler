@@ -214,12 +214,29 @@ public class GenerateFlow {
 		START beginFalseBranch = new START();
 		ifBranch.setFalseBranch(beginFalseBranch);
 		beginFalseBranch.addParent(ifBranch);
+		NoOp exitIf = new NoOp();
 		
-		FlowNode endTrueBranch = generateFlow(beginTrueBranch, ifNode.getTrueBlock(), context);
-		FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
+		if (ifNode.getTrueBlock().getStatements().size() == 0) {
+		    beginTrueBranch.addChild(exitIf);
+		    exitIf.addParent(beginTrueBranch);
+		} else {
+		    FlowNode endTrueBranch = generateFlow(beginTrueBranch, ifNode.getTrueBlock(), context);
+		    if (endTrueBranch != null && !(endTrueBranch instanceof END)) {
+	            exitIf.addParent(endTrueBranch);
+	            endTrueBranch.addChild(exitIf);
+	        }
+		}
 		
-		if ((endTrueBranch == null || endTrueBranch instanceof END) && 
-				(endFalseBranch == null || endFalseBranch instanceof END))
+		if (ifNode.getFalseBlock().getStatements().size() == 0) {
+		    FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
+		    if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
+	            exitIf.addParent(endFalseBranch);
+	            endFalseBranch.addChild(exitIf);
+	        }
+		}
+		
+		
+		if (exitIf.getParents().size() == 0) {
 			// Program will not run beyond the 'if' branch, so we return null.
 			// For example:
 			// if (x)
@@ -228,19 +245,8 @@ public class GenerateFlow {
 			//    return false;
 			// [code here will never be reached]
 			return null;
+		}
 		
-		// We only want to return a single node, but there are two possible exit points 
-		// (true and false blocks). We set the children of both blocks to the NoOp node and 
-		// return it.
-		NoOp exitIf = new NoOp();
-		if (endTrueBranch != null && !(endTrueBranch instanceof END)) {
-			exitIf.addParent(endTrueBranch);
-			endTrueBranch.addChild(exitIf);
-		}
-		if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
-			exitIf.addParent(endFalseBranch);
-			endFalseBranch.addChild(exitIf);
-		}
 		return exitIf;
 	}
 	
