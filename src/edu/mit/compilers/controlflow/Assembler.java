@@ -103,7 +103,6 @@ public class Assembler {
         context.addIns(new Instruction("pushq", rbp));      
         context.addIns(new Instruction("movq", rsp, rbp ));
 
-        long localArgSize = 0;
         //instructions for potentially saving arguments.
         ArrayList<Instruction> argIns = new ArrayList<Instruction>();
         //save register parameters to stack
@@ -122,10 +121,11 @@ public class Assembler {
                 argDst = context.getRsp();
             }
             context.allocLocal(CodegenConst.INT_SIZE);
+            LocLiteral sizeLoc= new LocLiteral(CodegenConst.INT_SIZE);
+            context.addIns(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
             argd.setLocation(argDst);
         }
         context.addIns(argIns);
-        localArgSize = context.totalLocalSize;
         //generateBlock accumulates static local stack size required. 
         FlowNode next = decl.getValue().getChildren().get(0);
         boolean isVoid = decl.getValue().getRetType() == Type.VOID;
@@ -134,12 +134,13 @@ public class Assembler {
         //instructions for entering a function.
         //TODO: Ask about this: maxLocal + totalLocal seems wrong/excessive, but not sure
         //TODO: Note that maxLocal is monotonically increasing
-        LocLiteral loc= new LocLiteral(context.maxLocalSize + localArgSize );
+        LocLiteral loc= new LocLiteral(context.totalLocalSize);
         context.addIns(new Instruction("subq", loc, rsp));
 
         //write instructions for function body.
         context.addIns(blockIns);
-        context.decScope();
+        Instruction moveSp = context.decScope();
+        context.addIns(moveSp);
 
         // Since GenerateFlow adds ENDs, all nodes will have an END - must 
         // check in generateReturn that non-void functions don't return 
@@ -243,7 +244,7 @@ public class Assembler {
                     throw new RuntimeException("This ought not have occurred");
                 }
             }
-            context.decScope();
+            ins.add(context.decScope());
             
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
@@ -277,7 +278,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            context.decScope();
+            ins.add(context.decScope());
         } else if (begin.getType() == BranchType.WHILE) {
             FlowNode next;
             if (begin.getIsLimitedWhile()) {
@@ -318,7 +319,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            context.decScope();
+            ins.add(context.decScope());
         }
         return ins;
     }
@@ -764,6 +765,8 @@ public class Assembler {
             break;
         }
         LocStack loc = context.allocLocal(size);
+        LocLiteral sizeLoc= new LocLiteral(size);
+        ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
         d.setLocation(loc);
         context.putSymbol(name, d);
         if(type == Type.INTARR || type == Type.BOOLARR){

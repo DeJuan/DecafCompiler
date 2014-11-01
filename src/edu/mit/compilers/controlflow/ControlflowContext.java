@@ -2,6 +2,7 @@ package edu.mit.compilers.controlflow;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -137,7 +138,7 @@ public class ControlflowContext {
         localVarSize.add(0L);
     }
 
-    public void decScope(){
+    public Instruction decScope(){
         symbol.decScope();
         int idx = localVarSize.size()-1;
         long locals = localVarSize.get(idx);
@@ -146,6 +147,8 @@ public class ControlflowContext {
             maxLocalSize = totalLocalSize;
         }
         totalLocalSize -= locals;
+        Instruction instr = new Instruction("addq", new LocLiteral(locals), new LocReg(Regs.RSP));
+        return instr;
     }
 
     /**@brief generate a unique jump label.
