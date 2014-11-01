@@ -566,7 +566,7 @@ public class Optimizer {
 					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. This is where you'd CSE.   
 					}
 					
-					//TODO : Actually kill things now!
+					//Actually kill things now!
 					IR_FieldDecl currentAssignTarget = (IR_FieldDecl) currentAssign.getDestVar().getVarDescriptor().getIR();
 					if(lookupToKillMap.get(currentAssignTarget) != null){
 						killedExpressions.addAll(lookupToKillMap.get(currentAssignTarget));
