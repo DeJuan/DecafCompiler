@@ -181,8 +181,8 @@ public class Optimizer {
 	 * @param node : A single FlowNode whose expressions you wish to discover.
 	 * @return allExprs : A List<Expression> of all expressions found within the single FlowNode given.
 	 */
-	public List<Expression> getAllExpressions(FlowNode node){
-		List<Expression> allExprs = new ArrayList<Expression>();
+	public Set<Expression> getAllExpressions(FlowNode node){
+		Set<Expression> allExprs = new LinkedHashSet<Expression>();
 		if (node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> stateList = cblock.getStatements();
@@ -584,7 +584,6 @@ public class Optimizer {
 				}
 					
 				//Don't have to have a case for declarations, they never kill anything. 	
-				
 			}
 		}
 		return killedExpressions;
@@ -593,45 +592,55 @@ public class Optimizer {
 	/**
 	 * This method calculates available Expressions based on the algorithm given on slide 48 of
 	 * http://6.035.scripts.mit.edu/sp14/slides/F14-lecture-10.pdf
-	 * 
-	 * Note that in our implementation so far, I've replaced "Expression" with "Statement" because I think that's what we're calling those types
-	 * of structures. VERY IMPORTANT NOTE: THIS IS A DRAFT AND ONLY LOOKS AT CODEBLOCKS, AND DOES NOTHING WITH NON-CODEBLOCKS.
-	 * 
-	 *  Update from Infosession: 
+	 * Update from Infosession: 
 	 *  
-	 *  Their use of "Expression" refers to X = A OP B, X = A, OR A CompareOp B.
-	 *  For this reason, I'll need to make seperate expression and enum for recognizing comparison expressions. 
-	 *  Two of those are assignments, which we cover under the heading "Statement". 
-	 *  Also, for method calls, set KILL to be all global variables for that line. 
+	 *  Their use of "Expression" refers to X = A OP B, X = A, OR A CompareOp B. 
+	 *  Two of those are assignments, which we cover under the heading "Statement", and would be in Codeblocks.
+	 *  The last is a branch condition. 
+	 *  Also, for method calls, set KILL to be all global variables. 
 	 * 
 	 * It will be a helper method used frequently in the code for actually doing Common Subexpression Elimination (CSE).
-	 * @param currentMethodFlownodes : A Set<FlowNode> that contains the flownodes for the method you want to check availability for.
+	 * 
+	 * @param currentMethodFlownodes : A LinkedList<FlowNode> that contains the flownodes for the method you want to check availability for.
+	 * You MUST have the first element in this LinkedList be a START node. 
 	 * @return Set<Expression> : A set of the available expressions for the given method flownodes.
 	 */
-	public Set<Expression> calculateAvailableExpressions(Set<FlowNode> currentMethodFlownodes){
+	public Set<Expression> calculateAvailableExpressions(LinkedList<FlowNode> currentMethodFlownodes){
 		HashMap<FlowNode, Set<Expression>> OUT = new HashMap<FlowNode, Set<Expression>>();
 		HashMap<FlowNode, Set<Expression>> IN = new HashMap<FlowNode, Set<Expression>>();
+		LinkedHashSet<Expression> allExprsForInitialization = new LinkedHashSet<Expression>();
 		LinkedList<FlowNode> Changed = new LinkedList<FlowNode>();
-		for(FlowNode n: currentMethodFlownodes){ //First, set up the output: OUT[node] = all expressions in the node
+		for(FlowNode n: currentMethodFlownodes){ //First, set up the output: OUT[node] = all expressions 
 			if (n instanceof Codeblock){
 				Codeblock cblock = (Codeblock)n;
-				LinkedHashSet<Expression> exprSet = new LinkedHashSet<Expression>(getAllExpressions(cblock));
-				// TODO Add getting righthand side if assignment and downcast to Expression
-				OUT.put(n, exprSet); //Out[node] = set of all statements in node
+				allExprsForInitialization.addAll(getAllExpressions(cblock));
+				// TODO Add getting righthand side if assignment and downcast to Expression???
 				Changed.add(cblock); //Put the codeblock in the Changed set we'll use to do fixed point.
 			}
+			if(n instanceof Branch){
+				Branch bran = (Branch)n;
+				allExprsForInitialization.add(bran.getExpr());
+				Changed.add(bran);
+			}
+			for (FlowNode c : Changed){
+				OUT.put(c, allExprsForInitialization);
+			}
 		}
-		
+		START entry = (START)currentMethodFlownodes.getFirst();
+		currentMethodFlownodes.remove(entry);
+		IN.put(entry, new LinkedHashSet<Expression>());
+		OUT.put(entry, getAllExpressions(entry));
+		Changed.remove(entry);
 		//Next, actually carry out the changed iteration part of the algorithm.
 		//This part is most likely so full of bugs it is scary and I am scared looking at it. 
 		while(!Changed.isEmpty()){
 			Codeblock currentNode = (Codeblock)Changed.pop(); //Get whatever the first codeblock in the set is. 
-			Set<Expression> currentExpressionSet = IN.get(currentNode); 
+			Set<Expression> currentExpressionINSet = allExprsForInitialization; 
 			for (FlowNode parentNode : currentNode.getParents()){
 				if(parentNode instanceof Codeblock){
 					Codeblock parent = (Codeblock)parentNode;
-					currentExpressionSet.retainAll(OUT.get(parent)); //Set intersection
-					IN.put(currentNode, currentExpressionSet);
+					currentExpressionINSet.retainAll(OUT.get(parent)); //Set intersection
+					IN.put(currentNode, currentExpressionINSet);
 				}	
 			}
 			Set<Expression> genUnisonFactor = new LinkedHashSet<Expression>(IN.get(currentNode)); 
@@ -658,6 +667,6 @@ public class Optimizer {
 			availableExpressions.addAll(OUT.get(key));
 		}
 		
-		return availableExpressions; //Probably really buggy at this point, need to show group and debug 
+		return availableExpressions;  
 	}
 }
