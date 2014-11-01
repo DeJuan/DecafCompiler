@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -13,7 +14,6 @@ public class Branch extends FlowNode {
 	private FlowNode trueBranch;
 	private FlowNode falseBranch;
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
-	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private BranchType type;
 	private boolean visited = false;
 	private String label;
@@ -36,8 +36,6 @@ public class Branch extends FlowNode {
 		this.trueBranch = ifTrue;
 		this.falseBranch = ifFalse;
 		this.parents = parentList;
-		this.children.add(trueBranch);
-		this.children.add(falseBranch);
 		this.expr = express;
 	}
 	
@@ -86,7 +84,7 @@ public class Branch extends FlowNode {
 	 *  @return children : List<FlowNode> that combines the true and false branches.
 	 */
 	public List<FlowNode> getChildren() {
-		return children;
+		return new ArrayList<FlowNode>(Arrays.asList(trueBranch, falseBranch));
 	}
 	
 	/**
@@ -112,7 +110,6 @@ public class Branch extends FlowNode {
 	 */
 	public void setTrueBranch(FlowNode newTrueBranch){
 		trueBranch = newTrueBranch;	
-		children.set(0, newTrueBranch);
 	}
 	
 	/**
@@ -129,7 +126,6 @@ public class Branch extends FlowNode {
 	 */
 	public void setFalseBranch(FlowNode newFalseBranch){
 		falseBranch = newFalseBranch;
-		children.set(1, newFalseBranch);
 	}
 	
 	/**
@@ -176,11 +172,11 @@ public class Branch extends FlowNode {
 	@Override
 	public void resetVisit() {
 		visited = false;
-		if (children.size() > 0) {
-			for (FlowNode child : children) {
-				if (child.visited())
-					child.resetVisit();
-			}
+		if (trueBranch != null) {
+			trueBranch.resetVisit();
+		}
+		if (falseBranch != null) {
+		    falseBranch.resetVisit();
 		}
 	}
 	
