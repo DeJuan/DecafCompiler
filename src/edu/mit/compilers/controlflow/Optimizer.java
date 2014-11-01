@@ -525,7 +525,7 @@ public class Optimizer {
 					Assignment currentAssign = (Assignment)currentState; 
 					Expression currentExpr = currentAssign.getValue();
 					if(!notYetKilledExprs.contains(currentExpr)){
-						notYetKilledExprs.add(currentExpr);
+						notYetKilledExprs.add(currentExpr); //Put it in the list since we just saw it isn't there
 						if(currentExpr instanceof BinExpr){
 							BinExpr bin = (BinExpr)currentExpr;
 							varList = new ArrayList<IR_FieldDecl>();
@@ -563,7 +563,8 @@ public class Optimizer {
 						}
 					}
 					
-					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. This is where you'd CSE.   
+					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. 
+						//This is where you'd CSE, assuming you had the other pieces needed.     
 					}
 					
 					//Actually kill things now!
