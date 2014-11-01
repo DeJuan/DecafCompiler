@@ -516,7 +516,7 @@ public class Optimizer {
 			notYetKilledExprs = new LinkedList<Expression>(); //Should this maybe be IR_FieldDecls, actually? 
 		}
 		HashMap<IR_FieldDecl, Set<Expression>> lookupToKillMap = new HashMap<IR_FieldDecl, Set<Expression>>();
-		List<IR_FieldDecl> varList = null;
+		List<IR_FieldDecl> varList = new ArrayList<IR_FieldDecl>();
 		if(node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> statementList = cblock.getStatements();
@@ -528,7 +528,6 @@ public class Optimizer {
 						notYetKilledExprs.add(currentExpr); //Put it in the list since we just saw it isn't there
 						if(currentExpr instanceof BinExpr){
 							BinExpr bin = (BinExpr)currentExpr;
-							varList = new ArrayList<IR_FieldDecl>();
 							varList.addAll(getVarsFromExpression(bin.getLeftSide()));
 							varList.addAll(getVarsFromExpression(bin.getRightSide()));
 						}
@@ -544,7 +543,7 @@ public class Optimizer {
 						
 						else if (currentExpr instanceof Ternary){
 							Ternary tern = (Ternary)currentExpr;
-							varList = getVarsFromExpression(tern.getTernaryCondition());
+							varList.addAll(getVarsFromExpression(tern.getTernaryCondition()));
 							varList.addAll(getVarsFromExpression(tern.getTrueBranch()));
 							varList.addAll(getVarsFromExpression(tern.getFalseBranch()));
 						}
