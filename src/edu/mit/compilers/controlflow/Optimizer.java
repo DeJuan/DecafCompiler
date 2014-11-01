@@ -25,14 +25,14 @@ import edu.mit.compilers.ir.Ops;
 public class Optimizer {
 	private ControlflowContext context;
 	private List<IR_Node> calloutList;
-	private List<IR_Node> globalList;
+	private List<IR_FieldDecl> globalList;
 	private HashMap<String, FlowNode> flowNodes;
 	/**
 	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
 	 *  
 	 */
 	public Optimizer(ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes){
+			List<IR_Node> callouts, List<IR_FieldDecl> globals, HashMap<String, FlowNode> flowNodes){
 		this.context = context;
 		this.calloutList = callouts;
 		this.globalList = globals;
@@ -516,6 +516,7 @@ public class Optimizer {
 			notYetKilledExprs = new LinkedList<Expression>(); //Should this maybe be IR_FieldDecls, actually? 
 		}
 		HashMap<IR_FieldDecl, Set<Expression>> lookupToKillMap = new HashMap<IR_FieldDecl, Set<Expression>>();
+		List<IR_FieldDecl> varList = null;
 		if(node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> statementList = cblock.getStatements();
@@ -525,110 +526,64 @@ public class Optimizer {
 					Expression currentExpr = currentAssign.getValue();
 					if(!notYetKilledExprs.contains(currentExpr)){
 						notYetKilledExprs.add(currentExpr);
-						// TODO : Question - Do I need to get subexpressions of the current expression as well? Say, if we just added x + y + z, do I need to add x + y, y + z, and x + z?
 						if(currentExpr instanceof BinExpr){
 							BinExpr bin = (BinExpr)currentExpr;
-							List<IR_FieldDecl> binVarList = new ArrayList<IR_FieldDecl>();
-							binVarList.addAll(getVarsFromExpression(bin.getLeftSide()));
-							binVarList.addAll(getVarsFromExpression(bin.getRightSide()));
-							for (IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){
-									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
-								}
-								else{
-									lookupToKillMap.get(binVar).add(currentExpr);
-								}
-							}
+							varList = new ArrayList<IR_FieldDecl>();
+							varList.addAll(getVarsFromExpression(bin.getLeftSide()));
+							varList.addAll(getVarsFromExpression(bin.getRightSide()));
 						}
 						else if(currentExpr instanceof NotExpr){
 							NotExpr not = (NotExpr)currentExpr;
-							List<IR_FieldDecl> binVarList = getVarsFromExpression(not.getUnresolvedExpression());
-							for(IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){
-									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
-								}
-								else{
-									lookupToKillMap.get(binVar).add(currentExpr);
-								}
-							}
+							varList = getVarsFromExpression(not.getUnresolvedExpression());
 						}
 						
 						else if(currentExpr instanceof NegateExpr){
 							NegateExpr negate = (NegateExpr)currentExpr;
-							List<IR_FieldDecl> binVarList = getVarsFromExpression(negate.getNegatedExpr());
-							for(IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){
-									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
-								}
-								else{
-									lookupToKillMap.get(binVar).add(currentExpr);
-								}
-							}
+							varList = getVarsFromExpression(negate.getNegatedExpr());
 						}
 						
 						else if (currentExpr instanceof Ternary){
 							Ternary tern = (Ternary)currentExpr;
-							List<IR_FieldDecl> binVarList = getVarsFromExpression(tern.getTernaryCondition());
-							binVarList.addAll(getVarsFromExpression(tern.getTrueBranch()));
-							binVarList.addAll(getVarsFromExpression(tern.getFalseBranch()));
-							for(IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){
-									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
-								}
-								else{
-									lookupToKillMap.get(binVar).add(currentExpr);
-								}
-							}
+							varList = getVarsFromExpression(tern.getTernaryCondition());
+							varList.addAll(getVarsFromExpression(tern.getTrueBranch()));
+							varList.addAll(getVarsFromExpression(tern.getFalseBranch()));
 						}
 						
 						else if (currentExpr instanceof MethodCall){
 							notYetKilledExprs.remove(currentExpr); //Get rid of the entire method call statement, can't really use that since we assume methods kill things.
-							// TODO : From here on, this code doesn't make sense because again, methods kill things! Consult with someone else before removing for sanity check.
-							MethodCall mc = (MethodCall)currentExpr;
-							List<IR_FieldDecl> binVarList = new ArrayList<IR_FieldDecl>();
-							for (Expression arg : mc.getArguments()){
-								binVarList.addAll(getVarsFromExpression(arg));
+						}
+						
+						for (IR_FieldDecl binVar : varList){
+							if(!lookupToKillMap.containsKey(binVar)){
+								lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
 							}
-							for(IR_FieldDecl binVar : binVarList){
-								if(!lookupToKillMap.containsKey(binVar)){ //Doubt we'd ever find it already in there
-									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
-								}
-								else{
-									lookupToKillMap.get(binVar).add(currentExpr);
-								}
+							else{
+								lookupToKillMap.get(binVar).add(currentExpr);
 							}
 						}
 					}
 					
-					
-					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. I.e: If notYetKilled does contain what just got assigned,
-						killedExpressions.addAll(lookupToKillMap.get(currentExpr)); //This flat out doesn't work. I know it doesn't. Consult on how to fix. 
-						notYetKilledExprs.remove(currentExpr); //This part's okay though. 
-						continue;
+					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. This is where you'd CSE.   
 					}
+					
+					//TODO : Actually kill things now!
+					IR_FieldDecl currentAssignTarget = (IR_FieldDecl) currentAssign.getDestVar().getVarDescriptor().getIR();
+					if(lookupToKillMap.get(currentAssignTarget) != null){
+						killedExpressions.addAll(lookupToKillMap.get(currentAssignTarget));
+					}
+					
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					//Set all global variables to a killed state
-					LinkedList<FlowNode> parentChainNodes = new LinkedList<FlowNode>();
-					while(!parentChainNodes.isEmpty()){
-						FlowNode currentParentInChain = parentChainNodes.pop();
-						if(!(currentParentInChain instanceof START)){
-							parentChainNodes.addAll(currentParentInChain.getParents());
-							continue;
-						}
-						else{
-							START origin = (START)currentParentInChain;
-							List<IR_FieldDecl> globals = origin.getArguments();
-							for (IR_FieldDecl global : globals){
-								if(lookupToKillMap.containsKey(global)){
-									killedExpressions.addAll(lookupToKillMap.get(global));
-								}
-							}
-							break;
+					for (IR_FieldDecl global : this.globalList){
+						if(lookupToKillMap.get(global) != null){
+							killedExpressions.addAll(lookupToKillMap.get(global));
 						}
 					}
-				//Don't have to have a case for declarations, they never kill anything. 	
 				}
+					
+				//Don't have to have a case for declarations, they never kill anything. 	
+				
 			}
 		}
 		return killedExpressions;
