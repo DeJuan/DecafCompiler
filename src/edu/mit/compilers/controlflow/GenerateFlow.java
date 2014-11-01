@@ -227,12 +227,15 @@ public class GenerateFlow {
 	        }
 		}
 		
-		if (ifNode.getFalseBlock().getStatements().size() == 0) {
+		if (ifNode.getFalseBlock() == null || ifNode.getFalseBlock().getStatements().size() == 0) {
+		    beginFalseBranch.addChild(exitIf);
+		    exitIf.addParent(beginFalseBranch);
+		} else {
 		    FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
-		    if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
-	            exitIf.addParent(endFalseBranch);
-	            endFalseBranch.addChild(exitIf);
-	        }
+            if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
+                exitIf.addParent(endFalseBranch);
+                endFalseBranch.addChild(exitIf);
+            }
 		}
 		
 		
