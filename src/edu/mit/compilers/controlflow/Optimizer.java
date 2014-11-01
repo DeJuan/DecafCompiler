@@ -23,12 +23,21 @@ import edu.mit.compilers.ir.Ops;
  *
  */
 public class Optimizer {
+	private ControlflowContext context;
+	private List<IR_Node> calloutList;
+	private List<IR_Node> globalList;
+	private HashMap<String, FlowNode> flowNodes;
 	/**
 	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
 	 *  
 	 */
 	public Optimizer(ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes){}
+			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes){
+		this.context = context;
+		this.calloutList = callouts;
+		this.globalList = globals;
+		this.flowNodes = flowNodes;
+	}
 	
 	/*
 	public List<Expression> simpleAlgebraicSimplifier(List<Expression> exprList){
@@ -53,6 +62,8 @@ public class Optimizer {
 		}
 	}
 	*/
+	
+	
 	
 	/**
 	 * For handling commutativity. Use sets; write a class, SPSet, that is a class which has three fields. These fields are a Set<SPSet>, an Op, and a Set<IR_FieldDecl>.
@@ -120,6 +131,42 @@ public class Optimizer {
 		return assignedVars;
 	}
 	
+	public List<IR_FieldDecl> getVarsFromExpression(Expression expr){
+		List<IR_FieldDecl> allVars = new ArrayList<IR_FieldDecl>();
+		if(expr instanceof BinExpr){
+			BinExpr bin = (BinExpr)expr;
+			Expression lhs = bin.getLeftSide();
+			Expression rhs = bin.getRightSide();
+			allVars.addAll(getVarsFromExpression(lhs));
+			allVars.addAll(getVarsFromExpression(rhs));
+		}
+		else if (expr instanceof Var){
+			Var varia = (Var)expr;
+			allVars.add((IR_FieldDecl)varia.getVarDescriptor().getIR());
+		}	
+		else if(expr instanceof NotExpr){
+			NotExpr nope = (NotExpr)expr;
+			allVars.addAll(getVarsFromExpression(nope.getUnresolvedExpression()));
+		}
+		else if(expr instanceof NegateExpr){
+			NegateExpr negate = (NegateExpr)expr;
+			allVars.addAll(getVarsFromExpression(negate.negatedExpr));
+		}
+		else if(expr instanceof Ternary){
+			Ternary tern = (Ternary)expr;
+			allVars.addAll(getVarsFromExpression(tern.getTernaryCondition()));
+			allVars.addAll(getVarsFromExpression(tern.trueBranch));
+			allVars.addAll(getVarsFromExpression(tern.falseBranch));
+		}
+		else if(expr instanceof MethodCall){
+			MethodCall MCHammer = (MethodCall)expr;
+			for(Expression arg : MCHammer.getArguments()){
+				allVars.addAll(getVarsFromExpression(arg));
+			}
+		}
+		return allVars;
+	}
+	
 	/**
 	 * This is a method to get all expressions from a given FlowNode. 
 	 * If the node is a Codeblock, it is scanned for assignments. 
@@ -156,22 +203,6 @@ public class Optimizer {
 			allExprs.add(splitNode.getExpr());
 		}
 		return allExprs;
-	}
-	
-	
-	/**
-	 * This is a helper method designed to allow an easy way to check if a given 
-	 * FlowNode is a Codeblock without having to repeatedly write the code needed to do so.
-	 * It is now deprecated. 
-	 * 
-	 * @param node : The FlowNode whose type you want to confirm.
-	 * @return boolean : true if the given node is a Codeblock, false otherwise. 
-	 */
-	public boolean checkIfCodeblock(FlowNode node){
-		if(node instanceof Codeblock){
-			return true;
-		}
-		return false;
 	}
 	
 	
@@ -479,34 +510,104 @@ public class Optimizer {
 	 * @param node : FlowNode (really should be a Codeblock) that we want to investigate for killed statements.
 	 * @return killedStatements : Set<Statement> containing all statements that were killed by later assignments in this Codeblock.
 	 */
-	public Set<Expression> getKilledExpressions(FlowNode node){
+	public Set<Expression> getKilledExpressions(FlowNode node, List<Expression> notYetKilledExprs){
 		Set<Expression> killedExpressions = new LinkedHashSet<Expression>();
-		List<Expression> notYetKilledExprs = new LinkedList<Expression>();
-		HashMap<Expression, List<Expression>> lookupToKillMap = new HashMap<Expression, List<Expression>>();
-		if(checkIfCodeblock(node)){
+		if(notYetKilledExprs == null){
+			notYetKilledExprs = new LinkedList<Expression>();
+		}
+		HashMap<IR_FieldDecl, Set<Expression>> lookupToKillMap = new HashMap<IR_FieldDecl, Set<Expression>>();
+		if(node instanceof Codeblock){
 			Codeblock cblock = (Codeblock)node;
 			List<Statement> statementList = cblock.getStatements();
 			for (Statement currentState : statementList){
-				if(checkIfAssignment(currentState)){
-					Assignment currentAssign = (Assignment)currentState;
+				if(currentState instanceof Assignment){
+					Assignment currentAssign = (Assignment)currentState; 
 					Expression currentExpr = currentAssign.getValue();
 					if(!notYetKilledExprs.contains(currentExpr)){
 						notYetKilledExprs.add(currentExpr);
+						// TODO : Question - Do I need to get subexpressions of the current expression as well? Say, if we just added x + y + z, do I need to add x + y, y + z, and x + z?
 						if(currentExpr instanceof BinExpr){
 							BinExpr bin = (BinExpr)currentExpr;
-							lookupToKillMap.put(bin.getLeftSide(), new ArrayList<Expression>(Arrays.asList(currentExpr)));
-							lookupToKillMap.put(bin.getRightSide(), new ArrayList<Expression>(Arrays.asList(currentExpr)));
+							List<IR_FieldDecl> binVarList = new ArrayList<IR_FieldDecl>();
+							binVarList.addAll(getVarsFromExpression(bin.getLeftSide()));
+							binVarList.addAll(getVarsFromExpression(bin.getRightSide()));
+							for (IR_FieldDecl binVar : binVarList){
+								if(!lookupToKillMap.containsKey(binVar)){
+									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
+								}
+								else{
+									lookupToKillMap.get(binVar).add(currentExpr);
+								}
+							}
 						}
-						// TODO : Add checks for Not/Negate. 
+						else if(currentExpr instanceof NotExpr){
+							NotExpr not = (NotExpr)currentExpr;
+							List<IR_FieldDecl> binVarList = getVarsFromExpression(not.getUnresolvedExpression());
+							for(IR_FieldDecl binVar : binVarList){
+								if(!lookupToKillMap.containsKey(binVar)){
+									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
+								}
+								else{
+									lookupToKillMap.get(binVar).add(currentExpr);
+								}
+							}
+						}
+						
+						else if(currentExpr instanceof NegateExpr){
+							NegateExpr negate = (NegateExpr)currentExpr;
+							List<IR_FieldDecl> binVarList = getVarsFromExpression(negate.getNegatedExpr());
+							for(IR_FieldDecl binVar : binVarList){
+								if(!lookupToKillMap.containsKey(binVar)){
+									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
+								}
+								else{
+									lookupToKillMap.get(binVar).add(currentExpr);
+								}
+							}
+						}
+						
+						else if (currentExpr instanceof Ternary){
+							Ternary tern = (Ternary)currentExpr;
+							List<IR_FieldDecl> binVarList = getVarsFromExpression(tern.getTernaryCondition());
+							binVarList.addAll(getVarsFromExpression(tern.getTrueBranch()));
+							binVarList.addAll(getVarsFromExpression(tern.getFalseBranch()));
+							for(IR_FieldDecl binVar : binVarList){
+								if(!lookupToKillMap.containsKey(binVar)){
+									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
+								}
+								else{
+									lookupToKillMap.get(binVar).add(currentExpr);
+								}
+							}
+						}
+						
+						else if (currentExpr instanceof MethodCall){
+							notYetKilledExprs.remove(currentExpr); //Get rid of the entire method call statement, can't really use that since we assume methods kill things.
+							MethodCall mc = (MethodCall)currentExpr;
+							List<IR_FieldDecl> binVarList = new ArrayList<IR_FieldDecl>();
+							for (Expression arg : mc.getArguments()){
+								binVarList.addAll(getVarsFromExpression(arg));
+							}
+							for(IR_FieldDecl binVar : binVarList){
+								if(!lookupToKillMap.containsKey(binVar)){
+									lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
+								}
+								else{
+									lookupToKillMap.get(binVar).add(currentExpr);
+								}
+							}
+						}
 					}
+					
+					
 					else{
-						killedExpressions.add(notYetKilledExprs.get(notYetKilledExprs.indexOf(currentExpr)));
-						notYetKilledExprs.add(currentExpr);
+						killedExpressions.addAll(lookupToKillMap.get(currentExpr));
+						notYetKilledExprs.remove(currentExpr);
 						continue;
 					}
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
-					//TODO : Set all global variables to a killed state
+					//Set all global variables to a killed state
 					LinkedList<FlowNode> parentChainNodes = new LinkedList<FlowNode>();
 					while(!parentChainNodes.isEmpty()){
 						FlowNode currentParentInChain = parentChainNodes.pop();
@@ -516,7 +617,13 @@ public class Optimizer {
 						}
 						else{
 							START origin = (START)currentParentInChain;
-							List<IR_FieldDecl> globals = origin.getArguments(); 
+							List<IR_FieldDecl> globals = origin.getArguments();
+							for (IR_FieldDecl global : globals){
+								if(lookupToKillMap.containsKey(global)){
+									killedExpressions.addAll(lookupToKillMap.get(global));
+								}
+							}
+							break;
 						}
 					}
 					
@@ -549,7 +656,7 @@ public class Optimizer {
 		HashMap<FlowNode, Set<Expression>> IN = new HashMap<FlowNode, Set<Expression>>();
 		LinkedList<FlowNode> Changed = new LinkedList<FlowNode>();
 		for(FlowNode n: currentMethodFlownodes){ //First, set up the output: OUT[node] = all expressions in the node
-			if (checkIfCodeblock(n)){
+			if (n instanceof Codeblock){
 				Codeblock cblock = (Codeblock)n;
 				LinkedHashSet<Expression> exprSet = new LinkedHashSet<Expression>(getAllExpressions(cblock));
 				// TODO Add getting righthand side if assignment and downcast to Expression
@@ -564,19 +671,19 @@ public class Optimizer {
 			Codeblock currentNode = (Codeblock)Changed.pop(); //Get whatever the first codeblock in the set is. 
 			Set<Expression> currentExpressionSet = IN.get(currentNode); 
 			for (FlowNode parentNode : currentNode.getParents()){
-				if(checkIfCodeblock(parentNode)){
+				if(parentNode instanceof Codeblock){
 					Codeblock parent = (Codeblock)parentNode;
 					currentExpressionSet.retainAll(OUT.get(parent)); //Set intersection
 					IN.put(currentNode, currentExpressionSet);
 				}	
 			}
 			Set<Expression> genUnisonFactor = new LinkedHashSet<Expression>(IN.get(currentNode)); 
-			genUnisonFactor.removeAll(getKilledExpressions(currentNode)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
+			genUnisonFactor.removeAll(getKilledExpressions(currentNode, null)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
 			
 			//The below combines OUT[n] = GEN[n] UNION (IN[n] - KILL[n]) and the check for whether or not this changed OUT in one line.  
 			if(OUT.get(currentNode).addAll(genUnisonFactor)){ //That addAll gives a boolean that is true if the set changed as a result of the add. 
 				for (FlowNode childNode : currentNode.getChildren()){
-					if(checkIfCodeblock(childNode)){
+					if(childNode instanceof Codeblock){
 						Codeblock child = (Codeblock)childNode;
 						if (Changed.contains(child)){
 							continue;
