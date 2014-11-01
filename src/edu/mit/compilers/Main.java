@@ -213,12 +213,12 @@ class Main {
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
 			    		  List<IR_Node> callouts = new ArrayList<IR_Node>(); // type IR_MethodDecl
-			    		  List<IR_Node> globals = new ArrayList<IR_Node>();  // type IR_FieldDecl
+			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
 			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
 			    		  
 			    		  // TODO: Process flowNodes and generate assembly code.
-			    		  Assembler.generateProgram(context, callouts, globals, flowNodes);
+			    		  context = Assembler.generateProgram(root);
 			    		  
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");

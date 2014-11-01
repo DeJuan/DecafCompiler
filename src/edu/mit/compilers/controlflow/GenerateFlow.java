@@ -54,7 +54,7 @@ public class GenerateFlow {
 	 * @param flowNodes : HashMap of method names to FlowNodes
 	 */
 	public static void generateProgram(IR_Node root, ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_Node> globals, Map<String, START> flowNodes) {
+			List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> flowNodes) {
 		IR_Seq seq = (IR_Seq) root;
 		List<IR_Node> statements = seq.getStatements();
 		for (int i = 0; i < statements.size(); i++) {
@@ -73,7 +73,7 @@ public class GenerateFlow {
 				Descriptor d = new Descriptor(decl);
 				d.setLocation(new LocLabel(decl.getName()));
 				context.putSymbol(decl.getName(), d);
-				globals.add(node);
+				globals.add(decl);
 			} else {
 				System.err.println("Unrecognized type");
 			}

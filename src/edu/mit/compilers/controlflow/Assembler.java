@@ -27,7 +27,7 @@ import edu.mit.compilers.ir.Type;
 public class Assembler {
 
     public static void setUp(ControlflowContext context, 
-            List<IR_Node> callouts, List<IR_Node> globals,
+            List<IR_Node> callouts, List<IR_FieldDecl> globals,
             Map<String, START> methods) {
         List<FlowNode> processing = new ArrayList<FlowNode>();
         for (START node : methods.values()) {
@@ -40,35 +40,37 @@ public class Assembler {
             }
             next.setLabel(context.genLabel());
         }
+        for (IR_Node node : callouts) {
+            generateCallout(node, context);
+        }
+        for (IR_FieldDecl decl : globals) {
+            generateFieldDeclGlobal(decl, context);
+        }
     }
 
     public static ControlflowContext generateProgram(IR_Node root) {
         ControlflowContext context = new ControlflowContext();
         List<IR_Node> callouts = new ArrayList<IR_Node>();
-        List<IR_Node> globals = new ArrayList<IR_Node> ();
+        List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl> ();
         Map<String, START> methods = new HashMap<String, START>();
 
         // populate the various internal data structures
         GenerateFlow.generateProgram(root, context, callouts, globals, methods);
+        context = new ControlflowContext();
         setUp(context, callouts, globals, methods);
-
-        for (IR_Node node : callouts) {
-            generateCallout(node, context);
-        }
         for (Map.Entry<String, START> entry : methods.entrySet()) {
             generateMethodDecl(entry, context);
         }
         return context;
     }
     
-    public static void generateProgram(ControlflowContext context, List<IR_Node> callouts, List<IR_Node> globals, Map<String, START> methods){
+    public static ControlflowContext generateProgram(List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> methods){
+        ControlflowContext context = new ControlflowContext();
         setUp(context, callouts, globals, methods);
-        for (IR_Node node : callouts) {
-            generateCallout(node, context);
-        }
         for (Map.Entry<String, START> entry : methods.entrySet()) {
             generateMethodDecl(entry, context);
         }
+        return context;
     }
 
     public static void generateCallout(IR_Node node, ControlflowContext context){
@@ -76,6 +78,12 @@ public class Assembler {
         String name = decl.name;
         Descriptor d = new Descriptor(node);
         context.putSymbol(name, d);
+    }
+    
+    public static void generateFieldDeclGlobal(IR_FieldDecl decl, ControlflowContext context){
+        Descriptor d = new Descriptor(decl);
+        d.setLocation(new LocLabel(decl.getName()));
+        context.putSymbol(decl.getName(), d);
     }
 
     public static void generateMethodDecl(Map.Entry<String, START> decl, ControlflowContext context){
