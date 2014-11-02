@@ -697,9 +697,13 @@ public class Optimizer {
 		processing.add(initialNode);
 		while(!processing.isEmpty()){
 			FlowNode next = processing.remove(0);
+			next.visit();
 			nodeList.add(next);
 			for(FlowNode child : next.getChildren()){
-				processing.add(child);
+				if(!child.visited()){
+					processing.add(child);	
+				}
+				
 			}
 			if (next instanceof Codeblock){
 				Codeblock cblock = (Codeblock)next;
@@ -753,17 +757,17 @@ public class Optimizer {
 	
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
-			Map<IR_FieldDecl, SPSet> varToVal = new HashMap<IR_FieldDecl, SPSet>();
+			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
-			Map<Expression, SPSet> expToVal = new HashMap<Expression, SPSet>();
-			Map<Expression, String> expToTemp = new HashMap<Expression, String>();
+			Map<Expression, ValueID> expToVal = new HashMap<Expression, ValueID>();
+			Map<SPSet, String> expToTemp = new HashMap<SPSet, String>();
 			Map<FlowNode, Set<Expression>> availableExpressionsAtNode = calculateAvailableExpressions(initialNode);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			Set<Expression> firstAvailableExprs = availableExpressionsAtNode.get(firstNodeInProgram);
 			Iterator<Expression> iterForFirstExprs = firstAvailableExprs.iterator();
 			while(iterForFirstExprs.hasNext()){
 				Expression currentExpr = iterForFirstExprs.next();
-				expToTemp.put(currentExpr, generateNextTemp(allVarNames));
+				
 				
 			}
 		}
