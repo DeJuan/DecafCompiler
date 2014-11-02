@@ -1026,14 +1026,8 @@ public class Optimizer {
 					}
 				}
 			}
-			/*
-			Set<Expression> firstAvailableExprs = availableExpressionsAtNode.get(firstNodeInProgram);
-			Iterator<Expression> iterForFirstExprs = firstAvailableExprs.iterator();
-			while(iterForFirstExprs.hasNext()){
-				Expression currentExpr = iterForFirstExprs.next();
-				setVarIDs(varToVal, currentExpr);
-				expToTemp.put(new SPSet(currentExpr), generateNextTemp(allVarNames)); //TODO : why not call analyzeAndDispatch(currentExpr) for the SPSet?
-			}*/
+			// TODO : The above sets up the map in the case where we haven't seen things yet. Add checks for when we have seen things before and then try figuring out how to do
+			//the replacement logic. This next bit is non-trivial and is the heart of CSE, so not a good idea to try writing it at 5:45 am with no sleep.
 		}
 		return context;
 	}
