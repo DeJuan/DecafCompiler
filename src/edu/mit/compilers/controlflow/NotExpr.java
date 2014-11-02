@@ -52,5 +52,13 @@ public class NotExpr extends Expression {
 	public Expression getUnresolvedExpression(){
 		return this.express;
 	}
+	
+	@Override
+	public boolean equals(Object obj){
+		if(!(obj instanceof NotExpr)){
+			return false;
+		}
+		return true;
+	}
 
 }

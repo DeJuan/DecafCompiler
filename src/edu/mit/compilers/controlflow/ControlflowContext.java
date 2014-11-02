@@ -2,7 +2,6 @@ package edu.mit.compilers.controlflow;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
@@ -17,9 +16,9 @@ import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.codegen.LocationMem;
 import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.SymbolTable;
-import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 
 /**@brief Information used throughout the control flow.
  */

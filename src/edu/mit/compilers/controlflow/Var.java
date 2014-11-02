@@ -12,6 +12,7 @@ public class Var extends Expression {
 	private Descriptor var;
 	private String name;
 	private Expression index;
+	private ValueID val;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
@@ -48,6 +49,14 @@ public class Var extends Expression {
 	 */
 	public Expression getIndex() {
 	    return index;
+	}
+	
+	public void setValueID(ValueID val){
+	    this.val = val;
+	}
+	
+	public ValueID getValueID() {
+	    return val;
 	}
 	
 	/**
