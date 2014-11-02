@@ -69,7 +69,7 @@ public class Assembler {
         }
         return context;
     }
-    
+
     public static ControlflowContext generateProgram(List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> methods){
         ControlflowContext context = new ControlflowContext();
         setUp(context, callouts, globals, methods);
@@ -85,7 +85,7 @@ public class Assembler {
         Descriptor d = new Descriptor(node);
         context.putSymbol(name, d);
     }
-    
+
     public static void generateFieldDeclGlobal(IR_FieldDecl decl, ControlflowContext context){
         Descriptor d = new Descriptor(decl);
         d.setLocation(new LocLabel(decl.getName()));
@@ -125,10 +125,8 @@ public class Assembler {
                 List<Instruction> pushIns = context.push(argSrc);
                 argIns.addAll(pushIns);
                 argDst = context.getRsp();
+                context.allocLocal(CodegenConst.INT_SIZE);
             }
-            context.allocLocal(CodegenConst.INT_SIZE);
-            LocLiteral sizeLoc= new LocLiteral(CodegenConst.INT_SIZE);
-            argIns.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
             argd.setLocation(argDst);
         }
         context.addIns(argIns);
@@ -196,11 +194,7 @@ public class Assembler {
             ins.addAll(generateStatement(stat, context));
         }
         FlowNode child = begin.getChildren().get(0);
-        if (child instanceof END) {
-            ins.addAll(generateEnd((END) child, context, isVoid));
-        } else {
-            ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
-        }
+        ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
         return ins;
     }
 
@@ -212,7 +206,7 @@ public class Assembler {
         ins.addAll(context.pop(r10));
         ins.add(new Instruction("cmp", new LocLiteral(0L), r10));
         ins.add(new Instruction("je", new LocLabel(begin.getFalseBranch().getLabel())));
-        
+
         if (begin.getType() == BranchType.IF) {
             // make True branch - either ends at end or when hitting a if with two ends or an unpaired NOp
             context.incScope();
@@ -282,7 +276,7 @@ public class Assembler {
                 ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
             ins.add(context.decScope());
-            
+
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
             boolean done = false;
@@ -368,9 +362,10 @@ public class Assembler {
         }
         return ins;
     }
-    
+
     private static List<Instruction> generateEnd(END next, ControlflowContext context, boolean isVoid) {
         List<Instruction> stIns = new ArrayList<Instruction>();
+        stIns.add(Instruction.labelInstruction(next.getLabel()));
         Expression expr = next.getReturnExpression();
         // We only have instructions to add if return value is not void.
         if (expr == null && !isVoid) {
@@ -540,7 +535,7 @@ public class Assembler {
         String labelForDone = context.genLabel();
         List<Instruction> trueInstructs = generateExpression(ternary.getTrueBranch(), context);
         List<Instruction> falseInstructs = generateExpression(ternary.getFalseBranch(), context);
-        
+
         ins.addAll(generateExpression(ternary.getTernaryCondition(), context)); //Get result of conditional onto the stack by resolving it. 
         ins.addAll(context.pop(r10)); //pop result into r10.
         ins.add(new Instruction("cmp", new LocLiteral(1L), r10)); //Compare r10 against truth
@@ -584,7 +579,7 @@ public class Assembler {
         String endLabel = context.genLabel();
 
         ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
-        
+
         List<Instruction> ins = cfg.codegen(context);
 
         ins.add(Instruction.labelInstruction(tLabel));
@@ -675,7 +670,7 @@ public class Assembler {
         ins.addAll(generateExpression(right, context));
         ins.addAll(context.pop(r11));
         ins.addAll(context.pop(r10));
-        
+
         if(!(op == Ops.DIVIDE || op==Ops.MOD)){
             String cmd = "";
             switch (op){ //PLUS, MINUS, TIMES
