@@ -29,7 +29,7 @@ public class BoolLit extends Expression {
 	 * Returns the boolean truth value for this literal.
 	 * @return boolean : True or False depending on the value given when this literal was constructed, assuming no overwrites.
 	 */
-	public boolean getValue(){
+	public boolean getTruthValue(){
 		return value;
 	}
 	

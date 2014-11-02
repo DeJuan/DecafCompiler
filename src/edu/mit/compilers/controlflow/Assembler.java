@@ -229,14 +229,15 @@ public class Assembler {
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
                     ins.addAll(generateBranch(br, context, isVoid));
-                    endBranch = findNop(br);
-                    if (endBranch == null) {
+                    NoOp innerEndBranch = findNop(br);
+                    if (innerEndBranch == null) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        next = innerEndBranch.getChildren().get(0);
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
+                    endBranch = (NoOp) next;
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;

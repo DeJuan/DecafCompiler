@@ -33,7 +33,7 @@ public class NotExpr extends Expression {
 			break;
 		case BOOL_LIT:
 			BoolLit truthValue = (BoolLit)expr;
-			this.value = !truthValue.getValue();
+			this.value = !truthValue.getTruthValue();
 			this.express = truthValue;
 			break;
 		case NOT:
