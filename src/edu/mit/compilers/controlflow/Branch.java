@@ -44,7 +44,7 @@ public class Branch extends FlowNode {
 	 * about the branch, which is its condition and type.
 	 * @param expression : Expression representing the branch condition (i.e. if X >= 5 would 
 	 * have X >= 5 as the expression.
-	 * @param type : BrancType representing what type of branch this is (if, for, or while).
+	 * @param type : BranchType representing what type of branch this is (if, for, or while).
 	 */
 	public Branch(Expression expression, BranchType type) {
 		this.expr = expression;
@@ -156,10 +156,29 @@ public class Branch extends FlowNode {
 	}
 	
 	/**
+	 * Reset the visited flag of this FlowNode and its children.
+	 * 
+	 * Note: It will only reset the child if the child has been visited,
+	 * meaning that resetVisit will successfully reset all visited nodes
+	 * assuming that all traversals started from the ROOT.
+	 */
+	@Override
+	public void resetVisit() {
+		visited = false;
+		if (children.size() > 0) {
+			for (FlowNode child : children) {
+				if (child.visited())
+					child.resetVisit();
+			}
+		}
+	}
+	
+	/**
 	 * Returns whether or not this FlowNode has been traversed already.
 	 */
 	@Override
 	public boolean visited() {
 		return visited;
 	}
+	
 }

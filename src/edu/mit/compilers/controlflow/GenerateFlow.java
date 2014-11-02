@@ -44,6 +44,7 @@ public class GenerateFlow {
 				// global field declaration
 				IR_FieldDecl decl = (IR_FieldDecl) node;
 				Descriptor d = new Descriptor(decl);
+				d.setLocation(new LocLabel(decl.getName()));
 				context.putSymbol(decl.getName(), d);
 				globals.add(node);
 			} else {
@@ -62,6 +63,7 @@ public class GenerateFlow {
 		List<IR_FieldDecl> args = decl.args;
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(decl.name, d);
+		context.enterFun();
 		context.incScope();
 		
 		for (int i = 0; i < args.size(); i++) {
@@ -70,7 +72,7 @@ public class GenerateFlow {
 			context.putSymbol(a.getName(), argd);
 		}
 		
-		START start = new START(args);
+		START start = new START(args, decl.getRetType());
 		FlowNode returnNode = generateFlow(start, decl.body, context);
 		if (!(returnNode instanceof END) && (returnNode != null)) {
 			// No specified return value --> return void
@@ -261,7 +263,32 @@ public class GenerateFlow {
 	 * condition returns false).
 	 */
 	public static FlowNode generateWhile(FlowNode prevNode, IR_While whileNode, ControlflowContext context) {
-		// First initialize Branch object with the condition expression.
+		// It's probably easier to implement MaxLoops in codegen rather than here.
+		/*
+		IR_Node condExpr;
+		if (whileNode.getMaxLoops() != null) {
+			// Generate loop counter variable to count loops.
+			Descriptor loopDescriptor = context.findSymbol("while");
+			IR_Var loopVar = new IR_Var(Type.INT, "while", null);
+			if (loopDescriptor == null) {
+				// we need to first declare the loop counter variable
+				IR_FieldDecl loopCounter = new IR_FieldDecl(Type.INT, "while");
+				
+				Declaration loop = generateFieldDecl(loopCounter, context);
+			} else {
+				loopDescriptor.getIR();
+			}
+			IR_Assign assign = new IR_Assign(loopVar, new IR_IntLiteral(0L), Ops.ASSIGN);
+			Statement assignNode = generateStatement(assign, context);
+			
+			IR_CompareOp checkMaxLoops = new IR_CompareOp(loopVar, whileNode.getMaxLoops(),Ops.LT);
+			condExpr = new IR_CondOp(whileNode.getExpr(), checkMaxLoops, Ops.AND);
+		} else {
+			condExpr = whileNode.getExpr();
+		}
+		*/
+		
+		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(whileNode.getExpr(), context);
 		Branch whileBranch = new Branch(expr, BranchType.WHILE);
 		context.enterLoop(whileBranch);
@@ -302,44 +329,63 @@ public class GenerateFlow {
 			IR_Call callNode = (IR_Call) node;
 			expr = generateMethodCall(callNode, context);
 		}
-		// Why did we reduce the detail of the binary ops? I think we should still differentiate b/w them.
 		else if (node instanceof IR_ArithOp) {
 			IR_ArithOp arith = (IR_ArithOp) node;
-			expr = new BinExpr(generateExpr(arith.getLeft(), context), arith.getOp(), 
-					generateExpr(arith.getRight(), context));
+			Ops op = arith.getOp();
+			Expression left = generateExpr(arith.getLeft(), context);
+			Expression right = generateExpr(arith.getRight(), context);
+			switch (op) {
+				case PLUS:
+				case MINUS:
+					expr = new AddExpr(left, op, right);
+					break;
+				case TIMES:
+					expr = new MultExpr(left, op, right);
+					break;
+				case DIVIDE:
+					expr = new DivExpr(left, op, right);
+					break;
+				case MOD:
+					expr = new ModExpr(left, op, right);
+					break;
+				default:
+					System.err.println("Should not reach here!");
+					break;		
+			}
 		} 
 		else if (node instanceof IR_CompareOp) {
 			IR_CompareOp compare = (IR_CompareOp) node;
-			expr = new BinExpr(generateExpr(compare.getLeft(), context), compare.getOp(), 
+			expr = new CompExpr(generateExpr(compare.getLeft(), context), compare.getOp(), 
 					generateExpr(compare.getRight(), context));
 		} 
 		else if (node instanceof IR_CondOp) {
 			IR_CondOp cond = (IR_CondOp) node;
-			expr = new BinExpr(generateExpr(cond.getLeft(), context), cond.getOp(), 
+			expr = new CondExpr(generateExpr(cond.getLeft(), context), cond.getOp(), 
 					generateExpr(cond.getRight(), context));
 		}
 		else if (node instanceof IR_EqOp){
-			IR_EqOp eq = (IR_EqOp) node; //There's no real difference between CondOp and EqOp except operators
-			expr = new BinExpr(generateExpr(eq.getLeft(), context), eq.getOp(), 
+			IR_EqOp eq = (IR_EqOp) node;
+			expr = new EqExpr(generateExpr(eq.getLeft(), context), eq.getOp(), 
 					generateExpr(eq.getRight(), context));
 		}
 		else if (node instanceof IR_Negate) {
-			// TODO: Implement
 			IR_Negate negation = (IR_Negate) node;
-			Expression negExpr = generateExpr(negation.getExpr(), context);
+			expr = new NegateExpr(generateExpr(negation.getExpr(), context));
 		}
 		else if (node instanceof IR_Not) {
-			// TODO: Implement
 			IR_Not not = (IR_Not) node;
+			expr = new NotExpr(generateExpr(not.getExpr(), context));
 		}
 		else if (node instanceof IR_Ternary) {
-			// TODO: Implement
 			IR_Ternary ternary = (IR_Ternary) node;
+			expr = new Ternary(generateExpr(ternary.getCondition(), context), 
+					generateExpr(ternary.getTrueExpr(), context), 
+					generateExpr(ternary.getFalseExpr(), context));
 		}
 		else if (node instanceof IR_Var) {
 			IR_Var var = (IR_Var) node;
 			Descriptor d = context.findSymbol(var.getName());
-			expr = new Var(d);
+			expr = new Var(d, generateExpr(var.getIndex(), context));
 		}
 		else if (node instanceof IR_Literal) {
 			IR_Literal literal = (IR_Literal) node;
@@ -348,8 +394,7 @@ public class GenerateFlow {
 			else if (literal instanceof IR_IntLiteral)
 				expr = new IntLit(((IR_IntLiteral) literal).getValue());
 			else if (literal instanceof IR_StringLiteral)
-				// TODO: Implement string literals
-				;
+				expr = new StringLit(((IR_StringLiteral) literal).getValue());
 		}
 		else {
 			System.err.println("Unexpected Node type passed to generateExpr: " + node.getClass().getSimpleName());
@@ -360,9 +405,9 @@ public class GenerateFlow {
 	
 	/**
 	 * Generate statement for FieldDecl, Assignment, and MethodCall.
-	 * @param node : IR Node representing a statement
-	 * @param context : ControlflowContext object
-	 * @return Statement object for control flow
+	 * @param node : IR Node representing a statement.
+	 * @param context : ControlflowContext object.
+	 * @return Statement object for control flow.
 	 */
 	public static Statement generateStatement(IR_Node node, ControlflowContext context) {
 		if (node == null)
@@ -370,14 +415,12 @@ public class GenerateFlow {
 		Statement st = null;
 		if (node instanceof IR_FieldDecl) {
 			IR_FieldDecl fieldDecl = (IR_FieldDecl) node;
-			Descriptor d = new Descriptor(node);
-			context.putSymbol(fieldDecl.getName(), d);
-			st = new Declaration((IR_FieldDecl) node);
+			st = generateFieldDecl(fieldDecl, context);
 		} 
 		else if (node instanceof IR_Assign) {
 			IR_Assign assignNode = (IR_Assign) node;
 			Descriptor d = context.findSymbol(assignNode.getLhs().getName());
-			Var loc = new Var(d);
+			Var loc = new Var(d, generateExpr(assignNode.getLhs().getIndex(), context));
 			Expression expr = generateExpr(assignNode.getRhs(), context);
 			st = new Assignment(loc, assignNode.getOp(), expr);
 		} 
@@ -386,6 +429,31 @@ public class GenerateFlow {
 			st = new MethodCallStatement(generateMethodCall(callNode, context));
 		}
 		return st;	
+	}
+	
+	/**
+	 * Generate field declaration from IR_Node, updating the descriptor as necessary.
+	 * @param node : IR Node representing a field declaration.
+	 * @param context : ControlflowContext object.
+	 * @return Declaration object representing a field declaration.
+	 */
+	public static Declaration generateFieldDecl(IR_FieldDecl node, ControlflowContext context) {
+		String name = node.getName();
+		Descriptor d = new Descriptor(node);
+		Type type = node.getType();
+		long size = CodegenConst.INT_SIZE;
+		switch (type) {
+			case INTARR:
+			case BOOLARR:
+				size = node.getLength().getValue() * CodegenConst.INT_SIZE;
+				break;
+			default:
+				break;
+		}
+		LocStack loc = context.allocLocal(size);
+		d.setLocation(loc);
+		context.putSymbol(name, d);
+		return new Declaration(node);
 	}
 	
 	/**
