@@ -317,7 +317,7 @@ public class Optimizer {
 		
 		if(lhs instanceof IntLit){
 			IntLit intLit = (IntLit)lhs;
-			plusSet.intSet.add(intLit);
+			plusSet.intSet.add(intLit.getValue());
 		}
 		else if(lhs instanceof AddExpr){
 			AddExpr lhsAdd = (AddExpr)lhs;
@@ -331,12 +331,12 @@ public class Optimizer {
 
 		Expression rhs = adding.getRightSide();
 		if(rhs instanceof Var){
-			Var variaR = (Var) rhs;
-			plusSet.varSet.add((IR_FieldDecl) variaR.getVarDescriptor().getIR());
+			Var varia = (Var) rhs;
+			plusSet.varSet.add(varia.getValueID());
 		}
 		if(rhs instanceof IntLit){
 			IntLit intLit = (IntLit)rhs;
-			plusSet.intSet.add(intLit);
+			plusSet.intSet.add(intLit.getValue());
 		}
 		else if(rhs instanceof AddExpr){
 			AddExpr rhsAdd = (AddExpr)rhs;
@@ -356,11 +356,11 @@ public class Optimizer {
 		Expression lhs = modding.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			modSet.varSet.add(varia.getValueID());
 		}
 		else if(lhs instanceof IntLit){
 			IntLit intL = (IntLit)lhs;
-			modSet.intSet.add(intL);
+			modSet.intSet.add(intL.getValue());
 		}
 		else if(lhs instanceof ModExpr){
 			ModExpr lhsMod = (ModExpr)lhs;
@@ -399,11 +399,11 @@ public class Optimizer {
 		Expression lhs = multing.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			multSet.varSet.add(varia.getValueID());
 		}
 		else if(lhs instanceof IntLit){
 			IntLit intL = (IntLit)lhs;
-			multSet.intSet.add(intL);
+			multSet.intSet.add(intL.getValue());
 		}
 		else if(lhs instanceof MultExpr){
 			MultExpr lhsMult = (MultExpr)lhs;
@@ -418,11 +418,11 @@ public class Optimizer {
 		Expression rhs = multing.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
-			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			multSet.varSet.add(varia.getValueID());
 		}
 		else if(rhs instanceof IntLit){
 			IntLit intR = (IntLit)rhs;
-			multSet.intSet.add(intR);
+			multSet.intSet.add(intR.getValue());
 		}
 		else if(rhs instanceof MultExpr){
 			MultExpr rhsMult = (MultExpr)rhs;
@@ -442,11 +442,11 @@ public class Optimizer {
 		Expression lhs = divide.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			divSet.varSet.add(varia.getValueID());
 		}
 		else if(lhs instanceof IntLit){
 			IntLit intL = (IntLit)lhs;
-			divSet.intSet.add(intL);
+			divSet.intSet.add(intL.getValue());
 		}
 		else if(lhs instanceof DivExpr){
 			DivExpr lhsMult = (DivExpr)lhs;
@@ -461,11 +461,11 @@ public class Optimizer {
 		Expression rhs = divide.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
-			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			divSet.varSet.add(varia.getValueID());
 		}
 		else if(rhs instanceof IntLit){
 			IntLit intR = (IntLit)rhs;
-			divSet.intSet.add(intR);
+			divSet.intSet.add(intR.getValue());
 		}
 		else if(rhs instanceof DivExpr){
 			DivExpr rhsMult = (DivExpr)rhs;
@@ -485,15 +485,15 @@ public class Optimizer {
 		Expression lhs = comparing.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			compSet.varSet.add(varia.getValueID());
 		}
 		else if (lhs instanceof IntLit){
 			IntLit intL = (IntLit)lhs;
-			compSet.intSet.add(intL);
+			compSet.intSet.add(intL.getValue());
 		}
 		else if (lhs instanceof BoolLit){
 			BoolLit intL = (BoolLit)lhs;
-			compSet.boolSet.add(intL);
+			compSet.boolSet.add(intL.getTruthValue());
 		}
 		else if(lhs instanceof CompExpr){
 			CompExpr lhsComp = (CompExpr)lhs;
@@ -508,15 +508,15 @@ public class Optimizer {
 		Expression rhs = comparing.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
-			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			compSet.varSet.add(varia.getValueID());
 		}
 		else if(rhs instanceof IntLit){
 			IntLit intR = (IntLit)rhs;
-			compSet.intSet.add(intR);
+			compSet.intSet.add(intR.getValue());
 		}
 		else if(rhs instanceof BoolLit){
 			BoolLit intR = (BoolLit)rhs;
-			compSet.boolSet.add(intR);
+			compSet.boolSet.add(intR.getTruthValue());
 		}
 		else if(rhs instanceof CompExpr){
 			CompExpr rhsComp = (CompExpr)rhs;
@@ -539,11 +539,11 @@ public class Optimizer {
 		Expression lhs = conditional.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			condSet.varSet.add(varia.getValueID());
 		}
 		else if(lhs instanceof BoolLit){
 			BoolLit intL = (BoolLit)lhs;
-			condSet.boolSet.add(intL);
+			condSet.boolSet.add(intL.getTruthValue());
 		}
 		else if(lhs instanceof CondExpr){
 			CondExpr lhsCond = (CondExpr)lhs;
@@ -558,11 +558,11 @@ public class Optimizer {
 		Expression rhs = conditional.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
-			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			condSet.varSet.add(varia.getValueID());
 		}
 		else if(rhs instanceof BoolLit){
 			BoolLit intR = (BoolLit)rhs;
-			condSet.boolSet.add(intR);
+			condSet.boolSet.add(intR.getTruthValue());
 		}
 		else if(rhs instanceof CondExpr){
 			CondExpr rhsCond = (CondExpr)rhs;
