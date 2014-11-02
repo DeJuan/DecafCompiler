@@ -7,6 +7,7 @@ import edu.mit.compilers.ir.Ops;
 
 public class EqExpr extends BinExpr {
 	private List<Ops> opChecker = new ArrayList<Ops>();
+	public Ops operator;
 	
 	public EqExpr(Expression lhs, Ops op, Expression rhs) {
 		super(lhs, op, rhs);
@@ -15,6 +16,7 @@ public class EqExpr extends BinExpr {
 		if (!opChecker.contains(op)){
 			throw new UnsupportedOperationException("You initialized a EqExpr without a comparison operator.");
 		}
+		this.operator = op;
 	}
 
 	@Override
