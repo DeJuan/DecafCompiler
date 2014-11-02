@@ -491,7 +491,7 @@ public class Optimizer {
 		}
 		else if (lhs instanceof BoolLit){
 			BoolLit intL = (BoolLit)lhs;
-			compSet.boolSet.add(intL.getValue());
+			compSet.boolSet.add(intL.getTruthValue());
 		}
 		else if(lhs instanceof CompExpr){
 			CompExpr lhsComp = (CompExpr)lhs;
@@ -514,7 +514,7 @@ public class Optimizer {
 		}
 		else if(rhs instanceof BoolLit){
 			BoolLit intR = (BoolLit)rhs;
-			compSet.boolSet.add(intR.getValue());
+			compSet.boolSet.add(intR.getTruthValue());
 		}
 		else if(rhs instanceof CompExpr){
 			CompExpr rhsComp = (CompExpr)rhs;
@@ -541,7 +541,7 @@ public class Optimizer {
 		}
 		else if(lhs instanceof BoolLit){
 			BoolLit intL = (BoolLit)lhs;
-			condSet.boolSet.add(intL.getValue());
+			condSet.boolSet.add(intL.getTruthValue());
 		}
 		else if(lhs instanceof CondExpr){
 			CondExpr lhsCond = (CondExpr)lhs;
@@ -560,7 +560,7 @@ public class Optimizer {
 		}
 		else if(rhs instanceof BoolLit){
 			BoolLit intR = (BoolLit)rhs;
-			condSet.boolSet.add(intR.getValue());
+			condSet.boolSet.add(intR.getTruthValue());
 		}
 		else if(rhs instanceof CondExpr){
 			CondExpr rhsCond = (CondExpr)rhs;

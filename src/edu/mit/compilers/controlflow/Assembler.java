@@ -39,10 +39,10 @@ public class Assembler {
         while (processing.size() > 0) {
             FlowNode next = processing.remove(0);
             for (FlowNode child : next.getChildren()) {
-                seen.add(child);
                 if (!seen.contains(child)) {
                     processing.add(child);
                 }
+                seen.add(child);
             }
             next.setLabel(context.genLabel());
         }
@@ -128,7 +128,7 @@ public class Assembler {
             }
             context.allocLocal(CodegenConst.INT_SIZE);
             LocLiteral sizeLoc= new LocLiteral(CodegenConst.INT_SIZE);
-            context.addIns(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
+            argIns.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
             argd.setLocation(argDst);
         }
         context.addIns(argIns);
@@ -191,6 +191,7 @@ public class Assembler {
 
     private static List<Instruction> generateBlock(Codeblock begin, ControlflowContext context, boolean isVoid) {
         List<Instruction> ins = new ArrayList<Instruction>();
+        ins.add(Instruction.labelInstruction(begin.getLabel()));
         for (Statement stat : begin.getStatements()) {
             ins.addAll(generateStatement(stat, context));
         }
@@ -218,6 +219,7 @@ public class Assembler {
             boolean done = false;
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
+            NoOp endBranch = null;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -227,7 +229,7 @@ public class Assembler {
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
                     ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
+                    endBranch = findNop(br);
                     if (endBranch == null) {
                         done = true;
                     } else {
@@ -254,11 +256,16 @@ public class Assembler {
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
                     ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
-                    if (endBranch == null) {
+                    NoOp tempEndBranch = findNop(br);
+                    if (tempEndBranch == null) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        if (endBranch != null) {
+                            if (tempEndBranch != null && tempEndBranch != endBranch) {
+                                throw new RuntimeException("Something has gone HORRIBLY wrong");
+                            }
+                        }
+                        next = tempEndBranch.getChildren().get(0);
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
@@ -268,6 +275,10 @@ public class Assembler {
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
+            }
+            if (endBranch != null) {
+                ins.add(Instruction.labelInstruction(endBranch.getLabel()));
+                ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
             ins.add(context.decScope());
             
@@ -400,6 +411,7 @@ public class Assembler {
                 done = true;
             } else if (next instanceof NoOp) {
                 target = (NoOp) next;
+                done = true;
             } else {
                 throw new RuntimeException("Something has gone horribly wrong in findNop");
             }
@@ -424,6 +436,7 @@ public class Assembler {
                 done = true;
             } else if (next instanceof NoOp) {
                 target = (NoOp) next;
+                done = true;
             } else {
                 throw new RuntimeException("Something has gone horribly wrong in findNop");
             }
@@ -501,7 +514,7 @@ public class Assembler {
         } 
         else if (expr instanceof BoolLit) {
             BoolLit bool_literal = (BoolLit) expr;
-            if (bool_literal.getValue()) {
+            if (bool_literal.getTruthValue()) {
                 ins = context.push(new LocLiteral(CodegenConst.BOOL_TRUE));
             } else {
                 ins = context.push(new LocLiteral(CodegenConst.BOOL_FALSE));
