@@ -6,13 +6,13 @@ import java.util.List;
 import edu.mit.compilers.ir.Ops;
 
 public class SPSet {
-    private List<SPSet> SPSets;
-    private List<ValueID> varSet;
-    private List<Long> intSet;
-    private List<Boolean> boolSet;
-    private List<SPTern> ternSet;
-    private List<SPComp> comparisons;
-    private List<MethodCall> methodCalls; 
+    List<SPSet> SPSets;
+    List<ValueID> varSet;
+    List<Long> intSet;
+    List<Boolean> boolSet;
+    List<SPTern> ternSet;
+    List<SPComp> comparisons;
+    List<MethodCall> methodCalls; 
     public Ops operator;
 
     public SPSet(Ops op){

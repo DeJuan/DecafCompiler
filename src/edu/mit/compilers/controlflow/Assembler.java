@@ -136,7 +136,7 @@ public class Assembler {
         FlowNode next = decl.getValue().getChildren().get(0);
         boolean isVoid = decl.getValue().getRetType() == Type.VOID;
         boolean done = next == null;
-        List<Instruction> blockIns = generateNode(next, context, isVoid);
+        List<Instruction> blockIns = new ArrayList<Instruction>();
         while (!done) {
             if (next instanceof Codeblock) {
                 Codeblock blk = (Codeblock) next;
@@ -291,13 +291,17 @@ public class Assembler {
                     done = blk.getIsBreak();
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
-                    Branch br = (Branch) next;
-                    ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
-                    if (endBranch == null) {
+                    if (next == begin) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        Branch br = (Branch) next;
+                        ins.addAll(generateBranch(br, context, isVoid));
+                        NoOp endBranch = findNop(br);
+                        if (endBranch == null) {
+                            done = true;
+                        } else {
+                            next = endBranch.getChildren().get(0);
+                        }
                     }
                 } else if (next instanceof NoOp) {
                     throw new RuntimeException("no NoOps in fors");
@@ -332,13 +336,17 @@ public class Assembler {
                     done = blk.getIsBreak();
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
-                    Branch br = (Branch) next;
-                    ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
-                    if (endBranch == null) {
+                    if (next == begin) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        Branch br = (Branch) next;
+                        ins.addAll(generateBranch(br, context, isVoid));
+                        NoOp endBranch = findNop(br);
+                        if (endBranch == null) {
+                            done = true;
+                        } else {
+                            next = endBranch.getChildren().get(0);
+                        }
                     }
                 } else if (next instanceof NoOp) {
                     throw new RuntimeException("no NoOps in whiles");
