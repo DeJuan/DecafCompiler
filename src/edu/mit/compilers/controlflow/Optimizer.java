@@ -3,7 +3,6 @@ package edu.mit.compilers.controlflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Set;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
-import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Ops;
 
 /**

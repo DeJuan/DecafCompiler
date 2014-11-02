@@ -230,6 +230,16 @@ public class SPSet {
                     return true;
                 }
             }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
+                    return true;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(expr) || comp.getRhs().contains(expr)) {
+                    return true;
+                }
+            }
             return false;
         } else {
             // Expression is commutative
@@ -245,6 +255,35 @@ public class SPSet {
             else if(expr instanceof BinExpr){
                 BinExpr binex = (BinExpr)expr;
                 Ops searchOp = binex.getOperator();
+                if (operator == searchOp) {
+                    boolean hasLeftSide = false;
+                    if (binex.getLeftSide() instanceof Var) {
+                        hasLeftSide = varSet.contains(((Var) binex.getLeftSide()).getValueID());
+                    } else if (binex.getLeftSide() instanceof Ternary) {
+                        hasLeftSide = ternSet.contains(new SPTern((Ternary) binex.getLeftSide()));
+                    } else if (binex.getLeftSide() instanceof CompExpr) {
+                        hasLeftSide = comparisons.contains(new SPComp((CompExpr) binex.getLeftSide()));
+                    } else {
+                        hasLeftSide = SPSets.contains(new SPSet(binex.getLeftSide()));
+                    }
+                    if (hasLeftSide) {
+                        SPSet copy = copy(this);
+                        copy.remove(binex.getLeftSide());
+                        boolean hasRightSide;
+                        if (binex.getRightSide() instanceof Var) {
+                            hasRightSide = varSet.contains(((Var) binex.getRightSide()).getValueID());
+                        } else if (binex.getRightSide() instanceof Ternary) {
+                            hasRightSide = ternSet.contains(new SPTern((Ternary) binex.getRightSide()));
+                        } else if (binex.getRightSide() instanceof CompExpr) {
+                            hasRightSide = comparisons.contains(new SPComp((CompExpr) binex.getRightSide()));
+                        } else {
+                            hasRightSide = SPSets.contains(new SPSet(binex.getRightSide()));
+                        }
+                        if (hasRightSide) {
+                            return true;
+                        }
+                    }
+                }
                 for (SPSet currentSP : SPSets){
                     if (currentSP.operator == searchOp){
                         if (currentSP.contains(binex.getLeftSide())) {
@@ -256,6 +295,7 @@ public class SPSet {
                         }
                     }
                 }
+                
                 for (SPTern tern : ternSet) {
                     if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
                         return true;
@@ -269,6 +309,28 @@ public class SPSet {
                 return false;
             }
             else if(expr instanceof NotExpr || expr instanceof NegateExpr){
+                if ((operator == Ops.NOT && expr instanceof NotExpr) || (operator == Ops.NEGATE && expr instanceof NegateExpr)) {
+                    Expression inner;
+                    if (expr instanceof NotExpr) {
+                        inner = ((NotExpr) expr).getUnresolvedExpression();
+                    } else {
+                        inner = ((NegateExpr) expr).getExpression();
+                    }
+                    boolean found;
+                    if (inner instanceof Var) {
+                        found = varSet.contains(((Var) inner).getValueID());
+                    } else if (inner instanceof Ternary) {
+                        found = ternSet.contains(new SPTern((Ternary) inner));
+                    } else if (inner instanceof CompExpr) {
+                        found = comparisons.contains(new SPComp((CompExpr) inner));
+                    } else {
+                        found = SPSets.contains(new SPSet(inner));
+                    }
+                    if (found) {
+                        return true;
+                    }
+                    
+                }
                 if (SPSets.contains(new SPSet(expr))) {
                     return true;
                 }
@@ -378,15 +440,72 @@ public class SPSet {
             Ops searchOp = binex.getOperator();
             boolean found = false;
             if (operator == searchOp) {
-                for (SPSet currentSP : SPSets) {
-                    if (currentSP.contains(binex.getLeftSide())) {
-                        SPSet copy = copy(currentSP);
-                        copy.remove(binex.getLeftSide());
-                        if (copy.contains(binex.getRightSide())) {
-                            currentSP.remove(binex.getLeftSide());
-                            currentSP.remove(binex.getLeftSide());
-                            found = true;
+                int leftLoc;
+                boolean hasLeftSide = false;
+                if (binex.getLeftSide() instanceof Var) {
+                    hasLeftSide = varSet.contains(((Var) binex.getLeftSide()).getValueID());
+                    leftLoc = 1;
+                } else if (binex.getLeftSide() instanceof Ternary) {
+                    hasLeftSide = ternSet.contains(new SPTern((Ternary) binex.getLeftSide()));
+                    leftLoc = 2;
+                } else if (binex.getLeftSide() instanceof CompExpr) {
+                    hasLeftSide = comparisons.contains(new SPComp((CompExpr) binex.getLeftSide()));
+                    leftLoc = 3;
+                } else {
+                    hasLeftSide = SPSets.contains(new SPSet(binex.getLeftSide()));
+                    leftLoc = 4;
+                }
+                if (hasLeftSide) {
+                    SPSet copy = copy(this);
+                    copy.remove(binex.getLeftSide());
+                    int rightLoc;
+                    boolean hasRightSide;
+                    if (binex.getRightSide() instanceof Var) {
+                        hasRightSide = varSet.contains(((Var) binex.getRightSide()).getValueID());
+                        rightLoc = 1;
+                    } else if (binex.getRightSide() instanceof Ternary) {
+                        hasRightSide = ternSet.contains(new SPTern((Ternary) binex.getRightSide()));
+                        rightLoc = 2;
+                    } else if (binex.getRightSide() instanceof CompExpr) {
+                        hasRightSide = comparisons.contains(new SPComp((CompExpr) binex.getRightSide()));
+                        rightLoc = 3;
+                    } else {
+                        hasRightSide = SPSets.contains(new SPSet(binex.getRightSide()));
+                        rightLoc = 4;
+                    }
+                    if (hasRightSide) {
+                        found = true;
+                        switch(leftLoc) {
+                        case 1:
+                            varSet.remove(((Var) binex.getLeftSide()).getValueID());
                             break;
+                        case 2:
+                            ternSet.remove(new SPTern((Ternary) binex.getLeftSide()));
+                            break;
+                        case 3:
+                            comparisons.remove(new SPComp((CompExpr) binex.getLeftSide()));
+                            break;
+                        case 4:
+                            SPSets.remove(new SPSet(binex.getLeftSide()));
+                            break;
+                        default:
+                            throw new RuntimeException("this line should be unreachable");
+                        }
+                        switch(rightLoc) {
+                        case 1:
+                            varSet.remove(((Var) binex.getRightSide()).getValueID());
+                            break;
+                        case 2:
+                            ternSet.remove(new SPTern((Ternary) binex.getRightSide()));
+                            break;
+                        case 3:
+                            comparisons.remove(new SPComp((CompExpr) binex.getRightSide()));
+                            break;
+                        case 4:
+                            SPSets.remove(new SPSet(binex.getRightSide()));
+                            break;
+                        default:
+                            throw new RuntimeException("this line should be unreachable");
                         }
                     }
                 }
@@ -440,6 +559,47 @@ public class SPSet {
                 }
             }
         } else if(expr instanceof NotExpr || expr instanceof NegateExpr){
+            if ((operator == Ops.NOT && expr instanceof NotExpr) || (operator == Ops.NEGATE && expr instanceof NegateExpr)) {
+                Expression inner;
+                if (expr instanceof NotExpr) {
+                    inner = ((NotExpr) expr).getUnresolvedExpression();
+                } else {
+                    inner = ((NegateExpr) expr).getExpression();
+                }
+                boolean found;
+                int loc;
+                if (inner instanceof Var) {
+                    found = varSet.contains(((Var) inner).getValueID());
+                    loc = 1;
+                } else if (inner instanceof Ternary) {
+                    found = ternSet.contains(new SPTern((Ternary) inner));
+                    loc = 2;
+                } else if (inner instanceof CompExpr) {
+                    found = comparisons.contains(new SPComp((CompExpr) inner));
+                    loc = 3;
+                } else {
+                    found = SPSets.contains(new SPSet(inner));
+                    loc = 4;
+                }
+                if (found) {
+                    switch(loc) {
+                    case 1:
+                        varSet.remove(((Var) inner).getValueID());
+                        break;
+                    case 2:
+                        ternSet.remove(new SPTern((Ternary) inner));
+                        break;
+                    case 3:
+                        comparisons.remove(new SPComp((CompExpr) inner));
+                        break;
+                    case 4:
+                        SPSets.remove(new SPSet(inner));
+                        break;
+                    default:
+                        throw new RuntimeException("this line should be unreachable");
+                    }
+                }
+            }
             if (SPSets.contains(new SPSet(expr))) {
                 SPSets.remove(new SPSet(expr));
                 return;
