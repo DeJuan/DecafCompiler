@@ -1,8 +1,5 @@
 package edu.mit.compilers.controlflow;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import edu.mit.compilers.ir.Ops;
 
 public class CondExpr extends BinExpr {

@@ -12,16 +12,18 @@ public class Var extends Expression {
 	private Descriptor var;
 	private String name;
 	private Expression index;
+	private ValueID val;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
 	 * @param variable
+	 * @param index : the index into an array, or null if int/bool
 	 */
-	public Var(Descriptor variable, Expression index){
-		this.var = variable;
-		IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
-		this.name = ir.getName();
-		this.index = index;
+	public Var(Descriptor variable, Expression index) {
+	    this.var = variable;
+	    IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+	    this.name = ir.getName();
+	    this.index = index;
 	}
 	
 	@Override
@@ -40,20 +42,28 @@ public class Var extends Expression {
 	public Descriptor getVarDescriptor(){
 		return var;
 	}
-
+	
 	/**
-	 * Allows you to set a new descriptor in case an optimization changes what a variable's descriptor should be. 
-	 * @param newVar : The new descriptor for the variable this object represents. 
+	 * Gets the index into an array
+	 * @return Expression: index into the array, or null if an int/bool
 	 */
-	public void setNewDescriptor(Descriptor newVar){
-		this.var = newVar;
+	public Expression getIndex() {
+	    return index;
 	}
 	
+	public void setValueID(ValueID val){
+	    this.val = val;
+	}
+	
+	public ValueID getValueID() {
+	    return val;
+	}
+	
+	/**
+	 * Returns the name of the variable
+	 * @return String: the name of the variable
+	 */
 	public String getName(){
-		return name;
-	}
-	
-	public Expression getIndex(){
-		return index;
+	    return name;
 	}
 }

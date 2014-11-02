@@ -13,8 +13,6 @@ public class CompExpr extends BinExpr {
 		super(lhs, op, rhs);
 		opChecker.add(Ops.GT);
 		opChecker.add(Ops.GTE);
-		opChecker.add(Ops.EQUALS);
-		opChecker.add(Ops.NOT_EQUALS);
 		opChecker.add(Ops.LT);
 		opChecker.add(Ops.LTE);
 		if (!opChecker.contains(op)){

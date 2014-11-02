@@ -142,7 +142,6 @@ public class Codegen {
 		d.setLocation(loc);
 		context.putSymbol(name, d);
 		if(type == Type.INTARR || type == Type.BOOLARR){
-			long location = loc.offset;
 			LocLiteral lenLoc = new LocLiteral(size/8);
 			//loop variable
 			LocReg rax = new LocReg(Regs.RAX);

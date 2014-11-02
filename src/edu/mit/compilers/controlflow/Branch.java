@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -13,9 +14,10 @@ public class Branch extends FlowNode {
 	private FlowNode trueBranch;
 	private FlowNode falseBranch;
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
-	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private BranchType type;
 	private boolean visited = false;
+	private String label;
+	private boolean isLimitedWhile;
 	
 	public enum BranchType {
 		IF, FOR, WHILE
@@ -34,8 +36,6 @@ public class Branch extends FlowNode {
 		this.trueBranch = ifTrue;
 		this.falseBranch = ifFalse;
 		this.parents = parentList;
-		this.children.add(trueBranch);
-		this.children.add(falseBranch);
 		this.expr = express;
 	}
 	
@@ -84,15 +84,16 @@ public class Branch extends FlowNode {
 	 *  @return children : List<FlowNode> that combines the true and false branches.
 	 */
 	public List<FlowNode> getChildren() {
-		return children;
+		return new ArrayList<FlowNode>(Arrays.asList(trueBranch, falseBranch));
 	}
 	
 	/**
 	 * Adder method that allows you to add a new child to the child list.
+	 * Not allowed for branches
 	 * @param newChild : FlowNode that will be appended to the child list.  
 	 */
 	public void addChild(FlowNode newChild){
-		children.add(newChild);
+		throw new UnsupportedOperationException("Lo, the Branch shall have exactly two children, the true and the false");
 	}
 	
 	/**
@@ -109,7 +110,6 @@ public class Branch extends FlowNode {
 	 */
 	public void setTrueBranch(FlowNode newTrueBranch){
 		trueBranch = newTrueBranch;	
-		children.add(newTrueBranch);
 	}
 	
 	/**
@@ -126,7 +126,6 @@ public class Branch extends FlowNode {
 	 */
 	public void setFalseBranch(FlowNode newFalseBranch){
 		falseBranch = newFalseBranch;
-		children.add(newFalseBranch);
 	}
 	
 	/**
@@ -147,6 +146,14 @@ public class Branch extends FlowNode {
 		expr = newExpression;
 	}
 	
+	public void setIsLimitedWhile(boolean val){
+	    isLimitedWhile = val;
+	}
+	
+	public boolean getIsLimitedWhile() {
+	    return isLimitedWhile;
+	}
+	
 	/**
 	 * Traverse this FlowNode and mark visited as true.
 	 */
@@ -165,11 +172,11 @@ public class Branch extends FlowNode {
 	@Override
 	public void resetVisit() {
 		visited = false;
-		if (children.size() > 0) {
-			for (FlowNode child : children) {
-				if (child.visited())
-					child.resetVisit();
-			}
+		if (trueBranch != null) {
+			trueBranch.resetVisit();
+		}
+		if (falseBranch != null) {
+		    falseBranch.resetVisit();
 		}
 	}
 	
@@ -180,5 +187,19 @@ public class Branch extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+
+    @Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // TODO Enforce called once
+        this.label = label;
+    }
 	
 }

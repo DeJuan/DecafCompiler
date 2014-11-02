@@ -13,6 +13,7 @@ public class NoOp extends FlowNode {
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private boolean visited = false;
+	private String label;
 	
 	public NoOp(){}
 
@@ -79,5 +80,19 @@ public class NoOp extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+	
+	@Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // Enforce called once?
+        this.label = label;
+    }
 
 }

@@ -11,15 +11,18 @@ public class MethodCall extends Expression {
 
 	private String name;
 	private List<Expression> args;
+	private boolean isCallout;
 	
 	/**
 	 * This constructor takes in the name of the method and the arguments that will be passed to it.
 	 * @param methodName : String representing name of method being invoked
 	 * @param arguments : List<Expression> representing args that will be passed to the method
+	 * @param isCallout : true if and only if the method being called is a callout
 	 */
-	public MethodCall(String methodName, List<Expression> arguments){
+	public MethodCall(String methodName, List<Expression> arguments, boolean isCallout){
 		this.name = methodName;
 		this.args = arguments;
+		this.isCallout = isCallout;
 	}
 	
 	@Override
@@ -37,6 +40,10 @@ public class MethodCall extends Expression {
 	 */
 	public String getMethodName(){
 		return name;
+	}
+	
+	public boolean getIsCallout(){
+	    return isCallout;
 	}
 	
 	/**

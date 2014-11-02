@@ -1,7 +1,8 @@
 package edu.mit.compilers.controlflow;
 
 public class ValueID {
-	static int nextID = 0;
+    
+    static int nextID = 0;
     private final String ID;
     
     public ValueID(){
@@ -12,3 +13,4 @@ public class ValueID {
         return ID;
     }
 }
+

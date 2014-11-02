@@ -17,6 +17,7 @@ public class START extends FlowNode {
 	private List<IR_FieldDecl> arguments = new ArrayList<IR_FieldDecl>();
 	private Type retType;
 	private boolean visited = false;
+	private String label;
 	
 	/**
 	 * This constructor assumes you want a blank start that will be updated later. 
@@ -111,5 +112,19 @@ public class START extends FlowNode {
 	public boolean visited() {
 		return visited;
 	}
+	
+	@Override
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * SHOULD ONLY BE CALLED ONCE
+     */
+    @Override
+    public void setLabel(String label) {
+        // Enforce called once?
+        this.label = label;
+    }
 	
 }

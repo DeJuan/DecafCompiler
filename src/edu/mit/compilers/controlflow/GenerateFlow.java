@@ -1,13 +1,40 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import edu.mit.compilers.codegen.*;
+import edu.mit.compilers.codegen.CodegenConst;
+import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocLabel;
+import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.controlflow.Branch.BranchType;
-import edu.mit.compilers.ir.*;
-import edu.mit.compilers.ir.IR_Literal.*;
+import edu.mit.compilers.ir.IR_ArithOp;
+import edu.mit.compilers.ir.IR_Assign;
+import edu.mit.compilers.ir.IR_Break;
+import edu.mit.compilers.ir.IR_Call;
+import edu.mit.compilers.ir.IR_CompareOp;
+import edu.mit.compilers.ir.IR_CondOp;
+import edu.mit.compilers.ir.IR_Continue;
+import edu.mit.compilers.ir.IR_EqOp;
+import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_For;
+import edu.mit.compilers.ir.IR_If;
+import edu.mit.compilers.ir.IR_Literal;
+import edu.mit.compilers.ir.IR_Literal.IR_BoolLiteral;
+import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
+import edu.mit.compilers.ir.IR_Literal.IR_StringLiteral;
+import edu.mit.compilers.ir.IR_MethodDecl;
+import edu.mit.compilers.ir.IR_Negate;
+import edu.mit.compilers.ir.IR_Node;
+import edu.mit.compilers.ir.IR_Not;
+import edu.mit.compilers.ir.IR_Return;
+import edu.mit.compilers.ir.IR_Seq;
+import edu.mit.compilers.ir.IR_Ternary;
+import edu.mit.compilers.ir.IR_Var;
+import edu.mit.compilers.ir.IR_While;
+import edu.mit.compilers.ir.Ops;
+import edu.mit.compilers.ir.Type;
 
 /**
  * Class that is responsible for the conversion of high-level IR to low-level IR.
@@ -27,7 +54,8 @@ public class GenerateFlow {
 	 * @param flowNodes : HashMap of method names to FlowNodes
 	 */
 	public static void generateProgram(IR_Node root, ControlflowContext context, 
-			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes) {
+		List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> flowNodes) {
+
 		IR_Seq seq = (IR_Seq) root;
 		List<IR_Node> statements = seq.getStatements();
 		for (int i = 0; i < statements.size(); i++) {
@@ -79,6 +107,11 @@ public class GenerateFlow {
 			END end = new END();
 			returnNode.addChild(end);
 			end.addParent(returnNode);
+		} else if (decl.body.getStatements().size() == 0) {
+		    // method has an empty body
+		    END end = new END();
+		    start.addChild(end);
+		    end.addParent(start);
 		}
 		context.decScope();
 		return start;	
@@ -121,6 +154,7 @@ public class GenerateFlow {
 				// innermost for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br.getFalseBranch());
+				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
 			else if (st instanceof IR_Continue) {
@@ -128,6 +162,7 @@ public class GenerateFlow {
 				// for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br);
+				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
 			else if (st instanceof IR_Return) {
@@ -180,12 +215,32 @@ public class GenerateFlow {
 		START beginFalseBranch = new START();
 		ifBranch.setFalseBranch(beginFalseBranch);
 		beginFalseBranch.addParent(ifBranch);
+		NoOp exitIf = new NoOp();
 		
-		FlowNode endTrueBranch = generateFlow(beginTrueBranch, ifNode.getTrueBlock(), context);
-		FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
+		if (ifNode.getTrueBlock().getStatements().size() == 0) {
+		    beginTrueBranch.addChild(exitIf);
+		    exitIf.addParent(beginTrueBranch);
+		} else {
+		    FlowNode endTrueBranch = generateFlow(beginTrueBranch, ifNode.getTrueBlock(), context);
+		    if (endTrueBranch != null && !(endTrueBranch instanceof END)) {
+	            exitIf.addParent(endTrueBranch);
+	            endTrueBranch.addChild(exitIf);
+	        }
+		}
 		
-		if ((endTrueBranch == null || endTrueBranch instanceof END) && 
-				(endFalseBranch == null || endFalseBranch instanceof END))
+		if (ifNode.getFalseBlock() == null || ifNode.getFalseBlock().getStatements().size() == 0) {
+		    beginFalseBranch.addChild(exitIf);
+		    exitIf.addParent(beginFalseBranch);
+		} else {
+		    FlowNode endFalseBranch = generateFlow(beginFalseBranch, ifNode.getFalseBlock(), context);
+            if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
+                exitIf.addParent(endFalseBranch);
+                endFalseBranch.addChild(exitIf);
+            }
+		}
+		
+		
+		if (exitIf.getParents().size() == 0) {
 			// Program will not run beyond the 'if' branch, so we return null.
 			// For example:
 			// if (x)
@@ -194,19 +249,8 @@ public class GenerateFlow {
 			//    return false;
 			// [code here will never be reached]
 			return null;
+		}
 		
-		// We only want to return a single node, but there are two possible exit points 
-		// (true and false blocks). We set the children of both blocks to the NoOp node and 
-		// return it.
-		NoOp exitIf = new NoOp();
-		if (endTrueBranch != null && !(endTrueBranch instanceof END)) {
-			exitIf.addParent(endTrueBranch);
-			endTrueBranch.addChild(exitIf);
-		}
-		if (endFalseBranch != null && !(endFalseBranch instanceof END)) {
-			exitIf.addParent(endFalseBranch);
-			endFalseBranch.addChild(exitIf);
-		}
 		return exitIf;
 	}
 	
@@ -246,6 +290,10 @@ public class GenerateFlow {
 		if (!(endFor instanceof END) && endFor != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endFor.addChild(forBranch);
+			if (!(endFor instanceof Codeblock)) {
+			    throw new RuntimeException("Maddie is wrong about things");
+			}
+			((Codeblock) endFor).setIsBreak(true);
 		}
 		context.exitLoop();
 		return exitFor;
@@ -264,29 +312,50 @@ public class GenerateFlow {
 	 */
 	public static FlowNode generateWhile(FlowNode prevNode, IR_While whileNode, ControlflowContext context) {
 		// It's probably easier to implement MaxLoops in codegen rather than here.
-		/*
-		IR_Node condExpr;
+	    // From Maddie: It's impossible to implement in codegen with the
+	    // current structure, since I don't have access to the maxLoops
+		IR_FieldDecl loopCounter;
+		Declaration loop = null;
+		IR_Var loopVar;
+		Statement assignNode = null;
+		Statement incrNode = null;
+		IR_CompareOp checkMaxLoops = null;
+		Branch maxCheck = null;
 		if (whileNode.getMaxLoops() != null) {
 			// Generate loop counter variable to count loops.
-			Descriptor loopDescriptor = context.findSymbol("while");
-			IR_Var loopVar = new IR_Var(Type.INT, "while", null);
-			if (loopDescriptor == null) {
-				// we need to first declare the loop counter variable
-				IR_FieldDecl loopCounter = new IR_FieldDecl(Type.INT, "while");
-				
-				Declaration loop = generateFieldDecl(loopCounter, context);
-			} else {
-				loopDescriptor.getIR();
-			}
-			IR_Assign assign = new IR_Assign(loopVar, new IR_IntLiteral(0L), Ops.ASSIGN);
-			Statement assignNode = generateStatement(assign, context);
+		    if (context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
+			    loopCounter = new IR_FieldDecl(Type.INT, "while");
+                loop = generateFieldDecl(loopCounter, context);
+		    }
+			loopVar = new IR_Var(Type.INT, "while", null);
 			
-			IR_CompareOp checkMaxLoops = new IR_CompareOp(loopVar, whileNode.getMaxLoops(),Ops.LT);
-			condExpr = new IR_CondOp(whileNode.getExpr(), checkMaxLoops, Ops.AND);
-		} else {
-			condExpr = whileNode.getExpr();
+			IR_Assign assign = new IR_Assign(loopVar, new IR_IntLiteral(-1L), Ops.ASSIGN);
+			assignNode = generateStatement(assign, context);
+			
+			IR_Assign increment = new IR_Assign(loopVar, new IR_IntLiteral(1L), Ops.ASSIGN_PLUS);
+			incrNode = generateStatement(increment, context);
+			
+			checkMaxLoops = new IR_CompareOp(loopVar, whileNode.getMaxLoops(), Ops.LT);
+			maxCheck = new Branch(generateExpr(checkMaxLoops, context), BranchType.WHILE);
+			maxCheck.setIsLimitedWhile(true);
 		}
-		*/
+		
+		// If while has maxLoops, initialize to zero
+		if (!(prevNode instanceof Codeblock)) {
+		    Codeblock initializer = new Codeblock();
+		    initializer.addParent(prevNode);
+		    prevNode.addChild(initializer);
+		    prevNode = initializer;
+		}
+		
+		if (whileNode.getMaxLoops() != null) {
+		    // safe because of preceding if
+		    // if no while loops have occurred at this level
+		    if (context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
+		        ((Codeblock) prevNode).addStatement(loop);
+		    }
+		    ((Codeblock) prevNode).addStatement(assignNode);
+		}
 		
 		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(whileNode.getExpr(), context);
@@ -299,17 +368,39 @@ public class GenerateFlow {
 		START beginWhileBlock = new START();
 		beginWhileBlock.addParent(whileBranch);
 		whileBranch.setTrueBranch(beginWhileBlock);
+		
 				
 		// Initiates exit block, when expr evaluates to false.
 		NoOp exitWhile = new NoOp();
 		exitWhile.addParent(whileBranch);
 		whileBranch.setFalseBranch(exitWhile);
+		
+		// Increment counter and check for maxLoops, if has maxLoops
+		if (whileNode.getMaxLoops() != null) {
+		    whileBranch.setIsLimitedWhile(true);
+		    Codeblock next = new Codeblock();
+		    next.addStatement(incrNode);
+		    next.addParent(beginWhileBlock);
+		    beginWhileBlock.addChild(next);
+		    next.addChild(maxCheck);
+		    maxCheck.addParent(next);
+		    maxCheck.setFalseBranch(exitWhile);
+		    exitWhile.addParent(maxCheck);
+		    START beginInnerWhile = new START();
+		    beginInnerWhile.addParent(maxCheck);
+		    maxCheck.setTrueBranch(beginInnerWhile);
+		    beginWhileBlock = beginInnerWhile;
+		}
 					
 		// Begin recursively generating loop code block.
 		FlowNode endWhile = generateFlow(beginWhileBlock, whileNode.getBlock(), context);
 		if (!(endWhile instanceof END) && endWhile != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endWhile.addChild(whileBranch);
+			if (!(endWhile instanceof Codeblock)) {
+                throw new RuntimeException("Maddie is wrong about things");
+            }
+            ((Codeblock) endWhile).setIsBreak(true);
 		}
 		context.exitLoop();
 		return exitWhile;
@@ -420,7 +511,8 @@ public class GenerateFlow {
 		else if (node instanceof IR_Assign) {
 			IR_Assign assignNode = (IR_Assign) node;
 			Descriptor d = context.findSymbol(assignNode.getLhs().getName());
-			Var loc = new Var(d, generateExpr(assignNode.getLhs().getIndex(), context));
+			Expression ind = generateExpr(assignNode.getLhs().getIndex(), context);
+			Var loc = new Var(d, ind);
 			Expression expr = generateExpr(assignNode.getRhs(), context);
 			st = new Assignment(loc, assignNode.getOp(), expr);
 		} 
@@ -468,7 +560,8 @@ public class GenerateFlow {
 		for (int i=0; i<args.size(); i++) {
 			exprs.add(generateExpr(args.get(i), context));
 		}
-		return new MethodCall(callNode.getName(), exprs);
+		boolean isCallout = callNode.getDecl().getType() == Type.CALLOUT;
+		return new MethodCall(callNode.getName(), exprs, isCallout);
 	}
 	
 }

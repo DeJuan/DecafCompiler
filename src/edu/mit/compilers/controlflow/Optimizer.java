@@ -26,13 +26,14 @@ public class Optimizer {
 	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
+
 	private int tempCounter = 0;
 	/**
 	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
 	 *  
 	 */
 	public Optimizer(ControlflowContext context, 
-			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
+		List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
 		this.context = context;
 		this.calloutList = callouts;
 		this.globalList = globals;
@@ -150,7 +151,7 @@ public class Optimizer {
 		}
 		else if(expr instanceof NegateExpr){
 			NegateExpr negate = (NegateExpr)expr;
-			allVars.addAll(getVarsFromExpression(negate.negatedExpr));
+			allVars.addAll(getVarsFromExpression(negate.getExpression()));
 		}
 		else if(expr instanceof Ternary){
 			Ternary tern = (Ternary)expr;
@@ -311,7 +312,7 @@ public class Optimizer {
 		Expression lhs = adding.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
-			plusSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			plusSet.varSet.add(varia.getValueID());
 		}
 		
 		if(lhs instanceof IntLit){
@@ -374,11 +375,11 @@ public class Optimizer {
 		Expression rhs = modding.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
-			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+			modSet.varSet.add(varia.getValueID());
 		}
 		else if (rhs instanceof IntLit){
 			IntLit intR = (IntLit)rhs;
-			modSet.intSet.add(intR);
+			modSet.intSet.add(intR.getValue());
 		}
 		else if(rhs instanceof ModExpr){
 			ModExpr rhsMod = (ModExpr)rhs;
@@ -574,7 +575,44 @@ public class Optimizer {
 		}
 		return condSet;
 	}
+	
+	public void setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Expression expr){
+		if(expr instanceof BinExpr){
+			BinExpr bin = (BinExpr)expr;
+			Expression lhs = bin.getLeftSide();
+			Expression rhs = bin.getRightSide();
+			setVarIDs(varToVal, lhs);
+			setVarIDs(varToVal, rhs);
+		}
+		else if (expr instanceof Var){
+			Var varia = (Var)expr;
+			varia.setValueID(varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR()));
+		}	
+		else if(expr instanceof NotExpr){
+			NotExpr nope = (NotExpr)expr;
+			setVarIDs(varToVal, nope.getUnresolvedExpression());
+		}
+		else if(expr instanceof NegateExpr){
+			NegateExpr negate = (NegateExpr)expr;
+			setVarIDs(varToVal, negate.getExpression());
+		}
+		else if(expr instanceof Ternary){
+			Ternary tern = (Ternary)expr;
+			setVarIDs(varToVal, tern.getTernaryCondition());
+			setVarIDs(varToVal, tern.trueBranch);
+			setVarIDs(varToVal, tern.falseBranch);
+		}
+		else if(expr instanceof MethodCall){
+			MethodCall MCHammer = (MethodCall)expr;
+			for(Expression arg : MCHammer.getArguments()){
+				setVarIDs(varToVal, arg);
+			}
+		}
+		
+	}
 
+	
+	
 	/**
 	 * This is a rough first attempt at finding the statements that were killed in a given Codeblock.
 	 * It checks that the given node is in fact a codeblock, and if it is, downcasts it.
@@ -655,7 +693,6 @@ public class Optimizer {
 					if(lookupToKillMap.get(currentAssignTarget) != null){
 						killedExpressions.addAll(lookupToKillMap.get(currentAssignTarget));
 					}
-
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					//Set all global variables to a killed state
@@ -704,7 +741,6 @@ public class Optimizer {
 				if(!child.visited()){
 					processing.add(child);	
 				}
-				
 			}
 			if (next instanceof Codeblock){
 				Codeblock cblock = (Codeblock)next;
@@ -712,6 +748,7 @@ public class Optimizer {
 				Changed.add(cblock); //Put the codeblock in the Changed set we'll use to do fixed point.
 			}
 		}
+		initialNode.resetVisit();
 		for (FlowNode c : nodeList){
 			OUT.put(c, allExprsForInitialization);
 		}
@@ -768,7 +805,8 @@ public class Optimizer {
 			Iterator<Expression> iterForFirstExprs = firstAvailableExprs.iterator();
 			while(iterForFirstExprs.hasNext()){
 				Expression currentExpr = iterForFirstExprs.next();
-				
+				setVarIDs(varToVal, currentExpr);
+				expToTemp.put(new SPSet(currentExpr), generateNextTemp(allVarNames));
 				
 			}
 		}

@@ -16,9 +16,22 @@ import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
 import edu.mit.compilers.codegen.Codegen;
 import edu.mit.compilers.codegen.CodegenContext;
-import edu.mit.compilers.controlflow.*;
-import edu.mit.compilers.grammar.*;
-import edu.mit.compilers.ir.*;
+import edu.mit.compilers.controlflow.Assembler;
+import edu.mit.compilers.controlflow.Branch;
+import edu.mit.compilers.controlflow.Codeblock;
+import edu.mit.compilers.controlflow.ControlflowContext;
+import edu.mit.compilers.controlflow.FlowNode;
+import edu.mit.compilers.controlflow.GenerateFlow;
+import edu.mit.compilers.controlflow.Optimizer;
+import edu.mit.compilers.controlflow.START;
+import edu.mit.compilers.grammar.DecafParser;
+import edu.mit.compilers.grammar.DecafParserTokenTypes;
+import edu.mit.compilers.grammar.DecafScanner;
+import edu.mit.compilers.grammar.DecafScannerTokenTypes;
+import edu.mit.compilers.ir.IRMaker;
+import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_MethodDecl;
+import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -116,8 +129,8 @@ class Main {
       CLI.parse(args, optimizations);
       InputStream inputStream = args.length == 0 ?
           System.in : new java.io.FileInputStream(CLI.infile);
-      PrintStream outputStream = CLI.outfile == null ? System.out : new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile));
       if (CLI.target == Action.SCAN) {
+        PrintStream outputStream = CLI.outfile == null ? System.out : new java.io.PrintStream(new java.io.FileOutputStream(CLI.outfile));
         DecafScanner scanner =
             new DecafScanner(new DataInputStream(inputStream));
         scanner.setTrace(CLI.debug);
@@ -157,6 +170,7 @@ class Main {
             scanner.consume();
           }
         }
+        outputStream.close();
       } else {
     	  // =============== PARSE =================
     	  DecafScanner scanner = new DecafScanner(new DataInputStream(inputStream));
@@ -205,7 +219,8 @@ class Main {
 			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
 			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-			    		  
+			    		  // TODO: Process flowNodes and generate assembly code.
+			    		  context = Assembler.generateProgram(root);
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");
 						  for (IR_Node callout : callouts)
@@ -219,15 +234,16 @@ class Main {
 						  System.out.println("");
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
-						  
-						  // TODO: Process flowNodes and generate assembly code.
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
-						  
+						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
+                          context.printInstructions(ps);
+                          ps.close();
 			    	  } 
 			    	  else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
 			    		  CodegenContext context = new CodegenContext();
 				    	  Codegen.generateProgram(root, context);
+			    	      // ControlflowContext context = Assembler.generateProgram(root);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
 				    	  ps.close();
@@ -243,6 +259,7 @@ class Main {
       // print the error:
       System.err.println(CLI.infile+" "+e);
       e.printStackTrace();
+    } finally {
     }
   }
 }
