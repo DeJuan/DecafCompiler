@@ -12,6 +12,7 @@ import java.util.Set;
 
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Ops;
 
@@ -22,16 +23,16 @@ import edu.mit.compilers.ir.Ops;
  */
 public class Optimizer {
 	private ControlflowContext context;
-	private List<IR_Node> calloutList;
+	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
-	private HashMap<String, FlowNode> flowNodes;
+	private HashMap<String, START> flowNodes;
 	private int tempCounter = 0;
 	/**
 	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
 	 *  
 	 */
 	public Optimizer(ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_FieldDecl> globals, HashMap<String, FlowNode> flowNodes){
+			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
 		this.context = context;
 		this.calloutList = callouts;
 		this.globalList = globals;

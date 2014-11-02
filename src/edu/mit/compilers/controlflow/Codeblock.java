@@ -101,6 +101,24 @@ public class Codeblock extends FlowNode {
 	}
 	
 	/**
+	 * Reset the visited flag of this FlowNode and its children.
+	 * 
+	 * Note: It will only reset the child if the child has been visited,
+	 * meaning that resetVisit will successfully reset all visited nodes
+	 * assuming that all traversals started from the ROOT.
+	 */
+	@Override
+	public void resetVisit() {
+		visited = false;
+		if (children.size() > 0) {
+			for (FlowNode child : children) {
+				if (child.visited())
+					child.resetVisit();
+			}
+		}
+	}
+	
+	/**
 	 * Returns whether or not this FlowNode has been traversed already.
 	 */
 	@Override
