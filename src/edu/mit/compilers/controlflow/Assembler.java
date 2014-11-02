@@ -135,7 +135,32 @@ public class Assembler {
         //generateBlock accumulates static local stack size required. 
         FlowNode next = decl.getValue().getChildren().get(0);
         boolean isVoid = decl.getValue().getRetType() == Type.VOID;
+        boolean done = next == null;
         List<Instruction> blockIns = generateNode(next, context, isVoid);
+        while (!done) {
+            if (next instanceof Codeblock) {
+                Codeblock blk = (Codeblock) next;
+                blockIns.addAll(generateNode(blk, context, isVoid));
+                done = blk.getIsBreak();
+                next = next.getChildren().get(0);
+            } else if (next instanceof Branch) {
+                Branch br = (Branch) next;
+                blockIns.addAll(generateBranch(br, context, isVoid));
+                NoOp endBranch = findNop(br);
+                if (endBranch == null) {
+                    done = true;
+                } else {
+                    next = endBranch.getChildren().get(0);
+                }
+            } else if (next instanceof NoOp) {
+                throw new RuntimeException("Something has gone screwy");
+            } else if (next instanceof END) {
+                blockIns.addAll(generateEnd((END) next, context, isVoid));
+                done = true;
+            } else {
+                throw new RuntimeException("This ought not have occurred");
+            }
+        }
 
         //instructions for entering a function.
         //TODO: Ask about this: maxLocal + totalLocal seems wrong/excessive, but not sure
