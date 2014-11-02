@@ -35,5 +35,9 @@ public class Declaration extends Statement {
 	public IR_FieldDecl getFieldDecl(){
 		return this.fieldDecl;
 	}
+	
+	public String getName(){
+		return fieldDecl.getName();
+	}
 
 }

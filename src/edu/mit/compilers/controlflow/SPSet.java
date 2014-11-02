@@ -12,12 +12,16 @@ import edu.mit.compilers.ir.Ops;
 public class SPSet {
 	public Set<SPSet> SPSets;
 	public Set<IR_FieldDecl> varSet;
-	private List<Ops> opsChecker = Arrays.asList(Ops.MINUS, Ops.PLUS, Ops.DIVIDE, Ops.TIMES, Ops.MOD, Ops.AND, Ops.OR);
+	public Set<IntLit> intSet;
+	public Set<BoolLit> boolSet;
+	private List<Ops> opsChecker = Arrays.asList(Ops.MINUS, Ops.PLUS, Ops.DIVIDE, Ops.TIMES, Ops.MOD, Ops.AND, Ops.OR, Ops.NOT);
 	public Ops operator;
 	
 	public SPSet(Ops op){
 		SPSets =  new LinkedHashSet<SPSet>();
 		varSet = new LinkedHashSet<IR_FieldDecl>();
+		intSet = new LinkedHashSet<IntLit>();
+		boolSet = new LinkedHashSet<BoolLit>();
 		if(this.opsChecker.contains(op)){
 			this.operator = op;
 		}
@@ -26,9 +30,11 @@ public class SPSet {
 		}
 	}
 	
-	public SPSet(Set<SPSet> initialSPSet, Set<IR_FieldDecl> initialVarSet, Ops op){
+	public SPSet(Set<SPSet> initialSPSet, Set<IR_FieldDecl> initialVarSet, Set<IntLit> intSet, Set<BoolLit> boolSet, Ops op){
 		this.SPSets = initialSPSet;
 		this.varSet = initialVarSet;
+		this.intSet = intSet;
+		this.boolSet = boolSet;
 		if(this.opsChecker.contains(op)){
 			this.operator = op;
 		}
@@ -38,11 +44,59 @@ public class SPSet {
 	}
 	
 	public void addToSPSets(SPSet newSP){
-		this.SPSets.add(newSP);
+		if(operator == Ops.NOT){
+			if(SPSets.isEmpty() && varSet.isEmpty() && intSet.isEmpty() && boolSet.isEmpty()){
+				this.SPSets.add(newSP);
+			}
+			else{
+				throw new UnsupportedOperationException("Tried to add to an SPSet when it wasn't empty for a NOT.");
+			}
+		}
+		else {
+			this.SPSets.add(newSP);
+		}
 	}
 	
 	public void addToVarSet(IR_FieldDecl newVar){
-		this.varSet.add(newVar);
+		if(operator == Ops.NOT){
+			if(SPSets.isEmpty() && varSet.isEmpty() && intSet.isEmpty() && boolSet.isEmpty()){
+				this.varSet.add(newVar);
+			}
+			else{
+				throw new UnsupportedOperationException("Tried to add to an VarSet when it wasn't empty for a NOT.");
+			}
+		}
+		else {
+			this.varSet.add(newVar);
+		}
+	}
+	
+	public void addToIntSet(IntLit newInt){
+		if(operator == Ops.NOT){
+			if(SPSets.isEmpty() && varSet.isEmpty() && intSet.isEmpty() && boolSet.isEmpty()){
+				this.intSet.add(newInt);
+			}
+			else{
+				throw new UnsupportedOperationException("Tried to add to an intSet when it wasn't empty for a NOT.");
+			}
+		}
+		else {
+			this.intSet.add(newInt);
+		}
+	}
+	
+	public void addToBoolSet(BoolLit newBool){
+		if(operator == Ops.NOT){
+			if(SPSets.isEmpty() && varSet.isEmpty() && intSet.isEmpty() && boolSet.isEmpty()){
+				this.boolSet.add(newBool);
+			}
+			else{
+				throw new UnsupportedOperationException("Tried to add to an boolSet when it wasn't empty for a NOT.");
+			}
+		}
+		else {
+			this.boolSet.add(newBool);
+		}
 	}
 	
 	// *(A,B) + (stuff) 
@@ -78,10 +132,7 @@ public class SPSet {
 			}
 		}
 		else if(expr instanceof NotExpr){
-			
-		}
-		
-		else if(expr instanceof Ternary){
+			NotExpr not =(NotExpr)expr;
 			
 		}
 		
@@ -89,6 +140,50 @@ public class SPSet {
 			
 		}
 		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		int hash = 0;
+		for (SPSet cset : SPSets){
+			hash = (hash + cset.hashCode()) % Integer.MAX_VALUE;
+		}
+		for (IR_FieldDecl decl : varSet){
+			hash = (hash + decl.hashCode()) % Integer.MAX_VALUE;
+		}
+		for (IntLit il : intSet){
+			hash = (hash + il.hashCode()) % Integer.MAX_VALUE;
+		}
+		for (BoolLit bl : boolSet){
+			hash = (hash + bl.hashCode()) % Integer.MAX_VALUE;
+		}
+		return hash;
+	}
+	
+	@Override
+	public boolean equals(Object obj){
+		if(!(obj instanceof SPSet)){
+			return false;
+		}
+		SPSet sp = (SPSet)obj;
+		if(sp.operator == this.operator){
+			if(sp.SPSets.equals(this.SPSets)){
+				if(!(sp.varSet.size() == this.varSet.size())){
+					return false;
+				}
+				for(IR_FieldDecl currentVar : sp.varSet){
+					if(!(this.varSet.contains(currentVar))){
+						return false;
+					}
+				}
+				if(!(sp.intSet.size() == this.intSet.size())){
+					return false;
+				}
+				for(IntLit intL : sp.intSet){
+				}
+			}
+		}
+		return true;
 	}
 	
 	public String toString(){

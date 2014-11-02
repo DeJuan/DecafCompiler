@@ -2,7 +2,7 @@ package edu.mit.compilers.ir;
 
 public enum Ops {
 ASSIGN("="), ASSIGN_PLUS("+="), ASSIGN_MINUS("-="), PLUS("+"), MINUS("-"), TIMES("*"), DIVIDE("/"), MOD("%"),
-LT("<"),LTE("<="),GT(">"),GTE(","),EQUALS("=="),NOT_EQUALS("!="), AND("&&"), OR("||");
+LT("<"),LTE("<="),GT(">"),GTE(","),EQUALS("=="),NOT_EQUALS("!="), AND("&&"), OR("||"), NOT("!");
 
 private final String text;
 

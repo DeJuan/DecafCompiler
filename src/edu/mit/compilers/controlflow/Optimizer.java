@@ -3,6 +3,7 @@ package edu.mit.compilers.controlflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +25,7 @@ public class Optimizer {
 	private List<IR_Node> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, FlowNode> flowNodes;
+	private int tempCounter = 0;
 	/**
 	 * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
 	 *  
@@ -35,7 +37,7 @@ public class Optimizer {
 		this.globalList = globals;
 		this.flowNodes = flowNodes;
 	}
-	
+
 	/*
 	public List<Expression> simpleAlgebraicSimplifier(List<Expression> exprList){
 		List<Expression> simplifiedExprs = new ArrayList<Expression>();
@@ -52,16 +54,16 @@ public class Optimizer {
 							}
 						}
 				}
-				
+
 			default:
 				break;
 			}
 		}
 	}
-	*/
-	
-	
-	
+	 */
+
+
+
 	/**
 	 * For handling commutativity. Use sets; write a class, SPSet, that is a class which has three fields. These fields are a Set<SPSet>, an Op, and a Set<IR_FieldDecl>.
 	 * SPSet is used for any other set that doesn't contain IR_FieldDecls. So we can recursively store sets that are commutative.
@@ -70,7 +72,7 @@ public class Optimizer {
 	 * The tree structure for the above looks like:
 	 * 
 	 *                  +           Level 1
- 	 *                /   \
+	 *                /   \
 	 *               +     +        Level 2
 	 *              / \   / \ 
 	 *             A   B X   Y      Level 3
@@ -90,7 +92,7 @@ public class Optimizer {
 	 *    What if the tree is uneven? EX: X + Y + Z
 	 *    
 	 *                  +           Level 1
- 	 *                /   \
+	 *                /   \
 	 *               X     +        Level 2
 	 *                    / \ 
 	 *                   Y   Z      Level 3
@@ -106,8 +108,8 @@ public class Optimizer {
 	 *   
 	 *   and so on.
 	 */        
- 	
-	
+
+
 	/**
 	 * This method takes in a FlowNode and allows you to check all variables assigned within the FlowNode.
 	 * @param node : FlowNode that you wish to investigate
@@ -120,14 +122,14 @@ public class Optimizer {
 			List<Statement> statementList = codeblock.getStatements();
 			for (Statement currentStatement : statementList){
 				if (currentStatement.getStatementType() == StatementType.ASSIGNMENT){
-				 Assignment currentAssignment = (Assignment)currentStatement;
-				 assignedVars.add(currentAssignment.getDestVar());
+					Assignment currentAssignment = (Assignment)currentStatement;
+					assignedVars.add(currentAssignment.getDestVar());
 				}
 			}
 		}
 		return assignedVars;
 	}
-	
+
 	public List<IR_FieldDecl> getVarsFromExpression(Expression expr){
 		List<IR_FieldDecl> allVars = new ArrayList<IR_FieldDecl>();
 		if(expr instanceof BinExpr){
@@ -163,7 +165,7 @@ public class Optimizer {
 		}
 		return allVars;
 	}
-	
+
 	/**
 	 * This is a method to get all expressions from a given FlowNode. 
 	 * If the node is a Codeblock, it is scanned for assignments. 
@@ -188,10 +190,42 @@ public class Optimizer {
 					Assignment currentAssign = (Assignment) currentStatement;
 					allExprs.add(currentAssign.getValue());
 				}
-				
+
 			}
 		}
 		return allExprs;
+	}
+
+	public Set<String> getAllVarNamesInMethod(START node){
+		Set<String> allVarNames = new LinkedHashSet<String>();
+		List<FlowNode> processing = new ArrayList<FlowNode>();
+		for(IR_FieldDecl global : globalList){
+			allVarNames.add(global.getName());
+		}
+		processing.add(node.getChildren().get(0));
+		while (!processing.isEmpty()){
+			FlowNode currentNode = processing.remove(0);
+			if(currentNode instanceof Codeblock){
+				Codeblock cblock = (Codeblock)currentNode;
+				for(Statement state : cblock.getStatements()){
+					if(state instanceof Declaration){
+						Declaration decl = (Declaration)state;
+						allVarNames.add(decl.getName());
+					}
+				}
+			}
+			processing.addAll(currentNode.getChildren());
+		}
+		return allVarNames;
+	}
+	
+	
+	public String generateNextTemp(Set<String> allVarNames){
+		String tempName = "temp" + tempCounter++;
+		while(allVarNames.contains(tempName)){
+			tempName = "temp" + tempCounter++;
+		}
+		return tempName;
 	}
 	
 	
@@ -209,7 +243,7 @@ public class Optimizer {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * This is a helper method allowing us to deep copy a HashMap.
 	 * It is written using generic types so passing any valid HashMap will work.
@@ -243,11 +277,11 @@ public class Optimizer {
 			Branch branch = (Branch)node;
 			Expression expr = branch.getExpr();
 			if (expr instanceof AddExpr){
-				
+
 			}
 		}
 	}
-	*/
+	 */
 	public SPSet analyzeAndDispatch(Expression expr){
 		switch(expr.getExprType()){
 		case ADD_EXPR:
@@ -267,8 +301,8 @@ public class Optimizer {
 		}
 		return null;
 	}
-	
-	
+
+
 
 	public SPSet computePlusSets(AddExpr adding){
 		SPSet plusSet = new SPSet(Ops.PLUS);
@@ -277,6 +311,11 @@ public class Optimizer {
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			plusSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		
+		if(lhs instanceof IntLit){
+			IntLit intLit = (IntLit)lhs;
+			plusSet.intSet.add(intLit);
 		}
 		else if(lhs instanceof AddExpr){
 			AddExpr lhsAdd = (AddExpr)lhs;
@@ -287,11 +326,15 @@ public class Optimizer {
 		else{
 			plusSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = adding.getRightSide();
 		if(rhs instanceof Var){
 			Var variaR = (Var) rhs;
 			plusSet.varSet.add((IR_FieldDecl) variaR.getVarDescriptor().getIR());
+		}
+		if(rhs instanceof IntLit){
+			IntLit intLit = (IntLit)rhs;
+			plusSet.intSet.add(intLit);
 		}
 		else if(rhs instanceof AddExpr){
 			AddExpr rhsAdd = (AddExpr)rhs;
@@ -304,14 +347,18 @@ public class Optimizer {
 		}
 		return plusSet;
 	}
-	
+
 	public SPSet computeModSets(ModExpr modding) {
 		SPSet modSet = new SPSet(Ops.MOD);
-		
+
 		Expression lhs = modding.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof IntLit){
+			IntLit intL = (IntLit)lhs;
+			modSet.intSet.add(intL);
 		}
 		else if(lhs instanceof ModExpr){
 			ModExpr lhsMod = (ModExpr)lhs;
@@ -322,11 +369,15 @@ public class Optimizer {
 		else{
 			modSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = modding.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
 			modSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if (rhs instanceof IntLit){
+			IntLit intR = (IntLit)rhs;
+			modSet.intSet.add(intR);
 		}
 		else if(rhs instanceof ModExpr){
 			ModExpr rhsMod = (ModExpr)rhs;
@@ -339,14 +390,18 @@ public class Optimizer {
 		}
 		return modSet;
 	}
-	
+
 	public SPSet computeMultSets(MultExpr multing){
 		SPSet multSet = new SPSet(Ops.TIMES);
-		
+
 		Expression lhs = multing.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof IntLit){
+			IntLit intL = (IntLit)lhs;
+			multSet.intSet.add(intL);
 		}
 		else if(lhs instanceof MultExpr){
 			MultExpr lhsMult = (MultExpr)lhs;
@@ -357,11 +412,15 @@ public class Optimizer {
 		else{
 			multSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = multing.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
 			multSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof IntLit){
+			IntLit intR = (IntLit)rhs;
+			multSet.intSet.add(intR);
 		}
 		else if(rhs instanceof MultExpr){
 			MultExpr rhsMult = (MultExpr)rhs;
@@ -374,14 +433,18 @@ public class Optimizer {
 		}
 		return multSet;
 	}
-	
+
 	public SPSet computeDivSets(DivExpr divide){
 		SPSet divSet = new SPSet(Ops.DIVIDE);
-		
+
 		Expression lhs = divide.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof IntLit){
+			IntLit intL = (IntLit)lhs;
+			divSet.intSet.add(intL);
 		}
 		else if(lhs instanceof DivExpr){
 			DivExpr lhsMult = (DivExpr)lhs;
@@ -392,11 +455,15 @@ public class Optimizer {
 		else{
 			divSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = divide.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
 			divSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof IntLit){
+			IntLit intR = (IntLit)rhs;
+			divSet.intSet.add(intR);
 		}
 		else if(rhs instanceof DivExpr){
 			DivExpr rhsMult = (DivExpr)rhs;
@@ -409,14 +476,22 @@ public class Optimizer {
 		}
 		return divSet;
 	}
-	
+
 	public SPSet computeComparisonSets(CompExpr comparing){
 		SPSet compSet = new SPSet(comparing.operator);
-		
+
 		Expression lhs = comparing.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if (lhs instanceof IntLit){
+			IntLit intL = (IntLit)lhs;
+			compSet.intSet.add(intL);
+		}
+		else if (lhs instanceof BoolLit){
+			BoolLit intL = (BoolLit)lhs;
+			compSet.boolSet.add(intL);
 		}
 		else if(lhs instanceof CompExpr){
 			CompExpr lhsComp = (CompExpr)lhs;
@@ -427,11 +502,19 @@ public class Optimizer {
 		else{
 			compSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = comparing.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
 			compSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof IntLit){
+			IntLit intR = (IntLit)rhs;
+			compSet.intSet.add(intR);
+		}
+		else if(rhs instanceof BoolLit){
+			BoolLit intR = (BoolLit)rhs;
+			compSet.boolSet.add(intR);
 		}
 		else if(rhs instanceof CompExpr){
 			CompExpr rhsComp = (CompExpr)rhs;
@@ -439,19 +522,26 @@ public class Optimizer {
 			compSet.SPSets.addAll(recursiveSPSet.SPSets);
 			compSet.varSet.addAll(recursiveSPSet.varSet);
 		}
+		else if(rhs instanceof NotExpr){
+
+		}
 		else{
 			compSet.SPSets.add(analyzeAndDispatch(rhs));
 		}
 		return compSet;
 	}
-	
+
 	public SPSet computeCondSets(CondExpr conditional){
 		SPSet condSet = new SPSet(conditional.operator);
-		
+
 		Expression lhs = conditional.getLeftSide();
 		if(lhs instanceof Var){
 			Var varia = (Var) lhs;
 			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(lhs instanceof BoolLit){
+			BoolLit intL = (BoolLit)lhs;
+			condSet.boolSet.add(intL);
 		}
 		else if(lhs instanceof CondExpr){
 			CondExpr lhsCond = (CondExpr)lhs;
@@ -462,11 +552,15 @@ public class Optimizer {
 		else{
 			condSet.SPSets.add(analyzeAndDispatch(lhs));
 		}
-		
+
 		Expression rhs = conditional.getRightSide();
 		if(rhs instanceof Var){
 			Var varia = (Var) rhs;
 			condSet.varSet.add((IR_FieldDecl) varia.getVarDescriptor().getIR());
+		}
+		else if(rhs instanceof BoolLit){
+			BoolLit intR = (BoolLit)rhs;
+			condSet.boolSet.add(intR);
 		}
 		else if(rhs instanceof CondExpr){
 			CondExpr rhsCond = (CondExpr)rhs;
@@ -499,10 +593,10 @@ public class Optimizer {
 	 * @param node : FlowNode (really should be a Codeblock) that we want to investigate for killed statements.
 	 * @return killedStatements : Set<Statement> containing all statements that were killed by later assignments in this Codeblock.
 	 */
-	public Set<Expression> getKilledExpressions(FlowNode node, List<Expression> notYetKilledExprs){
+	public Set<Expression> getKilledExpressions(FlowNode node, Set<Expression> notYetKilledExprs){
 		Set<Expression> killedExpressions = new LinkedHashSet<Expression>();
 		if(notYetKilledExprs == null){
-			notYetKilledExprs = new LinkedList<Expression>(); //Should this maybe be IR_FieldDecls, actually? 
+			notYetKilledExprs = new LinkedHashSet<Expression>(); //Should this maybe be IR_FieldDecls, actually? 
 		}
 		HashMap<IR_FieldDecl, Set<Expression>> lookupToKillMap = new HashMap<IR_FieldDecl, Set<Expression>>();
 		List<IR_FieldDecl> varList = new ArrayList<IR_FieldDecl>();
@@ -524,23 +618,23 @@ public class Optimizer {
 							NotExpr not = (NotExpr)currentExpr;
 							varList = getVarsFromExpression(not.getUnresolvedExpression());
 						}
-						
+
 						else if(currentExpr instanceof NegateExpr){
 							NegateExpr negate = (NegateExpr)currentExpr;
 							varList = getVarsFromExpression(negate.getNegatedExpr());
 						}
-						
+
 						else if (currentExpr instanceof Ternary){
 							Ternary tern = (Ternary)currentExpr;
 							varList.addAll(getVarsFromExpression(tern.getTernaryCondition()));
 							varList.addAll(getVarsFromExpression(tern.getTrueBranch()));
 							varList.addAll(getVarsFromExpression(tern.getFalseBranch()));
 						}
-						
+
 						else if (currentExpr instanceof MethodCall){
 							notYetKilledExprs.remove(currentExpr); //Get rid of the entire method call statement, can't really use that since we assume methods kill things.
 						}
-						
+
 						for (IR_FieldDecl binVar : varList){
 							if(!lookupToKillMap.containsKey(binVar)){
 								lookupToKillMap.put(binVar, new LinkedHashSet<Expression>(Arrays.asList(currentExpr)));
@@ -550,17 +644,17 @@ public class Optimizer {
 							}
 						}
 					}
-					
+
 					else{ //This else is from the if(!notYetKilled.contains(currentExpr)) from so many lines ago. 
 						//This is where you'd CSE, assuming you had the other pieces needed.     
 					}
-					
+
 					//Actually kill things now!
 					IR_FieldDecl currentAssignTarget = (IR_FieldDecl) currentAssign.getDestVar().getVarDescriptor().getIR();
 					if(lookupToKillMap.get(currentAssignTarget) != null){
 						killedExpressions.addAll(lookupToKillMap.get(currentAssignTarget));
 					}
-					
+
 				}
 				else if (currentState.getStatementType() == StatementType.METHOD_CALL_STATEMENT){
 					//Set all global variables to a killed state
@@ -570,13 +664,13 @@ public class Optimizer {
 						}
 					}
 				}
-					
+
 				//Don't have to have a case for declarations, they never kill anything. 	
 			}
 		}
 		return killedExpressions;
 	}
-	
+
 	/**
 	 * This method calculates available Expressions based on the algorithm given on slide 48 of
 	 * http://6.035.scripts.mit.edu/sp14/slides/F14-lecture-10.pdf
@@ -616,9 +710,8 @@ public class Optimizer {
 		for (FlowNode c : nodeList){
 			OUT.put(c, allExprsForInitialization);
 		}
-		
-		//Next, actually carry out the changed iteration part of the algorithm.
-		//This part is most likely so full of bugs it is scary and I am scared looking at it. 
+
+		//Next, actually carry out the changed iteration part of the algorithm. 
 		while(!Changed.isEmpty()){
 			Codeblock currentNode = Changed.pop(); //Get whatever the first codeblock in the set is. 
 			Set<Expression> currentExpressionINSet = allExprsForInitialization; 
@@ -630,8 +723,8 @@ public class Optimizer {
 			}
 			IN.put(currentNode, currentExpressionINSet);
 			Set<Expression> genUnisonFactor = new LinkedHashSet<Expression>(IN.get(currentNode)); 
-			genUnisonFactor.removeAll(getKilledExpressions(currentNode, null)); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
-			
+			genUnisonFactor.removeAll(getKilledExpressions(currentNode, IN.get(currentNode))); // This is IN[Node] - KILL[Node], stored in a temp called getUnisonFactor
+
 			//The below combines OUT[n] = GEN[n] UNION (IN[n] - KILL[n]) and the check for whether or not this changed OUT in one line.  
 			if(OUT.get(currentNode).addAll(genUnisonFactor)){ //That addAll gives a boolean that is true if the set changed as a result of the add. 
 				for (FlowNode childNode : currentNode.getChildren()){
@@ -645,7 +738,35 @@ public class Optimizer {
 				}
 			}
 		}
-		
+
 		return OUT;
+	}
+
+	/**
+	 * This is the method you call to do actual CSE. It takes in a List of
+	 * start nodes for all the methods, and iterates through the list.
+	 * 
+	 * For each START node, 
+	 * 
+	 * @param startsForMethods
+	 */
+	
+	public ControlflowContext applyCSE (List<START> startsForMethods){
+		for(START initialNode : startsForMethods){
+			Map<IR_FieldDecl, SPSet> varToVal = new HashMap<IR_FieldDecl, SPSet>();
+			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
+			Map<Expression, SPSet> expToVal = new HashMap<Expression, SPSet>();
+			Map<Expression, String> expToTemp = new HashMap<Expression, String>();
+			Map<FlowNode, Set<Expression>> availableExpressionsAtNode = calculateAvailableExpressions(initialNode);
+			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
+			Set<Expression> firstAvailableExprs = availableExpressionsAtNode.get(firstNodeInProgram);
+			Iterator<Expression> iterForFirstExprs = firstAvailableExprs.iterator();
+			while(iterForFirstExprs.hasNext()){
+				Expression currentExpr = iterForFirstExprs.next();
+				expToTemp.put(currentExpr, generateNextTemp(allVarNames));
+				
+			}
+		}
+		return context;
 	}
 }
