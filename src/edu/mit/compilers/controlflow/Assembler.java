@@ -218,9 +218,6 @@ public class Assembler {
             boolean done = false;
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
-            if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
-                throw new RuntimeException("Maddie assumed something untrue");
-            }
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -248,9 +245,6 @@ public class Assembler {
             done = false;
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
             next = begin.getFalseBranch().getChildren().get(0);
-            if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
-                throw new RuntimeException("Maddie assumed something untrue");
-            }
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
