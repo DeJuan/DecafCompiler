@@ -22,31 +22,31 @@ public class GenerateFlow {
 	 * 
 	 * @param node: root IR node, containing sequence of methods, callouts, and global field declarations
 	 * @param context : ControlflowContext object
-	 * @param callouts : list of IR nodes containing callouts
-	 * @param globals : list of IR nodes containing global declarations
+	 * @param callouts : list of IR_MethodDecl objects containing callouts
+	 * @param globals : list of IR_FieldDecl objects containing global declarations
 	 * @param flowNodes : HashMap of method names to FlowNodes
 	 */
 	public static void generateProgram(IR_Node root, ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_Node> globals, HashMap<String, FlowNode> flowNodes) {
+			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes) {
 		IR_Seq seq = (IR_Seq) root;
 		List<IR_Node> statements = seq.getStatements();
 		for (int i = 0; i < statements.size(); i++) {
 			IR_Node node = statements.get(i);
 			if (node.getType() == Type.METHOD) {
 				// method declaration
-				FlowNode start = generateMethodDecl(node, context);
+				START start = generateMethodDecl(node, context);
 				String name = ((IR_MethodDecl) node).getName();
 				flowNodes.put(name, start);
 			} else if (node.getType() == Type.CALLOUT) {
 				// callout
-				callouts.add(node);
+				callouts.add((IR_MethodDecl) node);
 			} else if (node instanceof IR_FieldDecl) {
 				// global field declaration
 				IR_FieldDecl decl = (IR_FieldDecl) node;
 				Descriptor d = new Descriptor(decl);
 				d.setLocation(new LocLabel(decl.getName()));
 				context.putSymbol(decl.getName(), d);
-				globals.add(node);
+				globals.add(decl);
 			} else {
 				System.err.println("Unrecognized type");
 			}
@@ -58,7 +58,7 @@ public class GenerateFlow {
 	 * @param context : ControlflowContext object
 	 * @return start : START FlowNode object that signals the beginning of a method.
 	 */
-	public static FlowNode generateMethodDecl(IR_Node node, ControlflowContext context) {
+	public static START generateMethodDecl(IR_Node node, ControlflowContext context) {
 		IR_MethodDecl decl = (IR_MethodDecl) node;
 		List<IR_FieldDecl> args = decl.args;
 		Descriptor d = new Descriptor(node);

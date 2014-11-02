@@ -84,10 +84,10 @@ class Main {
    * Given a map of method names to method FlowNodes, print each FlowNode.
    * @param irMap : map of method names to method FlowNodes.
    */
-  public static void printIR(HashMap<String, FlowNode> irMap) {
-	  for (Map.Entry<String, FlowNode> entry : irMap.entrySet()) {
+  public static void printIR(HashMap<String, START> irMap) {
+	  for (Map.Entry<String, START> entry : irMap.entrySet()) {
 		    String key = entry.getKey();
-		    START node = (START) entry.getValue();
+		    START node = entry.getValue();
 		    
 		    System.out.println("============================ " + key + " ============================");
 		    // Print arguments.
@@ -201,12 +201,10 @@ class Main {
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
-			    		  List<IR_Node> callouts = new ArrayList<IR_Node>(); // type IR_MethodDecl
-			    		  List<IR_Node> globals = new ArrayList<IR_Node>();  // type IR_FieldDecl
-			    		  HashMap<String, FlowNode> flowNodes = new HashMap<String, FlowNode>();
+			    		  List<IR_MethodDecl> callouts = new ArrayList<IR_MethodDecl>(); // type IR_MethodDecl
+			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
+			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-			    		  
-			    		  // TODO: Process flowNodes and generate assembly code.
 			    		  
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");
@@ -221,6 +219,10 @@ class Main {
 						  System.out.println("");
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
+						  
+						  // TODO: Process flowNodes and generate assembly code.
+						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
+						  
 			    	  } 
 			    	  else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
