@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
@@ -827,7 +828,7 @@ public class Optimizer {
 					newBlock.addParent(oldParent);
 				}
 				else if(oldP instanceof END){
-					throw new RuntimeException("Something went wrong: " + old.getLabel() + "has a parent of type END.");
+					throw new RuntimeException("Something went wrong: a non-branch has a parent of type END." + System.getProperty("line.separator"));
 				}
 			}
 			
@@ -858,7 +859,7 @@ public class Optimizer {
 					newBlock.addChild(oldChild);
 				}
 				else if(oldC instanceof START){
-					throw new RuntimeException("Found a non-branch with a START for a child. The label for this branch is " + old.getLabel() + "." + System.getProperty("line.separator"));
+					throw new RuntimeException("Found a non-branch with a START for a child." + System.getProperty("line.separator"));
 				}
 				
 				else if(oldC instanceof END){
@@ -1065,7 +1066,8 @@ public class Optimizer {
 	 * 	1.1) If the Statement is an Assignment: (i.e. x = a + b)
 	 *     1.1a) Look at the values being assigned in the statement (a+b). For each component of the value being assigned (a and b), 
 	 *     	  1.1ab) Check if we have ever seen this component before.
-	 *     		- If we have not, assign a symbolic value to represent this component. This is varToVal. a= v1, b = v2;. This should never happen unless the component is a literal.
+	 *     		- If we have not, and it is not a Literal, assign a symbolic value to represent this component. This is varToVal. a= v1, b = v2;. 
+	 *     			This should never happen unless the component is a literal.
 	 *     		+ If we have, replace the component with its symbolic value.
 	 *     1.1b) After we have checked all components, check if we have ever seen this combination of symbolic values. 
 	 *         - If we have not, then assign a symbolic value to represent the combination of these components : v3 = +(v1, v2). This is an SPSet.
@@ -1086,30 +1088,47 @@ public class Optimizer {
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
-			Map<SPSet, String> expToTemp = new HashMap<SPSet, String>();
+			Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
 			Map<FlowNode, Set<Expression>> availableExpressionsAtNode = calculateAvailableExpressions(initialNode);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
-			
 			processing.add(firstNodeInProgram);
 			while(!processing.isEmpty()){
 				FlowNode currentNode = processing.remove(0);
 				currentNode.visit();
 				if(currentNode instanceof Codeblock){
 					Codeblock cblock = (Codeblock)currentNode;
+					Codeblock newCodeblock = new Codeblock();
 					for(Statement currentStatement : cblock.getStatements()){
+						newCodeblock.addStatement(currentStatement);
 						if(currentStatement instanceof Assignment){
 							Assignment currentAssign = (Assignment)currentStatement;
 							Expression assignExprValue = currentAssign.getValue();
 							setVarIDs(varToVal, assignExprValue);
-							expToVal.put(new SPSet(assignExprValue), new ValueID());
-							expToTemp.put(new SPSet(assignExprValue), generateNextTemp(allVarNames));
+							SPSet rhs = new SPSet(assignExprValue);
+							Set<SPSet> keySet = expToVal.keySet();
+							boolean changed = true;
+							while(changed){
+								for (SPSet key : keySet){
+									//while (rhs.contains(key)){
+									// TODO : Get code from Maddie with SPSet doing contains on SPSet.
+									//This is where the checking for already contained expressions and replacing expressions already seen happens.
+									//}
+								}
+							}
+							ValueID currentValID = new ValueID();
+							expToVal.put(rhs, currentValID);
+							Var currentDestVar = currentAssign.getDestVar();
+							IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), generateNextTemp(allVarNames));
+							expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+							newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
+							
+							varToVal.put((IR_FieldDecl)currentDestVar.getVarDescriptor().getIR(), currentValID);
 						}
 					}
 				}
 			}
-			// TODO : The above sets up the map in the case where we haven't seen things yet. Add checks for when we have seen things before and then try figuring out how to do
-			//the replacement logic. This next bit is non-trivial and is the heart of CSE, so not a good idea to try writing it at 5:45 am with no sleep.
+			
 		}
 		return context;
 	}
