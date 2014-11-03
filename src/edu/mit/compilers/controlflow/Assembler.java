@@ -162,12 +162,12 @@ public class Assembler {
 
         //write instructions for function body.
         context.addIns(blockIns);
-        Instruction moveSp = context.decScope();
-        context.addIns(moveSp);
 
         // Since GenerateFlow adds ENDs, all nodes will have an END - must 
         // check in generateReturn that non-void functions don't return 
         // without a return value
+        
+        //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
 
     private static List<Instruction> generateNode(FlowNode begin, ControlflowContext context, boolean isVoid) {
@@ -271,9 +271,9 @@ public class Assembler {
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
+                ins.add(context.decScope());
                 ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
-            ins.add(context.decScope());
 
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
@@ -319,10 +319,11 @@ public class Assembler {
                 FlowNode incrementer = begin.getTrueBranch().getChildren().get(0);
                 ins.addAll(generateNode(incrementer, context, isVoid));
                 Branch innerWhile = (Branch) incrementer.getChildren().get(0);
+                ins.add(Instruction.labelInstruction(innerWhile.getLabel()));
                 ins.addAll(generateExpression(innerWhile.getExpr(), context));
                 ins.addAll(context.pop(r10));
                 ins.add(new Instruction("cmp", new LocLiteral(0L), r10));
-                ins.add(new Instruction("je", new LocLabel(innerWhile.getFalseBranch().getLabel())));
+                ins.add(new Instruction("je", new LocLabel(begin.getFalseBranch().getLabel())));
                 next = innerWhile.getTrueBranch().getChildren().get(0);
             } else {
                 next = begin.getTrueBranch().getChildren().get(0);
@@ -380,6 +381,7 @@ public class Assembler {
             stIns.add(new Instruction("pop", r10));
             stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
         }
+        stIns.add(new Instruction("movq", new LocReg(Regs.RBP), new LocReg(Regs.RSP)));
         stIns.add(new Instruction("leave"));
         stIns.add(new Instruction("ret"));
         return stIns;

@@ -364,7 +364,7 @@ public class GenerateFlow {
 		Branch maxCheck = null;
 		if (whileNode.getMaxLoops() != null) {
 			// Generate loop counter variable to count loops.
-		    if (context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
+		    if (!context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
 			    loopCounter = new IR_FieldDecl(Type.INT, "while");
                 loop = generateFieldDecl(loopCounter, context);
 		    }
