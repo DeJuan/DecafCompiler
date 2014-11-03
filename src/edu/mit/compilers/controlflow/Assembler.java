@@ -208,6 +208,7 @@ public class Assembler {
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
             NoOp endBranch = null;
+            boolean firstNode = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -226,12 +227,16 @@ public class Assembler {
                 } else if (next instanceof NoOp) {
                     done = true;
                     endBranch = (NoOp) next;
+                    if (firstNode) {
+                        ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
+                    }
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
+                firstNode = false;
             }
             done = false;
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
@@ -265,6 +270,7 @@ public class Assembler {
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
+                ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
             ins.add(context.decScope());
 
