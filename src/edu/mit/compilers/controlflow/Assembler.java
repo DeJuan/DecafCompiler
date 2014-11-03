@@ -167,6 +167,7 @@ public class Assembler {
         // check in generateReturn that non-void functions don't return 
         // without a return value
         
+        context.decScope();
         //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
 
