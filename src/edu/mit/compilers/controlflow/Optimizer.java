@@ -1126,6 +1126,7 @@ public class Optimizer {
 							varToVal.put((IR_FieldDecl)currentDestVar.getVarDescriptor().getIR(), currentValID);
 						}
 					}
+					swapCodeblocks(cblock, newCodeblock);
 				}
 			}
 			
