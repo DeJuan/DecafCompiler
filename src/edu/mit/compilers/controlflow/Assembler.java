@@ -226,7 +226,6 @@ public class Assembler {
                 } else if (next instanceof NoOp) {
                     done = true;
                     endBranch = (NoOp) next;
-                    ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
@@ -254,7 +253,7 @@ public class Assembler {
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
-                    if (next != endBranch) {
+                    if (next != endBranch && endBranch != null) {
                         throw new RuntimeException("Something has gone HORRIBLY wrong");
                     }
                 } else if (next instanceof END) {
@@ -266,7 +265,6 @@ public class Assembler {
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
-                ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
             ins.add(context.decScope());
 
