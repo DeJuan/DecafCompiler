@@ -270,9 +270,19 @@ public class GenerateFlow {
 		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(comp, context);
 		Branch forBranch = new Branch(expr, BranchType.FOR);
+		Var loopVar = new Var(context.findSymbol(forNode.getVar().getName()), null);
+		AddExpr incrementLoopVar = new AddExpr(loopVar, Ops.PLUS, new IntLit(1L));
+		Statement increment = new Assignment(loopVar, Ops.ASSIGN, incrementLoopVar);
 		context.enterLoop(forBranch);
-		prevNode.addChild(forBranch);
-		forBranch.addParent(prevNode);
+		
+		// initialize loopvar to start
+		Assignment initialize = new Assignment(loopVar, Ops.ASSIGN, generateExpr(forNode.getStart(), context));
+		Codeblock initializer = new Codeblock();
+		initializer.addParent(prevNode);
+		prevNode.addChild(initializer);
+		initializer.addStatement(initialize);
+		forBranch.addParent(initializer);
+		initializer.addChild(forBranch);
 		
 		// Initiate loop block, when expr evaluates to true.
 		START beginForBlock = new START();
@@ -293,6 +303,15 @@ public class GenerateFlow {
 			    throw new RuntimeException("Maddie is wrong about things");
 			}
 			((Codeblock) endFor).setIsBreak(true);
+		}
+		// increment loop counter on all paths returning to beginning.
+		for (FlowNode node : forBranch.getParents()) {
+		    if (node instanceof Codeblock) {
+		        Codeblock blk = (Codeblock) node;
+		        if (blk.getIsBreak()) {
+		            blk.addStatement(increment);
+		        }
+		    }
 		}
 		context.exitLoop();
 		return exitFor;

@@ -160,12 +160,6 @@ public class Assembler {
             }
         }
 
-        //instructions for entering a function.
-        //TODO: Ask about this: maxLocal + totalLocal seems wrong/excessive, but not sure
-        //TODO: Note that maxLocal is monotonically increasing
-        LocLiteral loc= new LocLiteral(context.totalLocalSize);
-        context.addIns(new Instruction("subq", loc, rsp));
-
         //write instructions for function body.
         context.addIns(blockIns);
         Instruction moveSp = context.decScope();
@@ -284,6 +278,7 @@ public class Assembler {
             if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
                 throw new RuntimeException("Maddie assumed something untrue");
             }
+            context.incScope();
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -329,6 +324,7 @@ public class Assembler {
                 next = begin.getTrueBranch().getChildren().get(0);
             }
             boolean done = false;
+            context.incScope();
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
