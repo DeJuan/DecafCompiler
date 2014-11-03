@@ -371,7 +371,7 @@ public class Assembler {
         }
         if (expr != null) {
             LocReg r10 = new LocReg(Regs.R10);
-            stIns = generateExpression(expr, context);
+            stIns.addAll(generateExpression(expr, context));
             stIns.add(new Instruction("pop", r10));
             stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
         }
