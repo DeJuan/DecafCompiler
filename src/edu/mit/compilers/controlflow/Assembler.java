@@ -226,6 +226,7 @@ public class Assembler {
                 } else if (next instanceof NoOp) {
                     done = true;
                     endBranch = (NoOp) next;
+                    ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;

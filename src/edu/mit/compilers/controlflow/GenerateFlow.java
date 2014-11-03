@@ -299,6 +299,7 @@ public class GenerateFlow {
 		if (!(endFor instanceof END) && endFor != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endFor.addChild(forBranch);
+			forBranch.addParent(endFor);
 			if (!(endFor instanceof Codeblock)) {
 			    throw new RuntimeException("Maddie is wrong about things");
 			}
