@@ -71,7 +71,20 @@ public class SPSet {
         ternSet = new ArrayList<SPTern>();
         methodCalls = new ArrayList<MethodCall>();
         comparisons = new ArrayList<SPComp>();
-        if (expr instanceof NotExpr) {
+        if (expr instanceof BoolLit) {
+            boolSet.add(((BoolLit) expr).getTruthValue());
+        } else if (expr instanceof IntLit) {
+            intSet.add(((IntLit) expr).getValue());
+        } else if (expr instanceof Var) {
+            varSet.add(((Var) expr).getValueID());
+        } else if (expr instanceof Ternary) {
+            ternSet.add(new SPTern((Ternary) expr));
+        } else if (expr instanceof CompExpr) {
+            operator = ((CompExpr) expr).getOperator();
+            comparisons.add(new SPComp((CompExpr) expr));
+        } else if (expr instanceof MethodCall) {
+            methodCalls.add((MethodCall) expr);
+        } else if (expr instanceof NotExpr) {
             operator = Ops.NOT;
             NotExpr not = (NotExpr) expr;
             Expression inner = not.getUnresolvedExpression();
@@ -89,6 +102,8 @@ public class SPSet {
                 ternSet.add(new SPTern((Ternary) inner));
             } else if (inner instanceof MethodCall) {
                 methodCalls.add((MethodCall) inner);
+            } else if (inner instanceof CompExpr) {
+                comparisons.add(new SPComp((CompExpr) expr));
             } else {
                 SPSets.add(new SPSet(inner));
             }
@@ -110,6 +125,8 @@ public class SPSet {
                 ternSet.add(new SPTern((Ternary) inner));
             } else if (inner instanceof MethodCall) {
                 methodCalls.add((MethodCall) inner);
+            } else if (inner instanceof CompExpr) {
+                comparisons.add(new SPComp((CompExpr) expr));
             } else {
                 SPSets.add(new SPSet(inner));
             }

@@ -250,15 +250,13 @@ public class Assembler {
                     if (tempEndBranch == null) {
                         done = true;
                     } else {
-                        if (endBranch != null) {
-                            if (tempEndBranch != null && tempEndBranch != endBranch) {
-                                throw new RuntimeException("Something has gone HORRIBLY wrong");
-                            }
-                        }
                         next = tempEndBranch.getChildren().get(0);
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
+                    if (next != endBranch) {
+                        throw new RuntimeException("Something has gone HORRIBLY wrong");
+                    }
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
