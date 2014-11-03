@@ -10,19 +10,20 @@ public class Ternary extends Expression {
 	public Ternary(Expression condition, Expression truePath, Expression falsePath){
 		switch(condition.getExprType()){
 		case BOOL_LIT:
-			this.cond = (BoolLit)condition;
+			cond = condition;
 			break;
 		case COND_EXPR:
-			this.cond = (CondExpr)condition;
+			cond = condition;
 			break;
 		case COMP_EXPR:
-			this.cond = (CompExpr)condition;
+			cond = condition;
 			break;
 		case VAR:
 			Var varCond = (Var)condition;
 			if(varCond.getVarDescriptor().getType() != Type.BOOL){
 				throw new UnsupportedOperationException("Tried to use a non-boolean expression as the condition for a ternary expression.");
 			}
+			cond = condition;
 			break;
 		default:
 			throw new UnsupportedOperationException("Tried to use something that could never resolve to a truth value as the condition for a ternary expression.");
