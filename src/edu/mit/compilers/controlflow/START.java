@@ -59,8 +59,9 @@ public class START extends FlowNode {
 	public void addChild(FlowNode newChild) {
 		if (children.isEmpty()){
 			children.add(newChild);
+		} else {
+		    throw new UnsupportedOperationException("This START node already has a child. No START should have more than one child.");
 		}
-		else throw new UnsupportedOperationException("This START node already has a child. No START should have more than one child.");
 	}
 	
 	/**

@@ -152,14 +152,15 @@ public class GenerateFlow {
 				// This is a break. We set the pointer to the exit node  (FalseBranch) of the 
 				// innermost for/while loop.
 				Branch br = context.getInnermostLoop();
-				curNode.addChild(br.getFalseBranch());
-				if (!(curNode instanceof Codeblock)) {
+                if (!(curNode instanceof Codeblock)) {
                     // Build new Codeblock if one doesn't exist already.
                     Codeblock newBlock = new Codeblock();
                     curNode.addChild(newBlock);
                     newBlock.addParent(curNode);
                     curNode = newBlock;
-                } 
+                }
+                br.getFalseBranch().addParent(curNode);
+				curNode.addChild(br.getFalseBranch());
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
@@ -167,14 +168,15 @@ public class GenerateFlow {
 				// This is a continue. We set the pointer to the Branch object of the innermost 
 				// for/while loop.
 				Branch br = context.getInnermostLoop();
-				curNode.addChild(br);
-				if (!(curNode instanceof Codeblock)) {
+                if (!(curNode instanceof Codeblock)) {
                     // Build new Codeblock if one doesn't exist already.
                     Codeblock newBlock = new Codeblock();
                     curNode.addChild(newBlock);
                     newBlock.addParent(curNode);
                     curNode = newBlock;
                 } 
+				curNode.addChild(br);
+				br.addParent(curNode);
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
