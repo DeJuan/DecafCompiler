@@ -261,6 +261,7 @@ public class Assembler {
                     if (next != endBranch && endBranch != null) {
                         throw new RuntimeException("Something has gone HORRIBLY wrong");
                     }
+                    endBranch = (NoOp) next;
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
@@ -394,6 +395,7 @@ public class Assembler {
         NoOp target = null;
         while (!done) {
             if (next instanceof Codeblock) {
+                done = ((Codeblock) next).getIsBreak();
                 next = next.getChildren().get(0);
             } else if (next instanceof Branch) {
                 NoOp innerNOP = findNop(((Branch) next));
@@ -419,6 +421,7 @@ public class Assembler {
         done = false;
         while (!done) {
             if (next instanceof Codeblock) {
+                done = ((Codeblock) next).getIsBreak();
                 next = next.getChildren().get(0);
             } else if (next instanceof Branch) {
                 NoOp innerNOP = findNop(((Branch) next));
