@@ -153,6 +153,13 @@ public class GenerateFlow {
 				// innermost for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br.getFalseBranch());
+				if (!(curNode instanceof Codeblock)) {
+                    // Build new Codeblock if one doesn't exist already.
+                    Codeblock newBlock = new Codeblock();
+                    curNode.addChild(newBlock);
+                    newBlock.addParent(curNode);
+                    curNode = newBlock;
+                } 
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
@@ -161,6 +168,13 @@ public class GenerateFlow {
 				// for/while loop.
 				Branch br = context.getInnermostLoop();
 				curNode.addChild(br);
+				if (!(curNode instanceof Codeblock)) {
+                    // Build new Codeblock if one doesn't exist already.
+                    Codeblock newBlock = new Codeblock();
+                    curNode.addChild(newBlock);
+                    newBlock.addParent(curNode);
+                    curNode = newBlock;
+                } 
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
