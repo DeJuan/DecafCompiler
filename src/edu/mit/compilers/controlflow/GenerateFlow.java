@@ -480,9 +480,13 @@ public class GenerateFlow {
 					expr = new AddExpr(left, op, right);
 					break;
 				case TIMES:
+				    expr = new MultExpr(left, op, right);
+                    break;
 				case DIVIDE:
+				    expr = new DivExpr(left, op, right);
+                    break;
 				case MOD:
-					expr = new MultExpr(left, op, right);
+					expr = new ModExpr(left, op, right);
 					break;
 				default:
 					System.err.println("Should not reach here!");
