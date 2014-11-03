@@ -76,6 +76,18 @@ public class Branch extends FlowNode {
 		parents.add(newParent);
 	}
 	
+	/**
+	 * Allows you to remove a parent. This is done when we want to replace a parent 
+	 * codeblock or branch with an optimized version.
+	 * 
+	 * @param parent : The FlowNode you wish to remove from the parent list
+	 */
+	public void removeParent(FlowNode parent){
+		if (parents.contains(parent)){
+			parents.remove(parent);
+		}
+	}
+	
 	@Override
 	/**
 	 * Getter method for the children of this branch. This is a list that combines both the 
@@ -106,6 +118,7 @@ public class Branch extends FlowNode {
 	
 	/**
 	 * Method that allows you to set the true branch, in case you didn't know it at initialization.
+	 * A more likely use case is replacing this branch with an optimized version.
 	 * @param newTrueBranch : FlowNode representing new path taken if branch evaluates to True
 	 */
 	public void setTrueBranch(FlowNode newTrueBranch){
@@ -122,6 +135,7 @@ public class Branch extends FlowNode {
 	
 	/**
 	 * Method that allows you to set the false branch, in case it wasn't known at initialization.
+	 * A more likely use case is replacing this branch with an optimized version.
 	 * @param newFalseBranch : FlowNode representing new false path taken if branch evaluates to False. 
 	 */
 	public void setFalseBranch(FlowNode newFalseBranch){

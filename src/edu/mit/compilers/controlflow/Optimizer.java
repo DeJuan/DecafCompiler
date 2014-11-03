@@ -14,6 +14,8 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.Ops;
 
+//Code to get OS-independent newlines: System.getProperty("line.separator");
+
 /**
  * This class represents an object we can create to call our optimization methods. 
  * @author DeJuan
@@ -764,7 +766,11 @@ public class Optimizer {
 		}
 		else if (expr instanceof Var){
 			Var varia = (Var)expr;
-			varia.setValueID(varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR()));
+			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
+			if (valID == null){
+				throw new RuntimeException("Something went wrong; tried to set a ValueID with a null mapping.");
+			}
+			varia.setValueID(valID);
 		}	
 		else if(expr instanceof NotExpr){
 			NotExpr nope = (NotExpr)expr;
@@ -786,10 +792,92 @@ public class Optimizer {
 				setVarIDs(varToVal, arg);
 			}
 		}
-		
 	}
 
-	
+	/**
+	 * This is a helper method we will use to actually make our CSE changes.
+	 * In the CSE method, we'll make a new codeblock and just add statements as we go. 
+	 * After every assignment, we'll be putting in compiler temporaries, etc. and modifying
+	 * the block. Rather than take the time of doing an in-place modification, which carries
+	 * several issues of complication but is more efficient, we'll simply swap all the pointers
+	 * related to the old block to the new one, effectively replacing the old.
+	 * 
+	 * @param old : original Codeblock before modifications/optimizations
+	 * @param newBlock : new Codeblock after modifications/optimizations that should replace old
+	 */
+	public void swapCodeblocks(Codeblock old, Codeblock newBlock){
+		for (FlowNode oldP : old.getParents()){
+			if(!(oldP instanceof Branch)){
+				if(oldP instanceof Codeblock){
+					Codeblock oldParent = (Codeblock)oldP;
+					oldParent.removeChild(old);
+					oldParent.addChild(newBlock);
+					newBlock.addParent(oldParent);
+				}
+				else if(oldP instanceof NoOp){
+					NoOp oldParent = (NoOp)oldP;
+					oldParent.removeChild(old);
+					oldParent.addChild(newBlock);
+					newBlock.addParent(oldParent);
+				}
+				else if(oldP instanceof START){
+					START oldParent = (START)oldP;
+					oldParent.removeChild(old);
+					oldParent.addChild(newBlock);
+					newBlock.addParent(oldParent);
+				}
+				else if(oldP instanceof END){
+					throw new RuntimeException("Something went wrong: " + old.getLabel() + "has a parent of type END.");
+				}
+			}
+			
+			else{
+				Branch oldParent = (Branch)oldP;
+				if(old == oldParent.getTrueBranch()){
+					oldParent.setTrueBranch(newBlock);
+				}
+				else{
+					oldParent.setFalseBranch(newBlock);
+				}
+				newBlock.addParent(oldParent);
+			}
+		}
+		
+		for(FlowNode oldC: old.getChildren()){
+			if(!(oldC instanceof Branch)){
+				if(oldC instanceof Codeblock){
+					Codeblock oldChild = (Codeblock)oldC;
+					oldChild.removeParent(old);
+					oldChild.addParent(newBlock);
+					newBlock.addChild(oldChild);
+				}
+				else if (oldC instanceof NoOp){
+					NoOp oldChild = (NoOp)oldC;
+					oldChild.removeParent(old);
+					oldChild.addParent(newBlock);
+					newBlock.addChild(oldChild);
+				}
+				else if(oldC instanceof START){
+					throw new RuntimeException("Found a non-branch with a START for a child. The label for this branch is " + old.getLabel() + "." + System.getProperty("line.separator"));
+				}
+				
+				else if(oldC instanceof END){
+					END oldChild = (END)oldC;
+					oldChild.removeParent(old);
+					oldChild.addParent(newBlock);
+					newBlock.addChild(oldChild);
+				}
+			}
+
+			else{//mirror of the above, so check omitted
+				//Is this sane..?
+				Branch oldChild = (Branch)oldC;
+				oldChild.removeParent(old);
+				oldChild.addParent(newBlock);
+				newBlock.addChild(oldChild);
+			}
+		}
+	}
 	
 	/**
 	 * This is an attempt at finding the statements that were killed in a given Codeblock.
@@ -977,7 +1065,7 @@ public class Optimizer {
 	 * 	1.1) If the Statement is an Assignment: (i.e. x = a + b)
 	 *     1.1a) Look at the values being assigned in the statement (a+b). For each component of the value being assigned (a and b), 
 	 *     	  1.1ab) Check if we have ever seen this component before.
-	 *     		- If we have not, assign a symbolic value to represent this component. This is varToVal. a= v1, b = v2;
+	 *     		- If we have not, assign a symbolic value to represent this component. This is varToVal. a= v1, b = v2;. This should never happen unless the component is a literal.
 	 *     		+ If we have, replace the component with its symbolic value.
 	 *     1.1b) After we have checked all components, check if we have ever seen this combination of symbolic values. 
 	 *         - If we have not, then assign a symbolic value to represent the combination of these components : v3 = +(v1, v2). This is an SPSet.
@@ -997,11 +1085,12 @@ public class Optimizer {
 		for(START initialNode : startsForMethods){
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
-			Map<Expression, ValueID> expToVal = new HashMap<Expression, ValueID>();
+			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
 			Map<SPSet, String> expToTemp = new HashMap<SPSet, String>();
 			Map<FlowNode, Set<Expression>> availableExpressionsAtNode = calculateAvailableExpressions(initialNode);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
+			
 			processing.add(firstNodeInProgram);
 			while(!processing.isEmpty()){
 				FlowNode currentNode = processing.remove(0);
@@ -1012,13 +1101,8 @@ public class Optimizer {
 						if(currentStatement instanceof Assignment){
 							Assignment currentAssign = (Assignment)currentStatement;
 							Expression assignExprValue = currentAssign.getValue();
-							List<IR_FieldDecl> varIRsInExpr = getVarIRsFromExpression(assignExprValue);
-							for(IR_FieldDecl currentVar : varIRsInExpr){
-								if(!varToVal.containsKey(currentVar)){
-									varToVal.put(currentVar, new ValueID());
-								}
-							}
-							expToVal.put(assignExprValue, new ValueID());
+							setVarIDs(varToVal, assignExprValue);
+							expToVal.put(new SPSet(assignExprValue), new ValueID());
 							expToTemp.put(new SPSet(assignExprValue), generateNextTemp(allVarNames));
 						}
 					}

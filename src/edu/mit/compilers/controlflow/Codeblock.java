@@ -55,6 +55,18 @@ public class Codeblock extends FlowNode {
 	}
 	
 	/**
+	 * Allows you to remove a parent. This is done when we want to replace a parent 
+	 * codeblock or branch with an optimized version.
+	 * 
+	 * @param parent : The FlowNode you wish to remove from the parent list
+	 */
+	public void removeParent(FlowNode parent){
+		if (parents.contains(parent)){
+			parents.remove(parent);
+		}
+	}
+	
+	/**
 	 * Gets list of child FlowNodes.
 	 * @return children : List<FlowNode> containing immediate successors.
 	 */
@@ -71,6 +83,18 @@ public class Codeblock extends FlowNode {
 		children.add(newChild);
 		if (children.size() > 1) {
 		    throw new RuntimeException("Codeblocks shall have no more than one child");
+		}
+	}
+	
+	/**
+	 * Allows you to remove a child. This is done when we want to replace a child
+	 * codeblock or branch with an optimized version. 
+	 * 
+	 * @param child : The node we want to remove. 
+	 */
+	public void removeChild(FlowNode child){
+		if(children.contains(child)){
+			children.remove(child);
 		}
 	}
 	
