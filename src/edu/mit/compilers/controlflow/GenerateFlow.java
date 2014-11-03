@@ -314,11 +314,17 @@ public class GenerateFlow {
 		FlowNode endFor = generateFlow(beginForBlock, forNode.getBlock(), context);
 		if (!(endFor instanceof END) && endFor != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
+		    if (!(endFor instanceof Codeblock)) {
+                if (!(endFor instanceof NoOp)) {
+                    throw new RuntimeException("Maddie is wrong about things");
+                }
+                Codeblock newBlock = new Codeblock();
+                endFor.addChild(newBlock);
+                newBlock.addParent(endFor);
+                endFor = newBlock;
+            }
 			endFor.addChild(forBranch);
 			forBranch.addParent(endFor);
-			if (!(endFor instanceof Codeblock)) {
-			    throw new RuntimeException("Maddie is wrong about things");
-			}
 			((Codeblock) endFor).setIsBreak(true);
 		}
 		// increment loop counter on all paths returning to beginning.
@@ -430,11 +436,17 @@ public class GenerateFlow {
 		// Begin recursively generating loop code block.
 		FlowNode endWhile = generateFlow(beginWhileBlock, whileNode.getBlock(), context);
 		if (!(endWhile instanceof END) && endWhile != null ) {
+		    if (!(endWhile instanceof Codeblock)) {
+                if (!(endWhile instanceof NoOp)) {
+                    throw new RuntimeException("Maddie is wrong about things");
+                }
+                Codeblock newBlock = new Codeblock();
+                endWhile.addChild(newBlock);
+                newBlock.addParent(endWhile);
+                endWhile = newBlock;
+            }
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endWhile.addChild(whileBranch);
-			if (!(endWhile instanceof Codeblock)) {
-                throw new RuntimeException("Maddie is wrong about things");
-            }
             ((Codeblock) endWhile).setIsBreak(true);
 		}
 		context.exitLoop();
