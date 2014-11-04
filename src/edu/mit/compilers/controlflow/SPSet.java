@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import edu.mit.compilers.ir.Ops;
@@ -62,109 +63,122 @@ public class SPSet {
 	}
 
 	public SPSet(Expression expr){
-		//INT_LIT, VAR, BOOL_LIT, STRING_LIT, BIN_EXPR, METHOD_CALL, NOT,
-		//NEGATE, TERNARY, ADD_EXPR, COMP_EXPR, COND_EXPR, EQ_EXPR, MULT_EXPR,
-		//DIV_EXPR, MOD_EXPR;SPSets =  new ArrayList<SPSet>();
-		varSet = new ArrayList<ValueID>();
-		intSet = new ArrayList<Long>();
-		boolSet = new ArrayList<Boolean>();
-		ternSet = new ArrayList<SPTern>();
-		methodCalls = new ArrayList<MethodCall>();
-		comparisons = new ArrayList<SPComp>();
-		if (expr instanceof BoolLit) {
-			boolSet.add(((BoolLit) expr).getTruthValue());
-		} else if (expr instanceof IntLit) {
-			intSet.add(((IntLit) expr).getValue());
-		} else if (expr instanceof Var) {
-			varSet.add(((Var) expr).getValueID());
-		} else if (expr instanceof Ternary) {
-			ternSet.add(new SPTern((Ternary) expr));
-		} else if (expr instanceof CompExpr) {
-			operator = ((CompExpr) expr).getOperator();
-			comparisons.add(new SPComp((CompExpr) expr));
-		} else if (expr instanceof MethodCall) {
-			methodCalls.add((MethodCall) expr);
-		} else if (expr instanceof NotExpr) {
-			operator = Ops.NOT;
-			NotExpr not = (NotExpr) expr;
-			Expression inner = not.getUnresolvedExpression();
-			if (inner instanceof Var) {
-				Var innerVar = (Var) inner;
-				if (innerVar.getValueID() == null) {
-					throw new RuntimeException("valueID must be set in advance");
-				}
-				varSet.add(innerVar.getValueID());
-			} else if (inner instanceof IntLit) {
-				intSet.add(((IntLit) inner).getValue());
-			} else if (inner instanceof BoolLit) {
-				boolSet.add(((BoolLit) inner).getTruthValue());
-			} else if (inner instanceof Ternary) {
-				ternSet.add(new SPTern((Ternary) inner));
-			} else if (inner instanceof MethodCall) {
-				methodCalls.add((MethodCall) inner);
-			} else if (inner instanceof CompExpr) {
-				comparisons.add(new SPComp((CompExpr) expr));
-			} else {
-				SPSets.add(new SPSet(inner));
-			}
-		} else if (expr instanceof NegateExpr) {
-			operator = Ops.NEGATE;
-			NegateExpr neg = (NegateExpr) expr;
-			Expression inner = neg.getExpression();
-			if (inner instanceof Var) {
-				Var innerVar = (Var) inner;
-				if (innerVar.getValueID() == null) {
-					throw new RuntimeException("valueID must be set in advance");
-				}
-				varSet.add(innerVar.getValueID());
-			} else if (inner instanceof IntLit) {
-				intSet.add(((IntLit) inner).getValue());
-			} else if (inner instanceof BoolLit) {
-				boolSet.add(((BoolLit) inner).getTruthValue());
-			} else if (inner instanceof Ternary) {
-				ternSet.add(new SPTern((Ternary) inner));
-			} else if (inner instanceof MethodCall) {
-				methodCalls.add((MethodCall) inner);
-			} else if (inner instanceof CompExpr) {
-				comparisons.add(new SPComp((CompExpr) expr));
-			} else {
-				SPSets.add(new SPSet(inner));
-			}
-		} else if (expr instanceof BinExpr) {
-			BinExpr binEx = (BinExpr) expr;
-			operator = binEx.getOperator();
-			Expression lhs = binEx.getLeftSide();
-			Expression rhs = binEx.getRightSide();
-			if (binEx instanceof CompExpr) {
-				comparisons.add(new SPComp((CompExpr) binEx));
-			} else {
-				if (lhs instanceof Var) {
-					varSet.add(((Var) lhs).getValueID());
-				} else if (lhs instanceof Ternary) {
-					ternSet.add(new SPTern((Ternary) lhs));
-				} else if (lhs instanceof MethodCall) {
-					methodCalls.add((MethodCall) lhs);
-				} else {
-					SPSets.add(new SPSet(lhs));
-				}
-				if (rhs instanceof Var) {
-					Var varRHS = (Var) rhs;
-					varSet.add(varRHS.getValueID());
-				} else if (rhs instanceof Ternary) {
-					Ternary ternRHS = (Ternary) rhs;
-					SPTern tern = new SPTern(ternRHS);
-					ternSet.add(tern);
-				} else if (rhs instanceof MethodCall) {
-					methodCalls.add((MethodCall) rhs);
-				} else {
-					SPSet SPSetRHS = new SPSet(rhs);
-					SPSets.add(SPSetRHS);
-				}
-			}
-		} else {
-			throw new UnsupportedOperationException("Tried to initialize an SPSet with an invalid operator.");
-		}
-	}
+        //INT_LIT, VAR, BOOL_LIT, STRING_LIT, BIN_EXPR, METHOD_CALL, NOT,
+        //NEGATE, TERNARY, ADD_EXPR, COMP_EXPR, COND_EXPR, EQ_EXPR, MULT_EXPR,
+        //DIV_EXPR, MOD_EXPR;SPSets =  new ArrayList<SPSet>();
+        varSet = new ArrayList<ValueID>();
+        intSet = new ArrayList<Long>();
+        boolSet = new ArrayList<Boolean>();
+        ternSet = new ArrayList<SPTern>();
+        methodCalls = new ArrayList<MethodCall>();
+        comparisons = new ArrayList<SPComp>();
+        if (expr instanceof BoolLit) {
+            boolSet.add(((BoolLit) expr).getTruthValue());
+        } else if (expr instanceof IntLit) {
+            intSet.add(((IntLit) expr).getValue());
+        } else if (expr instanceof Var) {
+            varSet.add(((Var) expr).getValueID());
+        } else if (expr instanceof Ternary) {
+            ternSet.add(new SPTern((Ternary) expr));
+        } else if (expr instanceof CompExpr) {
+            operator = ((CompExpr) expr).getOperator();
+            comparisons.add(new SPComp((CompExpr) expr));
+        } else if (expr instanceof MethodCall) {
+            methodCalls.add((MethodCall) expr);
+        } else if (expr instanceof NotExpr) {
+            operator = Ops.NOT;
+            NotExpr not = (NotExpr) expr;
+            Expression inner = not.getUnresolvedExpression();
+            if (inner instanceof Var) {
+                Var innerVar = (Var) inner;
+                if (innerVar.getValueID() == null) {
+                    throw new RuntimeException("valueID must be set in advance");
+                }
+                varSet.add(innerVar.getValueID());
+            } else if (inner instanceof IntLit) {
+                intSet.add(((IntLit) inner).getValue());
+            } else if (inner instanceof BoolLit) {
+                boolSet.add(((BoolLit) inner).getTruthValue());
+            } else if (inner instanceof Ternary) {
+                ternSet.add(new SPTern((Ternary) inner));
+            } else if (inner instanceof MethodCall) {
+                methodCalls.add((MethodCall) inner);
+            } else if (inner instanceof CompExpr) {
+                comparisons.add(new SPComp((CompExpr) expr));
+            } else {
+                SPSets.add(new SPSet(inner));
+            }
+        } else if (expr instanceof NegateExpr) {
+            operator = Ops.NEGATE;
+            NegateExpr neg = (NegateExpr) expr;
+            Expression inner = neg.getExpression();
+            if (inner instanceof Var) {
+                Var innerVar = (Var) inner;
+                if (innerVar.getValueID() == null) {
+                    throw new RuntimeException("valueID must be set in advance");
+                }
+                varSet.add(innerVar.getValueID());
+            } else if (inner instanceof IntLit) {
+                intSet.add(((IntLit) inner).getValue());
+            } else if (inner instanceof BoolLit) {
+                boolSet.add(((BoolLit) inner).getTruthValue());
+            } else if (inner instanceof Ternary) {
+                ternSet.add(new SPTern((Ternary) inner));
+            } else if (inner instanceof MethodCall) {
+                methodCalls.add((MethodCall) inner);
+            } else if (inner instanceof CompExpr) {
+                comparisons.add(new SPComp((CompExpr) expr));
+            } else {
+                SPSets.add(new SPSet(inner));
+            }
+        } else if (expr instanceof BinExpr) {
+            BinExpr binEx = (BinExpr) expr;
+            operator = binEx.getOperator();
+            Expression lhs = binEx.getLeftSide();
+            Expression rhs = binEx.getRightSide();
+            if (operator == Ops.MINUS) {
+                operator = Ops.PLUS;
+                rhs = new NegateExpr(rhs);
+            }
+            if (binEx instanceof CompExpr) {
+                comparisons.add(new SPComp((CompExpr) binEx));
+            } else {
+                if (lhs instanceof Var) {
+                    varSet.add(((Var) lhs).getValueID());
+                } else if (lhs instanceof Ternary) {
+                    ternSet.add(new SPTern((Ternary) lhs));
+                } else if (lhs instanceof MethodCall) {
+                    methodCalls.add((MethodCall) lhs);
+                } else {
+                    BinExpr innerBinEx = (BinExpr) lhs;
+                    if (innerBinEx.getOperator() == operator) {
+                        populateSPSet(this, innerBinEx);
+                    } else {
+                        SPSets.add(new SPSet(lhs));
+                    }
+                }
+                if (rhs instanceof Var) {
+                    Var varRHS = (Var) rhs;
+                    varSet.add(varRHS.getValueID());
+                } else if (rhs instanceof Ternary) {
+                    Ternary ternRHS = (Ternary) rhs;
+                    SPTern tern = new SPTern(ternRHS);
+                    ternSet.add(tern);
+                } else if (rhs instanceof MethodCall) {
+                    methodCalls.add((MethodCall) rhs);
+                } else {
+                    BinExpr innerBinEx = (BinExpr) rhs;
+                    if (innerBinEx.getOperator() == operator) {
+                        populateSPSet(this, innerBinEx);
+                    } else {
+                        SPSets.add(new SPSet(rhs));
+                    }
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("Tried to initialize an SPSet with an invalid operator.");
+        }
+    }
 
 	public SPSet copy(SPSet original) {
 		List<SPSet> SPCopy = new ArrayList<SPSet>();
@@ -396,6 +410,420 @@ public class SPSet {
 			throw new RuntimeException("Should never reach here");
 		}
 	}
+	
+	private static void populateSPSet(SPSet outer, BinExpr expr) {
+        if (outer.operator != expr.getOperator()) {
+            throw new RuntimeException("populateSPSet should only be called when the operators match");
+        }
+        Expression l = expr.getLeftSide();
+        Expression r = expr.getRightSide();
+        if (l instanceof Var) {
+            outer.varSet.add(((Var) l).getValueID());
+        } else if (l instanceof Ternary) {
+            outer.ternSet.add(new SPTern((Ternary) l));
+        } else if (l instanceof MethodCall) {
+            outer.methodCalls.add((MethodCall) l);
+        } else {
+            BinExpr innerBinEx = (BinExpr) l;
+            if (innerBinEx.getOperator() == outer.operator) {
+                populateSPSet(outer, innerBinEx);
+            } else {
+                outer.SPSets.add(new SPSet(innerBinEx));
+            }
+        }
+        if (r instanceof Var) {
+            outer.varSet.add(((Var) r).getValueID());
+        } else if (r instanceof Ternary) {
+            outer.ternSet.add(new SPTern((Ternary) r));
+        } else if (r instanceof MethodCall) {
+            outer.methodCalls.add((MethodCall) r);
+        } else {
+            BinExpr innerBinEx = (BinExpr) r;
+            if (innerBinEx.getOperator() == outer.operator) {
+                populateSPSet(outer, innerBinEx);
+            } else {
+                outer.SPSets.add(new SPSet(innerBinEx));
+            }
+        }
+
+    }
+
+	
+	public boolean contains(SPSet set) {
+        if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
+            if (!set.SPSets.isEmpty() || !set.varSet.isEmpty() || !set.intSet.isEmpty() 
+                    || !set.boolSet.isEmpty() || !set.ternSet.isEmpty() || !set.methodCalls.isEmpty() 
+                    || !(set.comparisons.size() == 1)) {
+                throw new RuntimeException("Unexpected behavior - talk to Maddie");
+            }
+            SPComp target = set.comparisons.get(0);
+            if (comparisons.contains(target)) {
+                return true;
+            }
+            for (SPSet curSet : SPSets) {
+                if (curSet.comparisons.contains(target)) {
+                    return true;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.comparisons.contains(target) || tern.falseBranch.comparisons.contains(target) 
+                        || tern.trueBranch.comparisons.contains(target)){
+                    return true;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().comparisons.contains(target) || comp.getRhs().comparisons.contains(target)) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (set.operator == null) {
+            if (!set.SPSets.isEmpty() || !set.comparisons.isEmpty()) {
+                throw new RuntimeException("this means something is wonky with the constructor");
+            } if (set.varSet.size() + set.intSet.size() + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() != 1) {
+                throw new RuntimeException("An SPSet containing more than one thing should have an operator set");
+            }
+            if(!set.varSet.isEmpty()){
+                ValueID target = set.varSet.get(0);
+                if (varSet.contains(target)) {
+                    return true;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.varSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().varSet.contains(target) 
+                            || tern.getTrueBranch().varSet.contains(target) 
+                            || tern.getFalseBranch().varSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().varSet.contains(target) || comp.getRhs().varSet.contains(target)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (intSet.contains(target)) {
+                    return true;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.intSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().intSet.contains(target) 
+                            || tern.getTrueBranch().intSet.contains(target) 
+                            || tern.getFalseBranch().intSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().intSet.contains(target) || comp.getRhs().intSet.contains(target)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (boolSet.contains(target)) {
+                    return true;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.boolSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().boolSet.contains(target) 
+                            || tern.getTrueBranch().boolSet.contains(target) 
+                            || tern.getFalseBranch().boolSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().boolSet.contains(target) || comp.getRhs().boolSet.contains(target)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (ternSet.contains(target)) {
+                    return true;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.ternSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().ternSet.contains(target) 
+                            || tern.getTrueBranch().ternSet.contains(target) 
+                            || tern.getFalseBranch().ternSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().ternSet.contains(target) || comp.getRhs().ternSet.contains(target)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.methodCalls.isEmpty()) {
+                return false;
+            }
+            throw new RuntimeException("shouldn't reach here");
+        } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
+            if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                throw new RuntimeException("Not/Negate should have only one component");
+            }
+            if (!set.SPSets.isEmpty()) {
+                SPSet target = set.SPSets.get(0);
+                if (operator == set.operator) {
+                    if (SPSets.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.varSet.isEmpty()) {
+                ValueID target = set.varSet.get(0);
+                if (operator == set.operator) {
+                    if (varSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (operator == set.operator) {
+                    if (intSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (operator == set.operator) {
+                    if (boolSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (operator == set.operator) {
+                    if (ternSet.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (!set.methodCalls.isEmpty()) {
+                return false;
+            } else if (!set.comparisons.isEmpty()) {
+                SPComp target = set.comparisons.get(0);
+                if (operator == set.operator) {
+                    if (comparisons.contains(target)) {
+                        return true;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
+                        return true;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            throw new RuntimeException("should be reachable");
+
+        } else {
+            if (!set.methodCalls.isEmpty()) {
+                return false;
+            }
+            // all binex other than comp
+            if (operator == set.operator) {
+                boolean doneYet = false;
+                SPSet copy = copy(this);
+                for (SPSet innerSet : set.SPSets) {
+                    if (!copy.SPSets.contains(innerSet)) {
+                        doneYet = true;
+                        break;
+                    } else {
+                        copy.remove(innerSet);
+                    }
+                } if (!doneYet) {
+                    for (ValueID id : set.varSet) {
+
+                        if (!copy.varSet.contains(id)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.varSet.remove(id);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Long intLit : intSet) {
+                        if (!copy.intSet.contains(intLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.intSet.remove(intLit);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Boolean boolLit : boolSet) {
+                        if (!copy.boolSet.contains(boolLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.boolSet.remove(boolLit);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPTern ternary : ternSet) {
+                        if (!copy.ternSet.contains(ternary)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.ternSet.remove(ternary);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPComp comp : comparisons) {
+                        if (!copy.comparisons.contains(comp)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.comparisons.remove(comp);
+                        }
+                    }
+                }
+                if (!doneYet) {
+                    return true;
+                }
+            }
+            for (SPSet currentSP : SPSets){
+                if (currentSP.contains(set)) {
+                    return true;
+                }
+            }
+
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set) || tern.falseBranch.contains(set) || tern.trueBranch.contains(set)){
+                    return true;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 
 	private void remove(Expression expr) {
 		if (!contains(expr)) {
@@ -653,6 +1081,531 @@ public class SPSet {
 		}
 
 	}
+	
+	public void remove(SPSet set) {
+        if (!contains(set)) {
+            throw new RuntimeException("Can't remove what isn't there");
+        }
+        if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
+            if (!set.SPSets.isEmpty() || !set.varSet.isEmpty() || !set.intSet.isEmpty() 
+                    || !set.boolSet.isEmpty() || !set.ternSet.isEmpty() || !set.methodCalls.isEmpty() 
+                    || !(set.comparisons.size() == 1)) {
+                throw new RuntimeException("Unexpected behavior - talk to Maddie");
+            }
+            SPComp target = set.comparisons.get(0);
+            if (comparisons.contains(target)) {
+                comparisons.remove(target);
+                return;
+            }
+            for (SPSet curSet : SPSets) {
+                if (curSet.comparisons.contains(target)) {
+                    curSet.comparisons.remove(target);
+                    return;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.comparisons.contains(target)) {
+                    tern.cond.comparisons.remove(target);
+                    return;
+                } else if (tern.falseBranch.comparisons.contains(target) ) {
+                    tern.falseBranch.comparisons.remove(target);
+                    return;
+                } else if (tern.trueBranch.comparisons.contains(target)){
+                    tern.falseBranch.comparisons.remove(target);
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().comparisons.contains(target)) {
+                    comp.getLhs().comparisons.remove(target);
+                    return;
+                }   else if (comp.getRhs().comparisons.contains(target)) {
+                    comp.getRhs().comparisons.remove(target);
+                    return;
+                }
+            }
+            throw new RuntimeException("shouldn't be here");
+        } else if (set.operator == null) {
+            if (!set.SPSets.isEmpty() || !set.comparisons.isEmpty()) {
+                throw new RuntimeException("this means something is wonky with the constructor");
+            } if (set.varSet.size() + set.intSet.size() + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() != 1) {
+                throw new RuntimeException("An SPSet containing more than one thing should have an operator set");
+            }
+            if(!set.varSet.isEmpty()){
+                ValueID target = set.varSet.get(0);
+                if (varSet.contains(target)) {
+                    varSet.remove(target);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.varSet.contains(target)) {
+                        curSet.varSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().varSet.contains(target)) {
+                        tern.getTernaryCondition().varSet.remove(target);
+                        return;
+                    } else if (tern.getTrueBranch().varSet.contains(target)) {
+                        tern.getTrueBranch().varSet.remove(target);
+                        return;
+                    }else if (tern.getFalseBranch().varSet.contains(target)) {
+                        tern.getFalseBranch().varSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().varSet.contains(target)) {
+                        comp.getLhs().varSet.remove(target);
+                        return;
+                    } else if (comp.getRhs().varSet.contains(target)) {
+                        comp.getRhs().varSet.remove(target);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (intSet.contains(target)) {
+                    intSet.remove(target);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.intSet.contains(target)) {
+                        curSet.intSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().intSet.contains(target)) {
+                        tern.getTernaryCondition().intSet.remove(target);
+                        return;
+                    } else if (tern.getTrueBranch().intSet.contains(target)) {
+                        tern.getTrueBranch().intSet.remove(target);
+                        return;
+                    } else if (tern.getFalseBranch().intSet.contains(target)) {
+                        tern.getFalseBranch().intSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().intSet.contains(target)) {
+                        comp.getLhs().intSet.remove(target);
+                        return;
+                    } else if (comp.getRhs().intSet.contains(target)) {
+                        comp.getRhs().intSet.remove(target);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (boolSet.contains(target)) {
+                    boolSet.remove(target);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.boolSet.contains(target)) {
+                        curSet.boolSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().boolSet.contains(target)) {
+                        tern.getTernaryCondition().boolSet.remove(target);
+                        return;
+                    } else if (tern.getTrueBranch().boolSet.contains(target)) {
+                        tern.getTrueBranch().boolSet.remove(target);
+                        return;
+                    } else if (tern.getFalseBranch().boolSet.contains(target)) {
+                        tern.getFalseBranch().boolSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().boolSet.contains(target)) {
+                        comp.getLhs().boolSet.remove(target);
+                        return;
+                    } else if (comp.getRhs().boolSet.contains(target)) {
+                        comp.getRhs().boolSet.remove(target);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (ternSet.contains(target)) {
+                    ternSet.remove(target);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.ternSet.contains(target)) {
+                        curSet.ternSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().ternSet.contains(target)) {
+                        tern.getTernaryCondition().ternSet.remove(target);
+                        return;
+                    } else if (tern.getTrueBranch().ternSet.contains(target)) {
+                        tern.getTrueBranch().ternSet.remove(target);
+                        return;
+                    } else if (tern.getFalseBranch().ternSet.contains(target)) {
+                        tern.getFalseBranch().ternSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().ternSet.contains(target)) {
+                        comp.getLhs().ternSet.remove(target);
+                        return;
+                    } else if (comp.getRhs().ternSet.contains(target)) {
+                        comp.getRhs().ternSet.remove(target);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            }
+            throw new RuntimeException("shouldn't reach here");
+        } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
+            if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                throw new RuntimeException("Not/Negate should have only one component");
+            }
+            if (!set.SPSets.isEmpty()) {
+                SPSet target = set.SPSets.get(0);
+                if (operator == set.operator) {
+                    if (SPSets.contains(target)) {
+                        SPSets.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.SPSets.remove(target);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    } else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.varSet.isEmpty()) {
+                ValueID target = set.varSet.get(0);
+                if (operator == set.operator) {
+                    if (varSet.contains(target)) {
+                        varSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.remove(set);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (operator == set.operator) {
+                    if (intSet.contains(target)) {
+                        intSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.remove(set);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (operator == set.operator) {
+                    if (boolSet.contains(target)) {
+                        boolSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.remove(set);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (operator == set.operator) {
+                    if (ternSet.contains(target)) {
+                        ternSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.remove(set);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.comparisons.isEmpty()) {
+                SPComp target = set.comparisons.get(0);
+                if (operator == set.operator) {
+                    if (comparisons.contains(target)) {
+                        varSet.remove(target);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.remove(set);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().remove(set);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().remove(set);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().remove(set);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().remove(set);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().remove(set);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            }
+            throw new RuntimeException("should not be reachable");
+
+        } else {
+            // all binex other than comp
+            if (operator == set.operator) {
+                boolean doneYet = false;
+                SPSet copy = copy(this);
+                for (SPSet innerSet : set.SPSets) {
+                    if (!copy.SPSets.contains(innerSet)) {
+                        doneYet = true;
+                        break;
+                    } else {
+                        copy.remove(innerSet);
+                    }
+                } if (!doneYet) {
+                    for (ValueID id : set.varSet) {
+
+                        if (!copy.varSet.contains(id)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.varSet.remove(id);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Long intLit : intSet) {
+                        if (!copy.intSet.contains(intLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.intSet.remove(intLit);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Boolean boolLit : boolSet) {
+                        if (!copy.boolSet.contains(boolLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.boolSet.remove(boolLit);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPTern ternary : ternSet) {
+                        if (!copy.ternSet.contains(ternary)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.ternSet.remove(ternary);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPComp comp : comparisons) {
+                        if (!copy.comparisons.contains(comp)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.comparisons.remove(comp);
+                        }
+                    }
+                }
+                if (!doneYet) {
+                    for (SPSet innerSet : set.SPSets) {
+                        SPSets.remove(innerSet);
+                    }
+                    for (ValueID id : set.varSet) {
+                        varSet.remove(id);
+                    }
+                    for (Long intLit : set.intSet) {
+                        intSet.remove(intLit);
+                    }
+                    for (Boolean boolLit : set.boolSet) {
+                        boolSet.remove(boolLit);
+                    }
+                    for (SPTern tern : set.ternSet) {
+                        ternSet.remove(tern);
+                    }
+                    for (SPComp comp : set.comparisons) {
+                        comparisons.remove(comp);
+                    }
+                    return;
+                }
+            }
+            for (SPSet currentSP : SPSets){
+                if (currentSP.contains(set)) {
+                    currentSP.remove(set);
+                    return;
+                }
+            }
+
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set)) {
+                    tern.cond.remove(set);
+                    return;
+                } else if (tern.falseBranch.contains(set)) {
+                    tern.falseBranch.remove(set);
+                    return;
+                } else if (tern.trueBranch.contains(set)) {
+                    tern.trueBranch.remove(set);
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set)) {
+                    comp.getLhs().remove(set);
+                    return;
+                } else if (comp.getRhs().contains(set)) {
+                    comp.getRhs().remove(set);
+                    return;
+                }
+            }
+            throw new RuntimeException("Shouldn't get here");
+        }
+    }
+	
 
 	@Override
 	public int hashCode(){

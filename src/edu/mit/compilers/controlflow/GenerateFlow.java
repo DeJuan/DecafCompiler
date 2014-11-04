@@ -531,21 +531,28 @@ public class GenerateFlow {
 	 */
 	public static Declaration generateFieldDecl(IR_FieldDecl node, ControlflowContext context) {
 		String name = node.getName();
-		Descriptor d = new Descriptor(node);
 		Type type = node.getType();
 		long size = CodegenConst.INT_SIZE;
 		switch (type) {
 			case INTARR:
 			case BOOLARR:
-				size = node.getLength().getValue() * CodegenConst.INT_SIZE;
-				break;
+				//size = node.getLength().getValue() * CodegenConst.INT_SIZE;
+				//TODO : Don't think this is what you wanted, Maddie, but I tried. T_T Doesn't use index and does dupe the name, but I don't know enough to do it better. 
+				for (int i = 0 ; i < node.getLength().getValue(); i++){
+					Descriptor des = new Descriptor(node);
+					LocStack loc = context.allocLocal(size);
+					des.setLocation(loc);
+					context.putSymbol(name, des);
+				}
+				return new Declaration(node);
 			default:
-				break;
+				Descriptor d = new Descriptor(node);
+				LocStack loc = context.allocLocal(size);
+				d.setLocation(loc);
+				context.putSymbol(name, d);
+				return new Declaration(node);
 		}
-		LocStack loc = context.allocLocal(size);
-		d.setLocation(loc);
-		context.putSymbol(name, d);
-		return new Declaration(node);
+		
 	}
 	
 	/**

@@ -1047,7 +1047,7 @@ public class Optimizer {
 			}
 		}
 
-		return OUT;
+		return IN;
 	}
 
 	/**
@@ -1085,6 +1085,7 @@ public class Optimizer {
 	 */
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
+			//Set up tables and lists we'll need.
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
@@ -1093,40 +1094,58 @@ public class Optimizer {
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			processing.add(firstNodeInProgram);
-			while(!processing.isEmpty()){
-				FlowNode currentNode = processing.remove(0);
-				currentNode.visit();
-				if(currentNode instanceof Codeblock){
+			while(!processing.isEmpty()){ //list of nodes to process
+				FlowNode currentNode = processing.remove(0); //get first node in list
+				currentNode.visit(); //set its visited attribute so we don't loop back to it
+				if(currentNode instanceof Codeblock){ //if codeblock downcast and make new
 					Codeblock cblock = (Codeblock)currentNode;
 					Codeblock newCodeblock = new Codeblock();
-					for(Statement currentStatement : cblock.getStatements()){
-						newCodeblock.addStatement(currentStatement);
+					for(Statement currentStatement : cblock.getStatements()){ //for each statement
+						newCodeblock.addStatement(currentStatement); //TODO : add it to the new version, but NOT HERE, do it after modification 
 						if(currentStatement instanceof Assignment){
-							Assignment currentAssign = (Assignment)currentStatement;
-							Expression assignExprValue = currentAssign.getValue();
-							setVarIDs(varToVal, assignExprValue);
-							SPSet rhs = new SPSet(assignExprValue);
-							Set<SPSet> keySet = expToVal.keySet();
-							boolean changed = true;
-							while(changed){
-								for (SPSet key : keySet){
-									//while (rhs.contains(key)){
-									// TODO : Get code from Maddie with SPSet doing contains on SPSet.
-									//This is where the checking for already contained expressions and replacing expressions already seen happens.
-									//}
+							Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
+							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
+							Var currentDestVar = currentAssign.getDestVar(); //get the dest for this assignment
+							setVarIDs(varToVal, assignExprValue); //set its VarIDS if any exist
+							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp. 
+							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion. 
+							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set. 
+							boolean changed = true; //we want to run repeated checks over the expression.
+							while(changed){ //Until we reach a fixed point
+								changed = false; //say we haven't
+								for (SPSet key : keySet){ //Look at all keys in expToVal
+									while (rhs.contains(key)){ //if we have any of those keys in our current expression
+									rhs.remove(key); //remove it
+									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+									changed = true; //Need to repass over, one substitution could lead to another
+									if(!availableExprs.contains(assignExprValue)){
+										// TODO : Handle updating/removing/checking available expressions against what we want to replace...
+										//Question ; actually, isn't the way we build the map by walking taking care of this?
+										//I think it's not a question of dealing with the helper methods but rather modifying the Maps we have. 
+										
+									}
+									}
 								}
 							}
-							ValueID currentValID = new ValueID();
-							expToVal.put(rhs, currentValID);
-							Var currentDestVar = currentAssign.getDestVar();
-							IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), generateNextTemp(allVarNames));
-							expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+							if (!keySet.contains(rhs)){ //If the rhs is something new that we haven't seen yet,
+								expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
+								//Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
+								//So if we had a = x + y, we now have a temp value temp1 = a.
+								IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), generateNextTemp(allVarNames));
+								expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+							}
+							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.));
 							newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
-							
-							varToVal.put((IR_FieldDecl)currentDestVar.getVarDescriptor().getIR(), currentValID);
+							varToVal.put((IR_FieldDecl)currentDestVar.getVarDescriptor().getIR(), currentValID); //put the mapping from the left hand side to its symbolic value in the table. 
+						}
+						
+						else{ //if method call or declaration, just put it in the new block
+							newCodeblock.addStatement(currentStatement);
 						}
 					}
+					
 					swapCodeblocks(cblock, newCodeblock);
+					processing.addAll(newCodeblock.getChildren());
 				}
 			}
 			
