@@ -29,7 +29,7 @@ import edu.mit.compilers.ir.Type;
 public class Assembler {
 
     public static void setUp(ControlflowContext context, 
-            List<IR_Node> callouts, List<IR_FieldDecl> globals,
+            List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals,
             Map<String, START> methods) {
         List<FlowNode> processing = new ArrayList<FlowNode>();
         for (START node : methods.values()) {
@@ -46,7 +46,7 @@ public class Assembler {
             }
             next.setLabel(context.genLabel());
         }
-        for (IR_Node node : callouts) {
+        for (IR_MethodDecl node : callouts) {
             generateCallout(node, context);
         }
         for (IR_FieldDecl decl : globals) {
@@ -56,7 +56,7 @@ public class Assembler {
 
     public static ControlflowContext generateProgram(IR_Node root) {
         ControlflowContext context = new ControlflowContext();
-        List<IR_Node> callouts = new ArrayList<IR_Node>();
+        List<IR_MethodDecl> callouts = new ArrayList<IR_MethodDecl>();
         List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl> ();
         Map<String, START> methods = new HashMap<String, START>();
 
@@ -70,7 +70,7 @@ public class Assembler {
         return context;
     }
     
-    public static ControlflowContext generateProgram(List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> methods){
+    public static ControlflowContext generateProgram(List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, Map<String, START> methods){
         ControlflowContext context = new ControlflowContext();
         setUp(context, callouts, globals, methods);
         for (Map.Entry<String, START> entry : methods.entrySet()) {
@@ -79,10 +79,9 @@ public class Assembler {
         return context;
     }
 
-    public static void generateCallout(IR_Node node, ControlflowContext context){
-        IR_MethodDecl decl = (IR_MethodDecl)node;
+    public static void generateCallout(IR_MethodDecl decl, ControlflowContext context){
         String name = decl.name;
-        Descriptor d = new Descriptor(node);
+        Descriptor d = new Descriptor(decl);
         context.putSymbol(name, d);
     }
     
@@ -163,8 +162,6 @@ public class Assembler {
         }
 
         //instructions for entering a function.
-        //TODO: Ask about this: maxLocal + totalLocal seems wrong/excessive, but not sure
-        //TODO: Note that maxLocal is monotonically increasing
         LocLiteral loc= new LocLiteral(context.totalLocalSize);
         context.addIns(new Instruction("subq", loc, rsp));
 
@@ -501,7 +498,7 @@ public class Assembler {
         } 
         else if (expr instanceof BoolLit) {
             BoolLit bool_literal = (BoolLit) expr;
-            if (bool_literal.getValue()) {
+            if (bool_literal.getTruthValue()) {
                 ins = context.push(new LocLiteral(CodegenConst.BOOL_TRUE));
             } else {
                 ins = context.push(new LocLiteral(CodegenConst.BOOL_FALSE));
@@ -786,22 +783,37 @@ public class Assembler {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         IR_FieldDecl decl = declare.getFieldDecl();
         String name = decl.getName();
-        Descriptor d = new Descriptor(decl);
+        //Descriptor d = new Descriptor(decl);
         Type type = decl.getType();
         long size = CodegenConst.INT_SIZE;
+        LocStack loc = new LocStack();
         switch (type) {
         case INTARR:
         case BOOLARR:
-            size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
+            //size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
+        	for(int i = 0; i < decl.getLength().getValue(); i++){
+        	 Descriptor desc = new Descriptor(decl);
+            loc = context.allocLocal(size);
+            LocLiteral sizeLoc = new LocLiteral(size);
+            ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
+            desc.setLocation(loc);
+            context.putSymbol(name, desc);
+        	}
             break;
         default:
+        	Descriptor d = new Descriptor(decl);
+        	loc = context.allocLocal(size);
+            LocLiteral sizeLoc= new LocLiteral(size);
+            ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
+            d.setLocation(loc);
+            context.putSymbol(name, d);
             break;
         }
-        LocStack loc = context.allocLocal(size);
-        LocLiteral sizeLoc= new LocLiteral(size);
-        ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
-        d.setLocation(loc);
-        context.putSymbol(name, d);
+        //LocStack loc = context.allocLocal(size);
+        //LocLiteral sizeLoc= new LocLiteral(size);
+        //ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
+        //d.setLocation(loc);
+        //context.putSymbol(name, d);
         if(type == Type.INTARR || type == Type.BOOLARR){
             LocLiteral lenLoc = new LocLiteral(size/8);
             //loop variable

@@ -6,6 +6,7 @@ public class IR_FieldDecl extends IR_Node {
 	Type type;
 	IR_IntLiteral len;
 	String name;
+	int index;
 	
 	public IR_FieldDecl(Type t, String n){
 		type = t;
@@ -17,6 +18,13 @@ public class IR_FieldDecl extends IR_Node {
 		type = t;
 		name = n;
 		len = l;
+	}
+	
+	public IR_FieldDecl(Type t, String n, IR_IntLiteral l, int index){
+		type = t;
+		name = n;
+		len = l;
+		this.index = index;
 	}
 	
 	public String getName(){
@@ -31,7 +39,11 @@ public class IR_FieldDecl extends IR_Node {
 	public Type getType() {
 		return type;
 	}
-
+	
+	public int getIndex(){
+		return index;
+	}
+	
 	@Override
 	public String toString() {
 		return name;

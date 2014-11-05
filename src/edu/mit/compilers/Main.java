@@ -22,6 +22,7 @@ import edu.mit.compilers.controlflow.Codeblock;
 import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.GenerateFlow;
+import edu.mit.compilers.controlflow.Optimizer;
 import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.grammar.DecafParser;
 import edu.mit.compilers.grammar.DecafParserTokenTypes;
@@ -214,14 +215,12 @@ class Main {
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
-			    		  List<IR_Node> callouts = new ArrayList<IR_Node>(); // type IR_MethodDecl
+			    		  List<IR_MethodDecl> callouts = new ArrayList<IR_MethodDecl>(); // type IR_MethodDecl
 			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
 			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-			    		  
 			    		  // TODO: Process flowNodes and generate assembly code.
 			    		  context = Assembler.generateProgram(root);
-			    		  
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");
 						  for (IR_Node callout : callouts)
@@ -235,7 +234,7 @@ class Main {
 						  System.out.println("");
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
-						  
+						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
                           context.printInstructions(ps);
                           ps.close();

@@ -23,6 +23,7 @@ public class Ternary extends Expression {
 			if(varCond.getVarDescriptor().getType() != Type.BOOL){
 				throw new UnsupportedOperationException("Tried to use a non-boolean expression as the condition for a ternary expression.");
 			}
+			this.cond = varCond;
 			break;
 		default:
 			throw new UnsupportedOperationException("Tried to use something that could never resolve to a truth value as the condition for a ternary expression.");

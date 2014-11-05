@@ -51,6 +51,18 @@ public class START extends FlowNode {
 	public void addParent(FlowNode newParent) {
 		parents.add(newParent);
 	}
+	
+	/**
+	 * Allows you to remove a child. This is done when we want to replace a child
+	 * codeblock or branch with an optimized version. 
+	 * 
+	 * @param child : The node we want to remove. 
+	 */
+	public void removeChild(FlowNode child){
+		if(children.contains(child)){
+			children.remove(child);
+		}
+	}
 
 	@Override
 	/**

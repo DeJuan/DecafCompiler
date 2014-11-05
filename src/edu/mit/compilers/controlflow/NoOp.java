@@ -35,7 +35,19 @@ public class NoOp extends FlowNode {
 	public void addParent(FlowNode newParent) {
 		this.parents.add(newParent);
 	}
-
+	
+	/**
+	 * Allows you to remove a parent. This is done when we want to replace a parent 
+	 * codeblock or branch with an optimized version.
+	 * 
+	 * @param parent : The FlowNode you wish to remove from the parent list
+	 */
+	public void removeParent(FlowNode parent){
+		if (parents.contains(parent)){
+			parents.remove(parent);
+		}
+	}
+	
 	@Override
 	/**
 	 * Adder method allowing you to append a child to the list of children. Will error if the list already has a child. 
@@ -45,6 +57,18 @@ public class NoOp extends FlowNode {
 			children.add(newChild);
 		}
 		else throw new UnsupportedOperationException("NoOp should not have more than one child.");
+	}
+	
+	/**
+	 * Allows you to remove a child. This is done when we want to replace a child
+	 * codeblock or branch with an optimized version. 
+	 * 
+	 * @param child : The node we want to remove. 
+	 */
+	public void removeChild(FlowNode child){
+		if(children.contains(child)){
+			children.remove(child);
+		}
 	}
 	
 	/**

@@ -49,12 +49,13 @@ public class GenerateFlow {
 	 * 
 	 * @param node: root IR node, containing sequence of methods, callouts, and global field declarations
 	 * @param context : ControlflowContext object
-	 * @param callouts : list of IR nodes containing callouts
-	 * @param globals : list of IR nodes containing global declarations
+	 * @param callouts : list of IR_MethodDecl objects containing callouts
+	 * @param globals : list of IR_FieldDecl objects containing global declarations
 	 * @param flowNodes : HashMap of method names to FlowNodes
 	 */
 	public static void generateProgram(IR_Node root, ControlflowContext context, 
-			List<IR_Node> callouts, List<IR_FieldDecl> globals, Map<String, START> flowNodes) {
+		List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, Map<String, START> flowNodes) {
+
 		IR_Seq seq = (IR_Seq) root;
 		List<IR_Node> statements = seq.getStatements();
 		for (int i = 0; i < statements.size(); i++) {
@@ -66,7 +67,7 @@ public class GenerateFlow {
 				flowNodes.put(name, start);
 			} else if (node.getType() == Type.CALLOUT) {
 				// callout
-				callouts.add(node);
+				callouts.add((IR_MethodDecl) node);
 			} else if (node instanceof IR_FieldDecl) {
 				// global field declaration
 				IR_FieldDecl decl = (IR_FieldDecl) node;
@@ -420,8 +421,6 @@ public class GenerateFlow {
 			expr = generateMethodCall(callNode, context);
 		}
 		else if (node instanceof IR_ArithOp) {
-			// +, - ==> AddExpr
-			// *, /, % ==> MultExpr
 			IR_ArithOp arith = (IR_ArithOp) node;
 			Ops op = arith.getOp();
 			Expression left = generateExpr(arith.getLeft(), context);
@@ -432,9 +431,13 @@ public class GenerateFlow {
 					expr = new AddExpr(left, op, right);
 					break;
 				case TIMES:
-				case DIVIDE:
-				case MOD:
 					expr = new MultExpr(left, op, right);
+					break;
+				case DIVIDE:
+					expr = new DivExpr(left, op, right);
+					break;
+				case MOD:
+					expr = new ModExpr(left, op, right);
 					break;
 				default:
 					System.err.println("Should not reach here!");
@@ -473,8 +476,7 @@ public class GenerateFlow {
 		else if (node instanceof IR_Var) {
 			IR_Var var = (IR_Var) node;
 			Descriptor d = context.findSymbol(var.getName());
-			Expression index = generateExpr(var.getIndex(), context);
-			expr = new Var(d, index);
+			expr = new Var(d, generateExpr(var.getIndex(), context));
 		}
 		else if (node instanceof IR_Literal) {
 			IR_Literal literal = (IR_Literal) node;
@@ -529,21 +531,28 @@ public class GenerateFlow {
 	 */
 	public static Declaration generateFieldDecl(IR_FieldDecl node, ControlflowContext context) {
 		String name = node.getName();
-		Descriptor d = new Descriptor(node);
 		Type type = node.getType();
 		long size = CodegenConst.INT_SIZE;
 		switch (type) {
 			case INTARR:
 			case BOOLARR:
-				size = node.getLength().getValue() * CodegenConst.INT_SIZE;
-				break;
+				//size = node.getLength().getValue() * CodegenConst.INT_SIZE;
+				//TODO : Don't think this is what you wanted, Maddie, but I tried. T_T Doesn't use index and does dupe the name, but I don't know enough to do it better. 
+				for (int i = 0 ; i < node.getLength().getValue(); i++){
+					Descriptor des = new Descriptor(node);
+					LocStack loc = context.allocLocal(size);
+					des.setLocation(loc);
+					context.putSymbol(name, des);
+				}
+				return new Declaration(node);
 			default:
-				break;
+				Descriptor d = new Descriptor(node);
+				LocStack loc = context.allocLocal(size);
+				d.setLocation(loc);
+				context.putSymbol(name, d);
+				return new Declaration(node);
 		}
-		LocStack loc = context.allocLocal(size);
-		d.setLocation(loc);
-		context.putSymbol(name, d);
-		return new Declaration(node);
+		
 	}
 	
 	/**

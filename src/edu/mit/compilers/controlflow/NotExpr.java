@@ -1,12 +1,14 @@
 package edu.mit.compilers.controlflow;
 
+import edu.mit.compilers.ir.Ops;
 import edu.mit.compilers.ir.Type;
 
 public class NotExpr extends Expression {
-	boolean value;
-	Expression express;
+	private Expression express;
+	private Ops operator;
 	
 	public NotExpr(Expression expr){
+	    operator = Ops.NOT;
 		switch(expr.getExprType()){
 		case VAR:
 			Var varExpr = (Var)expr;
@@ -32,9 +34,8 @@ public class NotExpr extends Expression {
 			this.express = eqExpr;
 			break;
 		case BOOL_LIT:
-			BoolLit truthValue = (BoolLit)expr;
-			this.value = !truthValue.getValue();
-			this.express = truthValue;
+			BoolLit value = (BoolLit)expr;
+			this.express = value;
 			break;
 		case NOT:
 			this.express = (NotExpr) expr;
@@ -53,12 +54,8 @@ public class NotExpr extends Expression {
 		return this.express;
 	}
 	
-	@Override
-	public boolean equals(Object obj){
-		if(!(obj instanceof NotExpr)){
-			return false;
-		}
-		return true;
+	public Ops getOp(){
+	    return operator;
 	}
 
 }

@@ -37,6 +37,18 @@ public class END extends FlowNode {
 	}
 	
 	/**
+	 * Allows you to remove a parent. This is done when we want to replace a parent 
+	 * codeblock or branch with an optimized version.
+	 * 
+	 * @param parent : The FlowNode you wish to remove from the parent list
+	 */
+	public void removeParent(FlowNode parent){
+		if (parents.contains(parent)){
+			parents.remove(parent);
+		}
+	}
+	
+	/**
 	 * Allows you to set the return value. This isn't needed in CSE but may be used later in copy propagation or something.  
 	 * @param newReturnExpression : Expression describing what we'll return instead of what was given earlier.
 	 */
@@ -55,6 +67,7 @@ public class END extends FlowNode {
 		return Collections.emptyList();
 	}
 
+	
 	@Override
 	public void addParent(FlowNode newParent) {
 		parents.add(newParent);

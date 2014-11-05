@@ -130,13 +130,13 @@ public class Codegen {
 		Descriptor d = new Descriptor(decl);
 		Type type = decl.getType();
 		long size = CodegenConst.INT_SIZE;
-		switch (type) {
-			case INTARR:
-			case BOOLARR:
-				size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
-				break;
-			default:
-				break;
+		switch(type){
+		case INTARR:
+		case BOOLARR:
+			size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
+			break;
+		default:
+			break;
 		}
 		LocStack loc = context.allocLocal(size);
 		d.setLocation(loc);
