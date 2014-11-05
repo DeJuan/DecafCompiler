@@ -14,6 +14,7 @@ import edu.mit.compilers.codegen.LocArray;
 import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.codegen.LocLiteral;
 import edu.mit.compilers.codegen.LocReg;
+import edu.mit.compilers.codegen.LocRelStack;
 import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.codegen.LocationMem;
 import edu.mit.compilers.codegen.Regs;
@@ -768,16 +769,11 @@ public class Assembler {
                     idx = (long) context.stringLiterals.size();
                     context.stringLiterals.put(ss, idx);
                 }
-                context.allocLocal(CodegenConst.INT_SIZE);
             }else{
                 List<Instruction> exprIns = generateExpression(arg, context);
                 ins.addAll(exprIns);
             }
         }
-        LocStack rspStack = context.allocLocal(CodegenConst.INT_SIZE);
-        context.totalLocalSize -= CodegenConst.INT_SIZE;
-        long newVal = context.localVarSize.get(context.localVarSize.size() - 1) - CodegenConst.INT_SIZE;
-        context.localVarSize.set(context.localVarSize.size() - 1, newVal);
         for (int ii = args.size() - 1; ii >= 0; ii--){
             Expression arg = args.get(ii);
             LocationMem argSrc;
@@ -785,8 +781,8 @@ public class Assembler {
                 Long idx = context.stringLiterals.get(((StringLit) arg).getValue());
                 argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
             } else {
-                int offset = (args.size() - ii - 1 + 1) * CodegenConst.INT_SIZE;
-                argSrc = new LocStack(rspStack.offset + offset);
+                int offset = (args.size() - ii - 1) * CodegenConst.INT_SIZE;
+                argSrc = new LocRelStack(offset);
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
@@ -801,12 +797,8 @@ public class Assembler {
         //pop all arguments on the stack
         for (int ii = args.size() - 1; ii >= 0; ii--) {
             if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
-                ins.add(new Instruction("addq", new LocLiteral(CodegenConst.INT_SIZE), new LocReg(Regs.RSP)));
+                ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
-            context.totalLocalSize -= CodegenConst.INT_SIZE;
-            context.pop(null);
-            newVal = context.localVarSize.get(context.localVarSize.size() - 1) - CodegenConst.INT_SIZE;
-            context.localVarSize.set(context.localVarSize.size() - 1, newVal);
         }
         return ins;
     }
