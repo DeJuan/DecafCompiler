@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import edu.mit.compilers.ir.Type;
 
@@ -83,6 +84,10 @@ public class SPTern {
     @Override
     public int hashCode(){
         return cond.hashCode() + falseBranch.hashCode() + trueBranch.hashCode();
+    }
+    
+    public Ternary toExpression(Map<ValueID, List<Var>> valToVar){
+        return new Ternary(cond.toExpression(valToVar), trueBranch.toExpression(valToVar), falseBranch.toExpression(valToVar));
     }
     
     private SPSet safeSPConstruct(Expression expr) {

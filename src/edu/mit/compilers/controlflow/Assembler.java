@@ -758,7 +758,7 @@ public class Assembler {
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
-        for(int ii = args.size()-1; ii>=0; ii--){
+        for(int ii = 0; ii<args.size(); ii++){
             Expression arg = args.get(ii);
             //source location of argument
             LocationMem argSrc=null;

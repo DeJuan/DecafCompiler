@@ -2,6 +2,8 @@ package edu.mit.compilers.controlflow;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import edu.mit.compilers.ir.Ops;
 
@@ -46,6 +48,10 @@ public class SPComp {
     @Override
     public int hashCode(){
         return operator.hashCode() + lhs.hashCode() + rhs.hashCode();
+    }
+    
+    public CompExpr toExpression(Map<ValueID, List<Var>> valToVar) {
+        return new CompExpr(lhs.toExpression(valToVar), operator, rhs.toExpression(valToVar));
     }
     
     private SPSet safeSPConstruct(Expression expr) {
