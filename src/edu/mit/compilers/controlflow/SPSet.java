@@ -3,6 +3,7 @@ package edu.mit.compilers.controlflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import edu.mit.compilers.ir.Ops;
 
@@ -1713,7 +1714,109 @@ public class SPSet {
 		}
 		return true;
 	}
-
+	
+	public Expression toExpression(Map<ValueID, List<Var>> valToVar){
+        if (operator == null) {
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + methodCalls.size() + comparisons.size() == 1)) {
+                throw new RuntimeException("something has gone wrong");
+            }
+            if (!SPSets.isEmpty()) {
+                return SPSets.get(0).toExpression(valToVar);
+            } else if (!varSet.isEmpty()) {
+                return valToVar.get(varSet.get(0)).get(0);
+            } else if (!intSet.isEmpty()) {
+                return new IntLit(intSet.get(0));
+            } else if (!boolSet.isEmpty()) {
+                return new BoolLit(boolSet.get(0));
+            } else if (!ternSet.isEmpty()) {
+                return ternSet.get(0).toExpression(valToVar);
+            } else if (!methodCalls.isEmpty()) {
+                return methodCalls.get(0);
+            } else if (!comparisons.isEmpty()) {
+                throw new RuntimeException("single comparison should have operator set");
+            } else {
+                throw new RuntimeException("missing a case");
+            }
+        } else if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(operator)){
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + methodCalls.size() == 0) 
+                    || !(comparisons.size() == 1)){
+                throw new RuntimeException("something is screwy");
+            }
+            return comparisons.get(0).toExpression(valToVar);
+        } else {
+            Expression lhs = null;
+            for (SPSet set : SPSets) {
+                if (lhs == null) {
+                    lhs = set.toExpression(valToVar);
+                    continue;
+                }
+                lhs = joinSides(lhs, set.toExpression(valToVar));
+            }
+            for (ValueID var : varSet) {
+                if (lhs == null) {
+                    lhs = valToVar.get(var).get(0);
+                    continue;
+                }
+                lhs = joinSides(lhs, valToVar.get(var).get(0));
+            }
+            for (Long integer : intSet) {
+                if (lhs == null) {
+                    lhs = new IntLit(integer);
+                    continue;
+                }
+                lhs = joinSides(lhs, new IntLit(integer));
+            }
+            for (boolean bool : boolSet) {
+                if (lhs == null) {
+                    lhs = new BoolLit(bool);
+                    continue;
+                }
+                lhs = joinSides(lhs, new BoolLit(bool));
+            }
+            for (SPTern tern : ternSet) {
+                if (lhs == null) {
+                    lhs = tern.toExpression(valToVar);
+                    continue;
+                }
+                lhs = joinSides(lhs, tern.toExpression(valToVar));
+            }
+            for (MethodCall call : methodCalls) {
+                if (lhs == null) {
+                    lhs = call;
+                    continue;
+                }
+                lhs = joinSides(lhs, call);
+            }
+            for (SPComp comp : comparisons) {
+                if (lhs == null) {
+                    lhs = comp.toExpression(valToVar);
+                    continue;
+                }
+                lhs = joinSides(lhs, comp.toExpression(valToVar));
+            }
+            return lhs;
+        }
+    }
+    
+    private Expression joinSides(Expression lhs, Expression rhs) {
+        if (operator == null || Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(operator)) {
+            throw new RuntimeException("can't join these expressions");
+        }
+        if (operator == Ops.PLUS) {
+            return new AddExpr(lhs, operator, rhs);
+        } else if (operator == Ops.OR || operator == Ops.AND) {
+            return new CompExpr(lhs, operator, rhs);
+        } else if (operator == Ops.TIMES) {
+            return new MultExpr(lhs, operator, rhs);
+        } else if (operator == Ops.DIVIDE) {
+            return new DivExpr(lhs, operator, rhs);
+        } else if (operator == Ops.MOD) {
+            return new ModExpr(lhs, operator, rhs);
+        } else {
+            throw new RuntimeException("maddie missed a case somewhere - shouldn't join " + operator);
+        }
+    }
+	
 	public String toString(){
 		return operator.toString() + "(" + "SPSets: " + SPSets.toString() + " | VarSets: " + varSet.toString() + ")" + System.getProperty("line.separator");
 	}

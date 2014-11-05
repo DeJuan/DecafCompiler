@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import edu.mit.compilers.ir.Type;
 
@@ -108,5 +109,9 @@ public class SPTern {
                     Collections.<MethodCall> emptyList(), Collections.<SPComp> emptyList(), null);
         }
         return new SPSet(expr);
+    }
+    
+    public Ternary toExpression(Map<ValueID, List<Var>> valToVar){
+        return new Ternary(cond.toExpression(valToVar), trueBranch.toExpression(valToVar), falseBranch.toExpression(valToVar));
     }
 }

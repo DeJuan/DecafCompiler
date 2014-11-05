@@ -358,396 +358,7 @@ public class Optimizer {
 			}
 		}
 	}
-	*/
-	
-	/**
-	 * This is the method that allows us to compute SPSets, given a generic Expression.
-	 * It acts as a dispatcher that calls helper methods tailored to each type of expression.
-	 * 
-	 * @param expr : Expression that you want to compute an SPSet for
-	 * @return SPSet : The SPSet representing that expression
-	 */
-	public SPSet analyzeAndDispatch(Expression expr){
-		switch(expr.getExprType()){
-		case ADD_EXPR:
-			return computePlusSets((AddExpr)expr);
-		case COMP_EXPR: 
-			return computeComparisonSets((CompExpr)expr);
-		case EQ_EXPR:
-			return computeComparisonSets((EqExpr)expr); //Overloaded method
-		case COND_EXPR: 
-			return computeCondSets((CondExpr) expr);
-		case MOD_EXPR:
-			return computeModSets((ModExpr)expr);
-		case MULT_EXPR:
-			return computeMultSets((MultExpr)expr);
-		case DIV_EXPR: 
-			return computeDivSets((DivExpr)expr);
-		default:
-			break;
-		}
-		return null;
-	}
-
-
-	/**
-	 * Helper method for computing an SPSet if we know the expression is an AddExpr.
-	 * @param adding : AddExpr we want the SPSet for
-	 * @return SPSet : The SPSet for the given AddExpr
-	 */
-	public SPSet computePlusSets(AddExpr adding){
-		SPSet plusSet = new SPSet(Ops.PLUS);
-
-		Expression lhs = adding.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			plusSet.varSet.add(varia.getValueID());
-		}
-		
-		if(lhs instanceof IntLit){
-			IntLit intLit = (IntLit)lhs;
-			plusSet.intSet.add(intLit.getValue());
-		}
-		else if(lhs instanceof AddExpr){
-			AddExpr lhsAdd = (AddExpr)lhs;
-			SPSet recursiveSPSet = computePlusSets(lhsAdd);
-			plusSet.SPSets.addAll(recursiveSPSet.SPSets);
-			plusSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			plusSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = adding.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			plusSet.varSet.add(varia.getValueID());
-		}
-		if(rhs instanceof IntLit){
-			IntLit intLit = (IntLit)rhs;
-			plusSet.intSet.add(intLit.getValue());
-		}
-		else if(rhs instanceof AddExpr){
-			AddExpr rhsAdd = (AddExpr)rhs;
-			SPSet recursiveSPSet = computePlusSets(rhsAdd);
-			plusSet.SPSets.addAll(recursiveSPSet.SPSets);
-			plusSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			plusSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return plusSet;
-	}
-
-	/**
-	 * Helper method for computing SPSet if we know the expression is a Mod.
-	 * @param modding : ModExpr we want the SPSet for
-	 * @return SPSet : The SPSet for the ModExpr we were given
-	 */
-	public SPSet computeModSets(ModExpr modding) {
-		SPSet modSet = new SPSet(Ops.MOD);
-
-		Expression lhs = modding.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			modSet.varSet.add(varia.getValueID());
-		}
-		else if(lhs instanceof IntLit){
-			IntLit intL = (IntLit)lhs;
-			modSet.intSet.add(intL.getValue());
-		}
-		else if(lhs instanceof ModExpr){
-			ModExpr lhsMod = (ModExpr)lhs;
-			SPSet recursiveSPSet = computeModSets(lhsMod);
-			modSet.SPSets.addAll(recursiveSPSet.SPSets);
-			modSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			modSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = modding.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			modSet.varSet.add(varia.getValueID());
-		}
-		else if (rhs instanceof IntLit){
-			IntLit intR = (IntLit)rhs;
-			modSet.intSet.add(intR.getValue());
-		}
-		else if(rhs instanceof ModExpr){
-			ModExpr rhsMod = (ModExpr)rhs;
-			SPSet recursiveSPSet = computeModSets(rhsMod);
-			modSet.SPSets.addAll(recursiveSPSet.SPSets);
-			modSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			modSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return modSet;
-	}
-
-	/**
-	 * Helper function for computing SPSet if we know the Expression is a MultExpr.
-	 * @param multing : MultExpr we want the SPSet for
-	 * @return SPSet : SPSet for the given MultExpr
-	 */
-	public SPSet computeMultSets(MultExpr multing){
-		SPSet multSet = new SPSet(Ops.TIMES);
-
-		Expression lhs = multing.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			multSet.varSet.add(varia.getValueID());
-		}
-		else if(lhs instanceof IntLit){
-			IntLit intL = (IntLit)lhs;
-			multSet.intSet.add(intL.getValue());
-		}
-		else if(lhs instanceof MultExpr){
-			MultExpr lhsMult = (MultExpr)lhs;
-			SPSet recursiveSPSet = computeMultSets(lhsMult);
-			multSet.SPSets.addAll(recursiveSPSet.SPSets);
-			multSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			multSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = multing.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			multSet.varSet.add(varia.getValueID());
-		}
-		else if(rhs instanceof IntLit){
-			IntLit intR = (IntLit)rhs;
-			multSet.intSet.add(intR.getValue());
-		}
-		else if(rhs instanceof MultExpr){
-			MultExpr rhsMult = (MultExpr)rhs;
-			SPSet recursiveSPSet = computeMultSets(rhsMult);
-			multSet.SPSets.addAll(recursiveSPSet.SPSets);
-			multSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			multSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return multSet;
-	}
-
-	/**
-	 * Helper function for when we want the SPSet of a DivExpr.
-	 * @param divide : The DivExpr we want the SPSet for
-	 * @return SPSet : The SPSet for the given DivExpr
-	 */
-	public SPSet computeDivSets(DivExpr divide){
-		SPSet divSet = new SPSet(Ops.DIVIDE);
-
-		Expression lhs = divide.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			divSet.varSet.add(varia.getValueID());
-		}
-		else if(lhs instanceof IntLit){
-			IntLit intL = (IntLit)lhs;
-			divSet.intSet.add(intL.getValue());
-		}
-		else if(lhs instanceof DivExpr){
-			DivExpr lhsMult = (DivExpr)lhs;
-			SPSet recursiveSPSet = computeDivSets(lhsMult);
-			divSet.SPSets.addAll(recursiveSPSet.SPSets);
-			divSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			divSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = divide.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			divSet.varSet.add(varia.getValueID());
-		}
-		else if(rhs instanceof IntLit){
-			IntLit intR = (IntLit)rhs;
-			divSet.intSet.add(intR.getValue());
-		}
-		else if(rhs instanceof DivExpr){
-			DivExpr rhsMult = (DivExpr)rhs;
-			SPSet recursiveSPSet = computeDivSets(rhsMult);
-			divSet.SPSets.addAll(recursiveSPSet.SPSets);
-			divSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			divSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return divSet;
-	}
-	
-	/**
-	 * Helper function for computing SPSet of some comparison which is not an equivalence check.
-	 * @param comparing : CompExpr that we want the SPSet for
-	 * @return SPSet : The SPSet for that CompExpr
-	 */
-	public SPSet computeComparisonSets(CompExpr comparing){
-		SPSet compSet = new SPSet(comparing.operator);
-
-		Expression lhs = comparing.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			compSet.varSet.add(varia.getValueID());
-		}
-		else if (lhs instanceof IntLit){
-			IntLit intL = (IntLit)lhs;
-			compSet.intSet.add(intL.getValue());
-		}
-		else if (lhs instanceof BoolLit){
-			BoolLit intL = (BoolLit)lhs;
-			compSet.boolSet.add(intL.getTruthValue());
-		}
-		else if(lhs instanceof CompExpr){
-			CompExpr lhsComp = (CompExpr)lhs;
-			SPSet recursiveSPSet = computeComparisonSets(lhsComp);
-			compSet.SPSets.addAll(recursiveSPSet.SPSets);
-			compSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			compSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = comparing.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			compSet.varSet.add(varia.getValueID());
-		}
-		else if(rhs instanceof IntLit){
-			IntLit intR = (IntLit)rhs;
-			compSet.intSet.add(intR.getValue());
-		}
-		else if(rhs instanceof BoolLit){
-			BoolLit intR = (BoolLit)rhs;
-			compSet.boolSet.add(intR.getTruthValue());
-		}
-		else if(rhs instanceof CompExpr){
-			CompExpr rhsComp = (CompExpr)rhs;
-			SPSet recursiveSPSet = computeComparisonSets(rhsComp);
-			compSet.SPSets.addAll(recursiveSPSet.SPSets);
-			compSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else if(rhs instanceof NotExpr){
-
-		}
-		else{
-			compSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return compSet;
-	}
-	
-	/**
-	 * This is an overload on the method to handle the case when the comparison is an equivalence check.
-	 * @param equivalence : The EqExpr we want the SPSet for
-	 * @return SPSet : The SPSet for that EqExpr
-	 */
-	public SPSet computeComparisonSets(EqExpr equivalence){
-		SPSet compSet = new SPSet(equivalence.operator);
-
-		Expression lhs = equivalence.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			compSet.varSet.add(varia.getValueID());
-		}
-		else if (lhs instanceof IntLit){
-			IntLit intL = (IntLit)lhs;
-			compSet.intSet.add(intL.getValue());
-		}
-		else if (lhs instanceof BoolLit){
-			BoolLit intL = (BoolLit)lhs;
-			compSet.boolSet.add(intL.getTruthValue());
-		}
-		else if(lhs instanceof CompExpr){
-			CompExpr lhsComp = (CompExpr)lhs;
-			SPSet recursiveSPSet = computeComparisonSets(lhsComp);
-			compSet.SPSets.addAll(recursiveSPSet.SPSets);
-			compSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			compSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = equivalence.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			compSet.varSet.add(varia.getValueID());
-		}
-		else if(rhs instanceof IntLit){
-			IntLit intR = (IntLit)rhs;
-			compSet.intSet.add(intR.getValue());
-		}
-		else if(rhs instanceof BoolLit){
-			BoolLit intR = (BoolLit)rhs;
-			compSet.boolSet.add(intR.getTruthValue());
-		}
-		else if(rhs instanceof CompExpr){
-			CompExpr rhsComp = (CompExpr)rhs;
-			SPSet recursiveSPSet = computeComparisonSets(rhsComp);
-			compSet.SPSets.addAll(recursiveSPSet.SPSets);
-			compSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else if(rhs instanceof NotExpr){
-
-		}
-		else{
-			compSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return compSet;
-	}
-	
-	/**
-	 * Helper function used to compute SPSet for a conditional expression.
-	 * @param conditional : CondExpr we want the SPSet for
-	 * @return SPSet : The generated SPSet for the CondExpr
-	 */
-	public SPSet computeCondSets(CondExpr conditional){
-		SPSet condSet = new SPSet(conditional.operator);
-
-		Expression lhs = conditional.getLeftSide();
-		if(lhs instanceof Var){
-			Var varia = (Var) lhs;
-			condSet.varSet.add(varia.getValueID());
-		}
-		else if(lhs instanceof BoolLit){
-			BoolLit intL = (BoolLit)lhs;
-			condSet.boolSet.add(intL.getTruthValue());
-		}
-		else if(lhs instanceof CondExpr){
-			CondExpr lhsCond = (CondExpr)lhs;
-			SPSet recursiveSPSet = computeCondSets(lhsCond);
-			condSet.SPSets.addAll(recursiveSPSet.SPSets);
-			condSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			condSet.SPSets.add(analyzeAndDispatch(lhs));
-		}
-
-		Expression rhs = conditional.getRightSide();
-		if(rhs instanceof Var){
-			Var varia = (Var) rhs;
-			condSet.varSet.add(varia.getValueID());
-		}
-		else if(rhs instanceof BoolLit){
-			BoolLit intR = (BoolLit)rhs;
-			condSet.boolSet.add(intR.getTruthValue());
-		}
-		else if(rhs instanceof CondExpr){
-			CondExpr rhsCond = (CondExpr)rhs;
-			SPSet recursiveSPSet = computeCondSets(rhsCond);
-			condSet.SPSets.addAll(recursiveSPSet.SPSets);
-			condSet.varSet.addAll(recursiveSPSet.varSet);
-		}
-		else{
-			condSet.SPSets.add(analyzeAndDispatch(rhs));
-		}
-		return condSet;
-	}
+	*/	
 	
 	/**
 	 * This method allows us to actually set the variable IDs, which is a requirement for initializing an SPSet
@@ -757,40 +368,47 @@ public class Optimizer {
 	 * @param varToVal : Mapping of IR_FieldDecl to ValueID, used to assign ValueID to a Var, given its descriptor
 	 * @param expr The expression whose Vars we want to set the ValueIDs for
 	 */
-	public void setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Expression expr){
+	public void setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents,  Expression expr){
 		if(expr instanceof BinExpr){
 			BinExpr bin = (BinExpr)expr;
 			Expression lhs = bin.getLeftSide();
 			Expression rhs = bin.getRightSide();
-			setVarIDs(varToVal, lhs);
-			setVarIDs(varToVal, rhs);
+			setVarIDs(varToVal, varToValForArrayComponents, lhs);
+			setVarIDs(varToVal, varToValForArrayComponents, rhs);
 		}
 		else if (expr instanceof Var){
 			Var varia = (Var)expr;
+			if(varia.getIndex() != null){
+				IR_FieldDecl varDecl = (IR_FieldDecl) varia.getVarDescriptor().getIR();
+				SPSet varArraySP = new SPSet(varia);
+				varToValForArrayComponents.get(varDecl).put(varArraySP, new ValueID()); //TODO : Sanity check.
+			}
 			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
 			if (valID == null){
 				throw new RuntimeException("Something went wrong; tried to set a ValueID with a null mapping.");
 			}
-			varia.setValueID(valID);
+			else{
+				varia.setValueID(valID);
+			}
 		}	
 		else if(expr instanceof NotExpr){
 			NotExpr nope = (NotExpr)expr;
-			setVarIDs(varToVal, nope.getUnresolvedExpression());
+			setVarIDs(varToVal, varToValForArrayComponents, nope.getUnresolvedExpression());
 		}
 		else if(expr instanceof NegateExpr){
 			NegateExpr negate = (NegateExpr)expr;
-			setVarIDs(varToVal, negate.getExpression());
+			setVarIDs(varToVal, varToValForArrayComponents, negate.getExpression());
 		}
 		else if(expr instanceof Ternary){
 			Ternary tern = (Ternary)expr;
-			setVarIDs(varToVal, tern.getTernaryCondition());
-			setVarIDs(varToVal, tern.trueBranch);
-			setVarIDs(varToVal, tern.falseBranch);
+			setVarIDs(varToVal, varToValForArrayComponents, tern.getTernaryCondition());
+			setVarIDs(varToVal, varToValForArrayComponents, tern.trueBranch);
+			setVarIDs(varToVal, varToValForArrayComponents, tern.falseBranch);
 		}
 		else if(expr instanceof MethodCall){
 			MethodCall MCHammer = (MethodCall)expr;
 			for(Expression arg : MCHammer.getArguments()){
-				setVarIDs(varToVal, arg);
+				setVarIDs(varToVal, varToValForArrayComponents, arg);
 			}
 		}
 	}
@@ -879,6 +497,34 @@ public class Optimizer {
 			}
 		}
 	}
+	
+	/**
+	 * This method is a helper for CSE; given an Assignment's left hand side and the maps that could be affected by this
+	 * new assignment, it looks through each of the maps and removes the mappings which have become invalid.
+	 * Due to us not knowing where an array variable is modified since we can't evaluate the expressions, we
+	 * assume all expressions stored in that array become invalid. 
+	 * 
+	 * @param assignLhs : the Var indicating left hand side of the assignment we want to kill things for
+	 * @param varToValForArrayComponents 
+	 * @param exprToTemp
+	 * @param varToVal
+	 */
+	public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
+			Map<SPSet, Var> exprToTemp, Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
+		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
+		for(SPSet key : exprToTemp.keySet()){
+			if(key.contains(assignLhs)){
+				exprToTemp.remove(key);
+			}
+		}
+		
+		
+		//Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
+		ValueID oldID = varToVal.get(killVar);
+		valToVar.get(oldID).remove(assignLhs);
+		varToValForArrayComponents.remove(killVar);
+	}
+	
 	
 	/**
 	 * This is an attempt at finding the statements that were killed in a given Codeblock.
@@ -1087,10 +733,12 @@ public class Optimizer {
 		for(START initialNode : startsForMethods){
 			//Set up tables and lists we'll need.
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
-			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
 			Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
-			Map<FlowNode, Set<Expression>> availableExpressionsAtNode = calculateAvailableExpressions(initialNode);
+			Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
+			Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
+			//Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>(); 
+			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			processing.add(firstNodeInProgram);
@@ -1098,18 +746,46 @@ public class Optimizer {
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				if(currentNode instanceof Codeblock){ //if codeblock downcast and make new
-					Codeblock cblock = (Codeblock)currentNode;
-					Codeblock newCodeblock = new Codeblock();
-					for(Statement currentStatement : cblock.getStatements()){ //for each statement
-						newCodeblock.addStatement(currentStatement); //TODO : add it to the new version, but NOT HERE, do it after modification 
+					Codeblock cblock = (Codeblock)currentNode; 
+					Codeblock newCodeblock = new Codeblock(); 
+					//Before we do anything, set up the temporary variable declarations:
+					List<String> nextTempHolder = new ArrayList<String>();
+					List<Var> allTheVarsInBlock = checkVariablesAssigned(cblock);
+					for(Var current : allTheVarsInBlock){
+						String nextTemp = generateNextTemp(allVarNames);
+						newCodeblock.addStatement(new Declaration(new IR_FieldDecl(current.getVarDescriptor().getType(), nextTemp)));
+						nextTempHolder.add(nextTemp);
+					}
+					for(Statement currentStatement : cblock.getStatements()){ //for each statement 
 						if(currentStatement instanceof Assignment){
 							Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
-							Var currentDestVar = currentAssign.getDestVar(); //get the dest for this assignment
-							setVarIDs(varToVal, assignExprValue); //set its VarIDS if any exist
-							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp. 
-							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion. 
-							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set. 
+							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
+							killMappings(currentDestVar, varToValForArrayComponents, expToTemp, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
+							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
+							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
+							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
+							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
+							varToVal.put(lhs, currentValID);
+							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
+							if(currentDestVar.getIndex() != null){
+								varToVal.put(lhs, currentValID);
+							}
+							else{
+								IR_FieldDecl currentDecl = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
+								if(!varToVal.containsKey(currentDecl)){
+									varToVal.put(currentDecl, new ValueID());
+								}
+								Map<SPSet, ValueID> innerMap;
+								if(varToValForArrayComponents.containsKey(lhs)){
+									innerMap = varToValForArrayComponents.get(lhs);
+								}
+								else{
+									innerMap = new HashMap<SPSet, ValueID>();
+									varToValForArrayComponents.put(lhs, innerMap);
+								}
+								innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
+							}
 							boolean changed = true; //we want to run repeated checks over the expression.
 							while(changed){ //Until we reach a fixed point
 								changed = false; //say we haven't
@@ -1118,35 +794,57 @@ public class Optimizer {
 									rhs.remove(key); //remove it
 									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
 									changed = true; //Need to repass over, one substitution could lead to another
-									if(!availableExprs.contains(assignExprValue)){
-										// TODO : Handle updating/removing/checking available expressions against what we want to replace...
-										//Question ; actually, isn't the way we build the map by walking taking care of this?
-										//I think it's not a question of dealing with the helper methods but rather modifying the Maps we have. 
-										
-									}
 									}
 								}
 							}
 							if (!keySet.contains(rhs)){ //If the rhs is something new that we haven't seen yet,
-								expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
-								//Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
-								//So if we had a = x + y, we now have a temp value temp1 = a.
-								IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), generateNextTemp(allVarNames));
-								expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+								if((rhs.SPSets.size() +rhs.intSet.size() +rhs.boolSet.size() + rhs.ternSet.size() + rhs.methodCalls.size() +rhs.comparisons.size()) !=0){
+									if(rhs.varSet.size() > 1){
+									expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
+									//Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
+									//So if we had a = x + y, we now have a temp value temp1 = a.
+									IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
+									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+									}
+								}
 							}
-							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.));
+							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
 							newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
-							varToVal.put((IR_FieldDecl)currentDestVar.getVarDescriptor().getIR(), currentValID); //put the mapping from the left hand side to its symbolic value in the table. 
 						}
 						
-						else{ //if method call or declaration, just put it in the new block
+						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
+							//TODO : do cse on method call args...
+						}
+						
+						else{
 							newCodeblock.addStatement(currentStatement);
 						}
 					}
 					
 					swapCodeblocks(cblock, newCodeblock);
-					processing.addAll(newCodeblock.getChildren());
+					for(FlowNode child : newCodeblock.getChildren()){
+						if(!child.visited()){
+							processing.add(child);
+						}
+					}					
 				}
+				else if (currentNode instanceof Branch){
+					//copy the lists and store them somewhere
+				}
+				
+				else if(currentNode instanceof NoOp){
+					//write a method that takes in the l
+				}
+				
+				else if(currentNode instanceof START){
+					
+				}
+				
+				else if(currentNode instanceof END){
+					
+				}
+				
+				//TODO : Upload container to the map. 
 			}
 			
 		}

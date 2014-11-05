@@ -2,6 +2,8 @@ package edu.mit.compilers.controlflow;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import edu.mit.compilers.ir.Ops;
 
@@ -71,5 +73,9 @@ public class SPComp {
                     Collections.<MethodCall> emptyList(), Collections.<SPComp> emptyList(), null);
         }
         return new SPSet(expr);
+    }
+    
+    public CompExpr toExpression(Map<ValueID, List<Var>> valToVar) {
+        return new CompExpr(lhs.toExpression(valToVar), operator, rhs.toExpression(valToVar));
     }
 }
