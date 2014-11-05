@@ -737,7 +737,9 @@ public class Optimizer {
 			Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
 			Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
 			Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
-			//Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>(); 
+			Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>();
+			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+			containerForNode.put(initialNode, initialStateContainer);
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
@@ -745,6 +747,17 @@ public class Optimizer {
 			while(!processing.isEmpty()){ //list of nodes to process
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
+				//Set up the maps for this particular node, regardless of type. 
+				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
+				//TODO The above directly takes the parent's set; this will be destructive to the parent's set as it is copied by reference, not value. 
+				for(FlowNode parent: currentNode.getParents()){
+					thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
+				}
+				varToVal = thisNodeContainer.varToVal;
+				expToVal = thisNodeContainer.expToVal;
+				expToTemp = thisNodeContainer.expToTemp;
+				varToValForArrayComponents = thisNodeContainer.varToValForArrayComponents;
+				valToVar = thisNodeContainer.valToVar;
 				if(currentNode instanceof Codeblock){ //if codeblock downcast and make new
 					Codeblock cblock = (Codeblock)currentNode; 
 					Codeblock newCodeblock = new Codeblock(); 
@@ -813,7 +826,9 @@ public class Optimizer {
 						}
 						
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
-							//TODO : do cse on method call args...
+							MethodCallStatement mcs = (MethodCallStatement)currentStatement;
+							List<Expression> args = mcs.getMethodCall().getArguments();
+							
 						}
 						
 						else{
@@ -829,7 +844,24 @@ public class Optimizer {
 					}					
 				}
 				else if (currentNode instanceof Branch){
-					//copy the lists and store them somewhere
+					Branch cbranch = (Branch)currentNode;
+					SPSet branchExprSP = new SPSet(cbranch.getExpr());
+					boolean changed = true; //we want to run repeated checks over the expression.
+					boolean changedAtAll = false;
+					while(changed){ //Until we reach a fixed point
+						changed = false; //say we haven't
+						for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
+							while (branchExprSP.contains(key)){ //if we have any of those keys in our current expression
+							branchExprSP.remove(key); //remove it
+							branchExprSP.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+							changed = true; //Need to repass over, one substitution could lead to another
+							changedAtAll = true;
+							}
+						}
+					}
+					if(changedAtAll){ //don't do anything if we never changed the expr, no need to do busywork
+						cbranch.setExpr(branchExprSP.toExpression(valToVar)); //in place modification on block. No need to make a new one.
+					}
 				}
 				
 				else if(currentNode instanceof NoOp){
@@ -841,10 +873,12 @@ public class Optimizer {
 				}
 				
 				else if(currentNode instanceof END){
-					
+					//Pass, we don't need to do anything in that case, except for upload the container with no changes because consistent behavior is nice
 				}
 				
-				//TODO : Upload container to the map. 
+				//TODO : Upload container to the map.
+				MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+				containerForNode.put(currentNode, currentNodeContainer);
 			}
 			
 		}
