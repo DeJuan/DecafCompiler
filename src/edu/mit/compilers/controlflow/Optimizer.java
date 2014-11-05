@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.rits.cloning.Cloner;
+
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
@@ -27,6 +29,7 @@ public class Optimizer {
 	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
+	Cloner cloner = new Cloner();
 
 	private int tempCounter = 0;
 	/**
@@ -493,8 +496,6 @@ public class Optimizer {
 				exprToTemp.remove(key);
 			}
 		}
-		
-		
 		//Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
 		ValueID oldID = varToVal.get(killVar);
 		valToVar.get(oldID).remove(assignLhs);
@@ -724,7 +725,7 @@ public class Optimizer {
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				//Set up the maps for this particular node, regardless of type. 
-				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
+				MapContainer thisNodeContainer = cloner.deepClone(containerForNode.get(currentNode.getParents().get(0))); //want something we can intersect with, so take first parent's set.
 				//TODO The above directly takes the parent's set; this will be destructive to the parent's set as it is copied by reference, not value. 
 				for(FlowNode parent: currentNode.getParents()){
 					thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
