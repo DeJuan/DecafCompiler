@@ -783,6 +783,9 @@ public class Assembler {
                 argSrc = new LocReg(Regs.R10);
                 ins.addAll(context.pop(argSrc));
             }
+            if (ii >= CodegenConst.N_REG_ARG) {
+                context.allocLocal(CodegenConst.INT_SIZE);
+            }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
         }
