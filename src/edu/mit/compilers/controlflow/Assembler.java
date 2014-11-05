@@ -782,6 +782,9 @@ public class Assembler {
                 argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
             } else {
                 int offset = (args.size() - ii - 1) * CodegenConst.INT_SIZE;
+                if (ii >= CodegenConst.N_REG_ARG) {
+                    offset = offset + (args.size() - ii - 1) * CodegenConst.INT_SIZE;
+                }
                 argSrc = new LocRelStack(offset);
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
