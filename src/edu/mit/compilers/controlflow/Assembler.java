@@ -757,7 +757,7 @@ public class Assembler {
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
-        for(int ii = 0; ii<args.size(); ii++){
+        for(int ii = args.size() - 1; ii >= 0; ii--){
             Expression arg = args.get(ii);
             //source location of argument
             if(arg.getExprType() == ExpressionType.STRING_LIT){
@@ -773,7 +773,7 @@ public class Assembler {
                 ins.addAll(exprIns);
             }
         }
-        for (int ii = args.size() - 1; ii>= 0; ii--){
+        for (int ii = 0; ii < CodegenConst.N_REG_ARG; ii++){
             Expression arg = args.get(ii);
             LocationMem argSrc;
             if (arg.getExprType() == ExpressionType.STRING_LIT){
@@ -782,9 +782,6 @@ public class Assembler {
             } else {
                 argSrc = new LocReg(Regs.R10);
                 ins.addAll(context.pop(argSrc));
-            }
-            if (ii >= CodegenConst.N_REG_ARG) {
-                context.allocLocal(CodegenConst.INT_SIZE);
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
