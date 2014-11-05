@@ -165,7 +165,7 @@ public class Assembler {
         // Since GenerateFlow adds ENDs, all nodes will have an END - must 
         // check in generateReturn that non-void functions don't return 
         // without a return value
-        
+
         context.decScope();
         //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
@@ -757,7 +757,7 @@ public class Assembler {
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
-        for(int ii = args.size() - 1; ii >= 0; ii--){
+        for(int ii = 0; ii < args.size(); ii++){
             Expression arg = args.get(ii);
             //source location of argument
             if(arg.getExprType() == ExpressionType.STRING_LIT){
@@ -768,20 +768,25 @@ public class Assembler {
                     idx = (long) context.stringLiterals.size();
                     context.stringLiterals.put(ss, idx);
                 }
+                context.allocLocal(CodegenConst.INT_SIZE);
             }else{
                 List<Instruction> exprIns = generateExpression(arg, context);
                 ins.addAll(exprIns);
             }
         }
-        for (int ii = 0; ii < CodegenConst.N_REG_ARG; ii++){
+        LocStack rspStack = context.allocLocal(CodegenConst.INT_SIZE);
+        context.totalLocalSize -= CodegenConst.INT_SIZE;
+        long newVal = context.localVarSize.get(context.localVarSize.size() - 1) - CodegenConst.INT_SIZE;
+        context.localVarSize.set(context.localVarSize.size() - 1, newVal);
+        for (int ii = args.size() - 1; ii >= 0; ii--){
             Expression arg = args.get(ii);
             LocationMem argSrc;
             if (arg.getExprType() == ExpressionType.STRING_LIT){
                 Long idx = context.stringLiterals.get(((StringLit) arg).getValue());
                 argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
             } else {
-                argSrc = new LocReg(Regs.R10);
-                ins.addAll(context.pop(argSrc));
+                int offset = (args.size() - ii - 1 + 1) * CodegenConst.INT_SIZE;
+                argSrc = new LocStack(rspStack.offset + offset);
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
@@ -794,9 +799,14 @@ public class Assembler {
         ins.add(new Instruction("call ", new LocLabel(call.getMethodName()) ));
 
         //pop all arguments on the stack
-        if(args.size()>CodegenConst.N_REG_ARG){
-            long stackArgSize = CodegenConst.INT_SIZE * (args.size()-CodegenConst.N_REG_ARG);
-            ins.add(new Instruction("addq", new LocLiteral(stackArgSize), new LocReg(Regs.RSP)));
+        for (int ii = args.size() - 1; ii >= 0; ii--) {
+            if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
+                ins.add(new Instruction("addq", new LocLiteral(CodegenConst.INT_SIZE), new LocReg(Regs.RSP)));
+            }
+            context.totalLocalSize -= CodegenConst.INT_SIZE;
+            context.pop(null);
+            newVal = context.localVarSize.get(context.localVarSize.size() - 1) - CodegenConst.INT_SIZE;
+            context.localVarSize.set(context.localVarSize.size() - 1, newVal);
         }
         return ins;
     }
