@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.mit.compilers.codegen.CodegenConst;
-import edu.mit.compilers.codegen.CodegenContext;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.Instruction;
 import edu.mit.compilers.codegen.LocArray;
@@ -761,7 +760,6 @@ public class Assembler {
         for(int ii = 0; ii<args.size(); ii++){
             Expression arg = args.get(ii);
             //source location of argument
-            LocationMem argSrc=null;
             if(arg.getExprType() == ExpressionType.STRING_LIT){
                 StringLit sl= (StringLit) arg;
                 String ss = sl.getValue();
@@ -770,11 +768,18 @@ public class Assembler {
                     idx = (long) context.stringLiterals.size();
                     context.stringLiterals.put(ss, idx);
                 }
-                argSrc = new LocLabel("$"+CodegenContext.StringLiteralLoc(idx));
             }else{
                 List<Instruction> exprIns = generateExpression(arg, context);
                 ins.addAll(exprIns);
-                //load argument to temporary register.
+            }
+        }
+        for (int ii = args.size() - 1; ii>= 0; ii--){
+            Expression arg = args.get(ii);
+            LocationMem argSrc;
+            if (arg.getExprType() == ExpressionType.STRING_LIT){
+                Long idx = context.stringLiterals.get(((StringLit) arg).getValue());
+                argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
+            } else {
                 argSrc = new LocReg(Regs.R10);
                 ins.addAll(context.pop(argSrc));
             }
