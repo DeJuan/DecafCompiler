@@ -774,6 +774,7 @@ public class Assembler {
                 ins.addAll(exprIns);
             }
         }
+        int offset = 0;
         for (int ii = args.size() - 1; ii >= 0; ii--){
             Expression arg = args.get(ii);
             LocationMem argSrc;
@@ -781,11 +782,11 @@ public class Assembler {
                 Long idx = context.stringLiterals.get(((StringLit) arg).getValue());
                 argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
             } else {
-                int offset = (args.size() - ii - 1) * CodegenConst.INT_SIZE;
-                if (ii >= CodegenConst.N_REG_ARG) {
-                    offset = offset + (args.size() - ii - 1) * CodegenConst.INT_SIZE;
-                }
                 argSrc = new LocRelStack(offset);
+                offset = offset + CodegenConst.INT_SIZE;
+                if (ii >= CodegenConst.N_REG_ARG) {
+                    offset = offset + CodegenConst.INT_SIZE;
+                }
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
