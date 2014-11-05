@@ -866,7 +866,7 @@ public class Assembler {
                 loc_array = new LocArray(d.getLocation(), 
                         new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
 
-                if(index_int.getValue() >= len){
+                if(index_int.getValue() >= len || index_int.getValue() < 0){
                     //statically throw error
                     ins.add(new Instruction("jmp", new LocLabel(context.getArrayBoundLabel())));
                 }
@@ -881,6 +881,8 @@ public class Assembler {
                 loc_array = new LocArray(d.getLocation(), rax, CodegenConst.INT_SIZE);
                 ins.add(new Instruction("cmpq", new LocLiteral(len), rax));
                 ins.add(new Instruction("jge", new LocLabel(context.getArrayBoundLabel())));
+                ins.add(new Instruction("cmpq", new LocLiteral(0L), rax));
+                ins.add(new Instruction("jl", new LocLabel(context.getArrayBoundLabel())));
             }
             return loc_array;
         default:
