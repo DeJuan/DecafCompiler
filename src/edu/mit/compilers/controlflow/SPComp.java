@@ -50,6 +50,10 @@ public class SPComp {
         return operator.hashCode() + lhs.hashCode() + rhs.hashCode();
     }
     
+    public CompExpr toExpression(Map<ValueID, List<Var>> valToVar) {
+        return new CompExpr(lhs.toExpression(valToVar), operator, rhs.toExpression(valToVar));
+    }
+    
     private SPSet safeSPConstruct(Expression expr) {
         if (expr instanceof Var) {
             return new SPSet(Collections.<SPSet> emptyList(), Arrays.asList(((Var) expr).getValueID()), Collections.<IntLit> emptyList(), 
@@ -73,9 +77,5 @@ public class SPComp {
                     Collections.<MethodCall> emptyList(), Collections.<SPComp> emptyList(), null);
         }
         return new SPSet(expr);
-    }
-    
-    public CompExpr toExpression(Map<ValueID, List<Var>> valToVar) {
-        return new CompExpr(lhs.toExpression(valToVar), operator, rhs.toExpression(valToVar));
     }
 }

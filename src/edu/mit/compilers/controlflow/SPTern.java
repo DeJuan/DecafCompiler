@@ -86,6 +86,10 @@ public class SPTern {
         return cond.hashCode() + falseBranch.hashCode() + trueBranch.hashCode();
     }
     
+    public Ternary toExpression(Map<ValueID, List<Var>> valToVar){
+        return new Ternary(cond.toExpression(valToVar), trueBranch.toExpression(valToVar), falseBranch.toExpression(valToVar));
+    }
+    
     private SPSet safeSPConstruct(Expression expr) {
         if (expr instanceof Var) {
             return new SPSet(Collections.<SPSet> emptyList(), Arrays.asList(((Var) expr).getValueID()), Collections.<IntLit> emptyList(), 
@@ -109,9 +113,5 @@ public class SPTern {
                     Collections.<MethodCall> emptyList(), Collections.<SPComp> emptyList(), null);
         }
         return new SPSet(expr);
-    }
-    
-    public Ternary toExpression(Map<ValueID, List<Var>> valToVar){
-        return new Ternary(cond.toExpression(valToVar), trueBranch.toExpression(valToVar), falseBranch.toExpression(valToVar));
     }
 }

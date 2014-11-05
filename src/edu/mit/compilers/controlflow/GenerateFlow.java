@@ -153,6 +153,14 @@ public class GenerateFlow {
 				// This is a break. We set the pointer to the exit node  (FalseBranch) of the 
 				// innermost for/while loop.
 				Branch br = context.getInnermostLoop();
+                if (!(curNode instanceof Codeblock)) {
+                    // Build new Codeblock if one doesn't exist already.
+                    Codeblock newBlock = new Codeblock();
+                    curNode.addChild(newBlock);
+                    newBlock.addParent(curNode);
+                    curNode = newBlock;
+                }
+                br.getFalseBranch().addParent(curNode);
 				curNode.addChild(br.getFalseBranch());
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
@@ -161,7 +169,15 @@ public class GenerateFlow {
 				// This is a continue. We set the pointer to the Branch object of the innermost 
 				// for/while loop.
 				Branch br = context.getInnermostLoop();
+                if (!(curNode instanceof Codeblock)) {
+                    // Build new Codeblock if one doesn't exist already.
+                    Codeblock newBlock = new Codeblock();
+                    curNode.addChild(newBlock);
+                    newBlock.addParent(curNode);
+                    curNode = newBlock;
+                } 
 				curNode.addChild(br);
+				br.addParent(curNode);
 				((Codeblock) curNode).setIsBreak(true);
 				return null;
 			}
@@ -271,9 +287,19 @@ public class GenerateFlow {
 		// Initialize Branch object with the condition expression.
 		Expression expr = generateExpr(comp, context);
 		Branch forBranch = new Branch(expr, BranchType.FOR);
+		Var loopVar = new Var(context.findSymbol(forNode.getVar().getName()), null);
+		AddExpr incrementLoopVar = new AddExpr(loopVar, Ops.PLUS, new IntLit(1L));
+		Statement increment = new Assignment(loopVar, Ops.ASSIGN, incrementLoopVar);
 		context.enterLoop(forBranch);
-		prevNode.addChild(forBranch);
-		forBranch.addParent(prevNode);
+		
+		// initialize loopvar to start
+		Assignment initialize = new Assignment(loopVar, Ops.ASSIGN, generateExpr(forNode.getStart(), context));
+		Codeblock initializer = new Codeblock();
+		initializer.addParent(prevNode);
+		prevNode.addChild(initializer);
+		initializer.addStatement(initialize);
+		forBranch.addParent(initializer);
+		initializer.addChild(forBranch);
 		
 		// Initiate loop block, when expr evaluates to true.
 		START beginForBlock = new START();
@@ -289,11 +315,27 @@ public class GenerateFlow {
 		FlowNode endFor = generateFlow(beginForBlock, forNode.getBlock(), context);
 		if (!(endFor instanceof END) && endFor != null ) {
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
+		    if (!(endFor instanceof Codeblock)) {
+                if (!(endFor instanceof NoOp)) {
+                    throw new RuntimeException("Maddie is wrong about things");
+                }
+                Codeblock newBlock = new Codeblock();
+                endFor.addChild(newBlock);
+                newBlock.addParent(endFor);
+                endFor = newBlock;
+            }
 			endFor.addChild(forBranch);
-			if (!(endFor instanceof Codeblock)) {
-			    throw new RuntimeException("Maddie is wrong about things");
-			}
+			forBranch.addParent(endFor);
 			((Codeblock) endFor).setIsBreak(true);
+		}
+		// increment loop counter on all paths returning to beginning.
+		for (FlowNode node : forBranch.getParents()) {
+		    if (node instanceof Codeblock) {
+		        Codeblock blk = (Codeblock) node;
+		        if (blk.getIsBreak()) {
+		            blk.addStatement(increment);
+		        }
+		    }
 		}
 		context.exitLoop();
 		return exitFor;
@@ -323,7 +365,7 @@ public class GenerateFlow {
 		Branch maxCheck = null;
 		if (whileNode.getMaxLoops() != null) {
 			// Generate loop counter variable to count loops.
-		    if (context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
+		    if (!context.symbol.getTable(context.symbol.getNumScopes() - 1).containsKey("while")) {
 			    loopCounter = new IR_FieldDecl(Type.INT, "while");
                 loop = generateFieldDecl(loopCounter, context);
 		    }
@@ -395,11 +437,17 @@ public class GenerateFlow {
 		// Begin recursively generating loop code block.
 		FlowNode endWhile = generateFlow(beginWhileBlock, whileNode.getBlock(), context);
 		if (!(endWhile instanceof END) && endWhile != null ) {
+		    if (!(endWhile instanceof Codeblock)) {
+                if (!(endWhile instanceof NoOp)) {
+                    throw new RuntimeException("Maddie is wrong about things");
+                }
+                Codeblock newBlock = new Codeblock();
+                endWhile.addChild(newBlock);
+                newBlock.addParent(endWhile);
+                endWhile = newBlock;
+            }
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endWhile.addChild(whileBranch);
-			if (!(endWhile instanceof Codeblock)) {
-                throw new RuntimeException("Maddie is wrong about things");
-            }
             ((Codeblock) endWhile).setIsBreak(true);
 		}
 		context.exitLoop();
@@ -431,11 +479,11 @@ public class GenerateFlow {
 					expr = new AddExpr(left, op, right);
 					break;
 				case TIMES:
-					expr = new MultExpr(left, op, right);
-					break;
+				    expr = new MultExpr(left, op, right);
+                    break;
 				case DIVIDE:
-					expr = new DivExpr(left, op, right);
-					break;
+				    expr = new DivExpr(left, op, right);
+                    break;
 				case MOD:
 					expr = new ModExpr(left, op, right);
 					break;

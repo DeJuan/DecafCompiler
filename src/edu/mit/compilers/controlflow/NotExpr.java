@@ -5,10 +5,8 @@ import edu.mit.compilers.ir.Type;
 
 public class NotExpr extends Expression {
 	private Expression express;
-	private Ops operator;
 	
 	public NotExpr(Expression expr){
-	    operator = Ops.NOT;
 		switch(expr.getExprType()){
 		case VAR:
 			Var varExpr = (Var)expr;
@@ -55,7 +53,7 @@ public class NotExpr extends Expression {
 	}
 	
 	public Ops getOp(){
-	    return operator;
+	    return Ops.NOT;
 	}
 
 }

@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.mit.compilers.codegen.CodegenConst;
-import edu.mit.compilers.codegen.CodegenContext;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.Instruction;
 import edu.mit.compilers.codegen.LocArray;
 import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.codegen.LocLiteral;
 import edu.mit.compilers.codegen.LocReg;
+import edu.mit.compilers.codegen.LocRelStack;
 import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.codegen.LocationMem;
 import edu.mit.compilers.codegen.Regs;
@@ -39,10 +39,10 @@ public class Assembler {
         while (processing.size() > 0) {
             FlowNode next = processing.remove(0);
             for (FlowNode child : next.getChildren()) {
-                seen.add(child);
                 if (!seen.contains(child)) {
                     processing.add(child);
                 }
+                seen.add(child);
             }
             next.setLabel(context.genLabel());
         }
@@ -84,7 +84,7 @@ public class Assembler {
         Descriptor d = new Descriptor(decl);
         context.putSymbol(name, d);
     }
-    
+
     public static void generateFieldDeclGlobal(IR_FieldDecl decl, ControlflowContext context){
         Descriptor d = new Descriptor(decl);
         d.setLocation(new LocLabel(decl.getName()));
@@ -124,10 +124,8 @@ public class Assembler {
                 List<Instruction> pushIns = context.push(argSrc);
                 argIns.addAll(pushIns);
                 argDst = context.getRsp();
+                context.allocLocal(CodegenConst.INT_SIZE);
             }
-            context.allocLocal(CodegenConst.INT_SIZE);
-            LocLiteral sizeLoc= new LocLiteral(CodegenConst.INT_SIZE);
-            context.addIns(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
             argd.setLocation(argDst);
         }
         context.addIns(argIns);
@@ -160,19 +158,15 @@ public class Assembler {
                 throw new RuntimeException("This ought not have occurred");
             }
         }
-
-        //instructions for entering a function.
-        LocLiteral loc= new LocLiteral(context.totalLocalSize);
-        context.addIns(new Instruction("subq", loc, rsp));
-
         //write instructions for function body.
         context.addIns(blockIns);
-        Instruction moveSp = context.decScope();
-        context.addIns(moveSp);
 
         // Since GenerateFlow adds ENDs, all nodes will have an END - must 
         // check in generateReturn that non-void functions don't return 
         // without a return value
+
+        context.decScope();
+        //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
 
     private static List<Instruction> generateNode(FlowNode begin, ControlflowContext context, boolean isVoid) {
@@ -188,15 +182,12 @@ public class Assembler {
 
     private static List<Instruction> generateBlock(Codeblock begin, ControlflowContext context, boolean isVoid) {
         List<Instruction> ins = new ArrayList<Instruction>();
+        ins.add(Instruction.labelInstruction(begin.getLabel()));
         for (Statement stat : begin.getStatements()) {
             ins.addAll(generateStatement(stat, context));
         }
         FlowNode child = begin.getChildren().get(0);
-        if (child instanceof END) {
-            ins.addAll(generateEnd((END) child, context, isVoid));
-        } else {
-            ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
-        }
+        ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
         return ins;
     }
 
@@ -208,13 +199,15 @@ public class Assembler {
         ins.addAll(context.pop(r10));
         ins.add(new Instruction("cmp", new LocLiteral(0L), r10));
         ins.add(new Instruction("je", new LocLabel(begin.getFalseBranch().getLabel())));
-        
+
         if (begin.getType() == BranchType.IF) {
             // make True branch - either ends at end or when hitting a if with two ends or an unpaired NOp
             context.incScope();
             boolean done = false;
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
+            NoOp endBranch = null;
+            boolean firstNode = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -224,20 +217,25 @@ public class Assembler {
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
                     ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
-                    if (endBranch == null) {
+                    NoOp innerEndBranch = findNop(br);
+                    if (innerEndBranch == null) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        next = innerEndBranch.getChildren().get(0);
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
+                    endBranch = (NoOp) next;
+                    if (firstNode) {
+                        ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
+                    }
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
+                firstNode = false;
             }
             done = false;
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
@@ -251,14 +249,18 @@ public class Assembler {
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
                     ins.addAll(generateBranch(br, context, isVoid));
-                    NoOp endBranch = findNop(br);
-                    if (endBranch == null) {
+                    NoOp tempEndBranch = findNop(br);
+                    if (tempEndBranch == null) {
                         done = true;
                     } else {
-                        next = endBranch.getChildren().get(0);
+                        next = tempEndBranch.getChildren().get(0);
                     }
                 } else if (next instanceof NoOp) {
                     done = true;
+                    if (next != endBranch && endBranch != null) {
+                        throw new RuntimeException("Something has gone HORRIBLY wrong");
+                    }
+                    endBranch = (NoOp) next;
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
@@ -266,8 +268,12 @@ public class Assembler {
                     throw new RuntimeException("This ought not have occurred");
                 }
             }
-            ins.add(context.decScope());
-            
+            if (endBranch != null) {
+                ins.add(Instruction.labelInstruction(endBranch.getLabel()));
+                ins.add(context.decScope());
+                ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
+            }
+
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
             boolean done = false;
@@ -275,6 +281,7 @@ public class Assembler {
             if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
                 throw new RuntimeException("Maddie assumed something untrue");
             }
+            context.incScope();
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -311,15 +318,17 @@ public class Assembler {
                 FlowNode incrementer = begin.getTrueBranch().getChildren().get(0);
                 ins.addAll(generateNode(incrementer, context, isVoid));
                 Branch innerWhile = (Branch) incrementer.getChildren().get(0);
+                ins.add(Instruction.labelInstruction(innerWhile.getLabel()));
                 ins.addAll(generateExpression(innerWhile.getExpr(), context));
                 ins.addAll(context.pop(r10));
                 ins.add(new Instruction("cmp", new LocLiteral(0L), r10));
-                ins.add(new Instruction("je", new LocLabel(innerWhile.getFalseBranch().getLabel())));
+                ins.add(new Instruction("je", new LocLabel(begin.getFalseBranch().getLabel())));
                 next = innerWhile.getTrueBranch().getChildren().get(0);
             } else {
                 next = begin.getTrueBranch().getChildren().get(0);
             }
             boolean done = false;
+            context.incScope();
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -353,9 +362,10 @@ public class Assembler {
         }
         return ins;
     }
-    
+
     private static List<Instruction> generateEnd(END next, ControlflowContext context, boolean isVoid) {
         List<Instruction> stIns = new ArrayList<Instruction>();
+        stIns.add(Instruction.labelInstruction(next.getLabel()));
         Expression expr = next.getReturnExpression();
         // We only have instructions to add if return value is not void.
         if (expr == null && !isVoid) {
@@ -366,10 +376,11 @@ public class Assembler {
         }
         if (expr != null) {
             LocReg r10 = new LocReg(Regs.R10);
-            stIns = generateExpression(expr, context);
+            stIns.addAll(generateExpression(expr, context));
             stIns.add(new Instruction("pop", r10));
             stIns.add(new Instruction("mov", r10, new LocReg(Regs.RAX)));
         }
+        stIns.add(new Instruction("movq", new LocReg(Regs.RBP), new LocReg(Regs.RSP)));
         stIns.add(new Instruction("leave"));
         stIns.add(new Instruction("ret"));
         return stIns;
@@ -385,6 +396,7 @@ public class Assembler {
         NoOp target = null;
         while (!done) {
             if (next instanceof Codeblock) {
+                done = ((Codeblock) next).getIsBreak();
                 next = next.getChildren().get(0);
             } else if (next instanceof Branch) {
                 NoOp innerNOP = findNop(((Branch) next));
@@ -397,6 +409,7 @@ public class Assembler {
                 done = true;
             } else if (next instanceof NoOp) {
                 target = (NoOp) next;
+                done = true;
             } else {
                 throw new RuntimeException("Something has gone horribly wrong in findNop");
             }
@@ -409,6 +422,7 @@ public class Assembler {
         done = false;
         while (!done) {
             if (next instanceof Codeblock) {
+                done = ((Codeblock) next).getIsBreak();
                 next = next.getChildren().get(0);
             } else if (next instanceof Branch) {
                 NoOp innerNOP = findNop(((Branch) next));
@@ -421,6 +435,7 @@ public class Assembler {
                 done = true;
             } else if (next instanceof NoOp) {
                 target = (NoOp) next;
+                done = true;
             } else {
                 throw new RuntimeException("Something has gone horribly wrong in findNop");
             }
@@ -523,7 +538,7 @@ public class Assembler {
         String labelForDone = context.genLabel();
         List<Instruction> trueInstructs = generateExpression(ternary.getTrueBranch(), context);
         List<Instruction> falseInstructs = generateExpression(ternary.getFalseBranch(), context);
-        
+
         ins.addAll(generateExpression(ternary.getTernaryCondition(), context)); //Get result of conditional onto the stack by resolving it. 
         ins.addAll(context.pop(r10)); //pop result into r10.
         ins.add(new Instruction("cmp", new LocLiteral(1L), r10)); //Compare r10 against truth
@@ -567,7 +582,7 @@ public class Assembler {
         String endLabel = context.genLabel();
 
         ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
-        
+
         List<Instruction> ins = cfg.codegen(context);
 
         ins.add(Instruction.labelInstruction(tLabel));
@@ -658,7 +673,7 @@ public class Assembler {
         ins.addAll(generateExpression(right, context));
         ins.addAll(context.pop(r11));
         ins.addAll(context.pop(r10));
-        
+
         if(!(op == Ops.DIVIDE || op==Ops.MOD)){
             String cmd = "";
             switch (op){ //PLUS, MINUS, TIMES
@@ -741,10 +756,9 @@ public class Assembler {
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
-        for(int ii = args.size()-1; ii>=0; ii--){
+        for(int ii = 0; ii < args.size(); ii++){
             Expression arg = args.get(ii);
             //source location of argument
-            LocationMem argSrc=null;
             if(arg.getExprType() == ExpressionType.STRING_LIT){
                 StringLit sl= (StringLit) arg;
                 String ss = sl.getValue();
@@ -753,13 +767,24 @@ public class Assembler {
                     idx = (long) context.stringLiterals.size();
                     context.stringLiterals.put(ss, idx);
                 }
-                argSrc = new LocLabel("$"+CodegenContext.StringLiteralLoc(idx));
             }else{
                 List<Instruction> exprIns = generateExpression(arg, context);
                 ins.addAll(exprIns);
-                //load argument to temporary register.
-                argSrc = new LocReg(Regs.R10);
-                ins.addAll(context.pop(argSrc));
+            }
+        }
+        int offset = 0;
+        for (int ii = args.size() - 1; ii >= 0; ii--){
+            Expression arg = args.get(ii);
+            LocationMem argSrc;
+            if (arg.getExprType() == ExpressionType.STRING_LIT){
+                Long idx = context.stringLiterals.get(((StringLit) arg).getValue());
+                argSrc = new LocLabel("$" + ControlflowContext.StringLiteralLoc(idx));
+            } else {
+                argSrc = new LocRelStack(offset);
+                offset = offset + CodegenConst.INT_SIZE;
+                if (ii >= CodegenConst.N_REG_ARG) {
+                    offset = offset + CodegenConst.INT_SIZE;
+                }
             }
             List<Instruction> argIns = setCallArg(argSrc,ii,context);
             ins.addAll(argIns);
@@ -772,9 +797,10 @@ public class Assembler {
         ins.add(new Instruction("call ", new LocLabel(call.getMethodName()) ));
 
         //pop all arguments on the stack
-        if(args.size()>CodegenConst.N_REG_ARG){
-            long stackArgSize = CodegenConst.INT_SIZE * (args.size()-CodegenConst.N_REG_ARG);
-            ins.add(new Instruction("addq", new LocLiteral(stackArgSize), new LocReg(Regs.RSP)));
+        for (int ii = args.size() - 1; ii >= 0; ii--) {
+            if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
+                ins.addAll(context.pop(new LocReg(Regs.R10)));
+            }
         }
         return ins;
     }
@@ -853,7 +879,7 @@ public class Assembler {
                 loc_array = new LocArray(d.getLocation(), 
                         new LocLiteral(index_int.getValue()), CodegenConst.INT_SIZE);
 
-                if(index_int.getValue() >= len){
+                if(index_int.getValue() >= len || index_int.getValue() < 0){
                     //statically throw error
                     ins.add(new Instruction("jmp", new LocLabel(context.getArrayBoundLabel())));
                 }
@@ -868,6 +894,8 @@ public class Assembler {
                 loc_array = new LocArray(d.getLocation(), rax, CodegenConst.INT_SIZE);
                 ins.add(new Instruction("cmpq", new LocLiteral(len), rax));
                 ins.add(new Instruction("jge", new LocLabel(context.getArrayBoundLabel())));
+                ins.add(new Instruction("cmpq", new LocLiteral(0L), rax));
+                ins.add(new Instruction("jl", new LocLabel(context.getArrayBoundLabel())));
             }
             return loc_array;
         default:
