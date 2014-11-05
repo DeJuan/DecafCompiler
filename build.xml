@@ -47,6 +47,22 @@
     <pathelement path="${java.class.path}" />
   </path>
 
+  <path id="build.classpath">
+    <fileset dir="${basedir}">
+      <include name="lib/*.jar"/>
+    </fileset>
+  </path>
+
+  <pathconvert property="manifest.classpath" pathsep=" ">
+    <path refid="build.classpath"/>
+    <mapper>
+      <chainedmapper>
+        <flattenmapper/>
+        <globmapper from="*.jar" to="lib/*.jar"/>
+      </chainedmapper>
+   </mapper>
+  </pathconvert>
+
   <target name="init">
     <mkdir dir="${classes}" />
     <mkdir dir="${dist}" />
@@ -83,11 +99,18 @@
   </target>
 
   <target name="jar" depends="compile">
+    <manifestclasspath property="mf.classpath" jarfile="${dist}/Compiler.jar">
+       <classpath>
+          <fileset dir="${lib}" includes="*.jar" />
+       </classpath>
+    </manifestclasspath>
     <jar jarfile="${dist}/Compiler.jar" basedir="${classes}">
      <manifest>
        <attribute name="Main-Class" value="${base_package_name}.Main" />
        <!-- ANTLR runtime is needed for parsing! -->
-       <attribute name="Class-Path" value="antlr.jar" />
+       <attribute name="Class-Path" value=". ${lib}/antlr.jar ${lib}/cloning-1.7.9.jar ${lib}/cloning-1.7.9-sources.jar ${lib}/objenesis-1.2.jar" />
+       <attribute name="Cloner-Main" value="cloning-1.7.9.jar" />
+       <attribute name="Cloner-Resources" value="cloning-1.7.9-sources.jar" /> 
      </manifest>
     </jar>
     <!-- Third party libraries can only be found by java -jar if they
@@ -95,6 +118,8 @@
          so use symlinks instead. -->
     <symlink link="${dist}/antlr.jar" resource="${lib}/antlr.jar"
              overwrite="true" />
+    <symlink link="${dist}/cloning-1.7.9.jar" resource="${lib}/cloning-1.7.9.jar"                     overwrite="true" />
+    <symlink link="${dist}/cloning-1.7.9-sources.jar" resource="${lib}/cloning-1.7.9-sources.jar" overwrite="true" />
   </target>
 
   <target name="test_scanner" depends="jar">
