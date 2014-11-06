@@ -722,7 +722,7 @@ public class Optimizer {
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				//Set up the maps for this particular node, regardless of type. 
-				MapContainer thisNodeContainer = cloner.deepClone(containerForNode.get(currentNode.getParents().get(0))); //want something we can intersect with, so take first parent's set.
+				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
 				//TODO The above takes the parent's set and makes a deep clone of it; this will be non-destructive to the parent's set 
 				for(FlowNode parent: currentNode.getParents()){
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
