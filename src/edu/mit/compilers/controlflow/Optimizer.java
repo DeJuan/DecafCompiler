@@ -482,7 +482,7 @@ public class Optimizer {
 	public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
 			 Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
 		//TODO: Fix this.  
-		System.err.println("Just entered killMappings. The current var being assigned is " + assignLhs.getName() + "." + System.getProperty("line.separator"));
+		System.err.println("Just entered killMappings. The current var being assigned is " + assignLhs.getName() + ", so we shall kill entries in the maps containing it." + System.getProperty("line.separator"));
 		System.err.printf("Size of varToVal is currently %d" + System.getProperty("line.separator"), varToVal.size());
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
@@ -735,7 +735,7 @@ public class Optimizer {
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				//Set up the maps for this particular node, regardless of type. 
-				System.err.printf("We are about to get the parent Containers from the map. The currrent node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
+				System.err.printf("We are about to get the parent Containers from the map to update available expressions. The currrent node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
 				System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
 				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
 				System.err.println("The size of the Container sets for the current node before the intersection are as follows:");
@@ -746,7 +746,7 @@ public class Optimizer {
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
 				for(FlowNode parent: currentNode.getParents()){
 					if(containerForNode.get(parent) == null){
-						System.err.println("The parent of this node doesn't have an entry in the container because all of its parents have not yet been processed.");
+						System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
 					}
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
 				}
@@ -783,6 +783,9 @@ public class Optimizer {
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
+							if(assignExprValue instanceof BinExpr){
+								System.err.println("The right hand side of the current assignment is a binary expression.");
+							}
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
