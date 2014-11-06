@@ -729,7 +729,13 @@ public class Optimizer {
 				//Set up the maps for this particular node, regardless of type. 
 				System.err.printf("We are about to get the parent Containers from the map. The currrent node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
 				System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
-				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set. 
+				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
+				System.err.println("The size of the Container sets for the current node before the intersection are as follows:");
+				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), thisNodeContainer.varToVal.size());
+				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  thisNodeContainer.expToVal.size());
+				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), thisNodeContainer.expToTemp.size());
+				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
+				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
 				for(FlowNode parent: currentNode.getParents()){
 					if(containerForNode.get(parent) == null){
 						System.err.println("For some reason, the parent of this node doesn't have an entry in the container?!");
