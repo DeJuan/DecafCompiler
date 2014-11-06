@@ -741,6 +741,7 @@ public class Optimizer {
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
+							System.out.println(assignExprValue.toString());
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
@@ -779,7 +780,6 @@ public class Optimizer {
 									//So if we had a = x + y, we now have a temp value temp1 = a.
 									IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
 									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
-									//TODO: confirm with DeJuan
 									List<Var> varList = valToVar.get(currentValID);
 									if (varList == null) {
 									    varList = new ArrayList<Var>();
@@ -797,8 +797,10 @@ public class Optimizer {
 							List<Expression> args = mcs.getMethodCall().getArguments();
 							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();
 							for(int i = 0; i < args.size(); i++){
-								if(!(args.get(i).getExprType() == ExpressionType.STRING_LIT)){
-									argMap.put(new SPSet(args.get(i)), new Integer(i));
+								if(args.get(i).getExprType() != ExpressionType.STRING_LIT){
+									Expression expr = args.get(i);
+									setVarIDs(varToVal, varToValForArrayComponents, expr);
+									argMap.put(new SPSet(expr), new Integer(i));
 								}
 							}
 							boolean changedAtAll = false;
