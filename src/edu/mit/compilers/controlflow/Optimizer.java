@@ -786,6 +786,9 @@ public class Optimizer {
 							if(assignExprValue instanceof BinExpr){
 								System.err.println("The right hand side of the current assignment is a binary expression.");
 							}
+							if(assignExprValue.getExprType() == ExpressionType.BIN_EXPR){
+								System.err.println("If this prints but not a statement above telling you rhs is a binary expression, bug found.");
+							}
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
