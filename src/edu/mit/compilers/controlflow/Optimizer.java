@@ -341,25 +341,17 @@ public class Optimizer {
 		}
 		else if (expr instanceof Var){
 			Var varia = (Var)expr;
+			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
 			if(varia.getIndex() != null){
 				IR_FieldDecl varDecl = (IR_FieldDecl) varia.getVarDescriptor().getIR();
-				SPSet varArraySP = new SPSet(varia);
-				varToValForArrayComponents.get(varDecl).put(varArraySP, new ValueID()); //TODO : Sanity check.
+				SPSet varArraySP = new SPSet(varia.getIndex());
+				valID = varToValForArrayComponents.get(varDecl).get(varArraySP);
 			}
-			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
 			if (valID == null){
 				throw new RuntimeException("Something went wrong; tried to set a ValueID with a null mapping.");
 			}
 			else{
 				varia.setValueID(valID);
-				if(valToVar.containsKey(valID)){
-					valToVar.get(valID).add(varia);
-				}
-				else{
-					List<Var> newVarList = new ArrayList<Var>();
-					newVarList.add(varia);
-					valToVar.put(valID, newVarList);
-				}
 			}
 		}	
 		else if(expr instanceof NotExpr){
@@ -784,6 +776,13 @@ public class Optimizer {
 									//So if we had a = x + y, we now have a temp value temp1 = a.
 									IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
 									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+									//TODO: confirm with DeJuan
+									List<Var> varList = valToVar.get(currentValID);
+									if (varList == null) {
+									    varList = new ArrayList<Var>();
+									    valToVar.put(currentValID, varList);
+									}
+									varList.add(new Var(new Descriptor(rhsTempDecl), null));
 								}
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock

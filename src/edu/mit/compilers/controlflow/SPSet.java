@@ -228,7 +228,7 @@ public class SPSet {
 
     }
 
-    public SPSet copy(SPSet original) {
+    public static SPSet copy(SPSet original) {
         List<SPSet> SPCopy = new ArrayList<SPSet>();
         for (SPSet set : original.SPSets) {
             SPCopy.add(copy(set));
