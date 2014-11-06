@@ -91,6 +91,7 @@ public class Optimizer {
 	 *    rootSP.SPSets.addAll(computePlusSets(Level 2 LHS))
 	 *    rootSP.SPSets.addAll(computePlusSets(Level 2 RHS))
 	 *    
+	 *    
 	 *    In that recursive call, we need to hit a check for whether or not the LHS and RHS are Vars.
 	 *    If they are, then do:
 	 *    rootSP.VarSets.add(LHS.getDescriptor); //The descriptors are IR_FieldDecls 
@@ -438,6 +439,7 @@ public class Optimizer {
 					newBlock.addChild(oldChild);
 				}
 				else if (oldC instanceof NoOp){
+			
 					NoOp oldChild = (NoOp) oldC;
 					oldChild.removeParent(old);
 					oldChild.addParent(newBlock);
@@ -761,7 +763,9 @@ public class Optimizer {
 					List<Var> allTheVarsInBlock = checkVariablesAssigned(cblock);
 					for(Var current : allTheVarsInBlock){
 						String nextTemp = generateNextTemp(allVarNames);
-						newCodeblock.addStatement(new Declaration(new IR_FieldDecl(current.getVarDescriptor().getType(), nextTemp)));
+						Declaration temp = new Declaration(new IR_FieldDecl(current.getVarDescriptor().getType(), nextTemp));
+						newCodeblock.addStatement(temp);
+						context.putSymbol(nextTemp, current.getVarDescriptor());
 						nextTempHolder.add(nextTemp);
 					}
 					for(Statement currentStatement : cblock.getStatements()){ //for each statement 
