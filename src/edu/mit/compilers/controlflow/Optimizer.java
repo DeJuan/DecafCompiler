@@ -12,6 +12,7 @@ import java.util.Set;
 import com.rits.cloning.Cloner;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
@@ -706,6 +707,8 @@ public class Optimizer {
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
 			//Set up tables and lists we'll need.
+			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
+			int offset = 8 + 8*allVarNames.size();
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
 			Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
@@ -715,13 +718,16 @@ public class Optimizer {
 			for(IR_FieldDecl arg : initialNode.getArguments()){
 				ValueID parameterID = new ValueID();
 				List<Var> paramList = new ArrayList<Var>();
-				paramList.add(new Var(new Descriptor(arg),null));
+				Descriptor paramDescriptor = new Descriptor(arg);
+				paramDescriptor.setLocation(new LocStack(offset));
+				offset+=8;
+				paramList.add(new Var(paramDescriptor,null));
 				varToVal.put(arg, parameterID);
 				valToVar.put(parameterID, paramList);
 			}
 			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 			containerForNode.put(initialNode, initialStateContainer);
-			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
+			
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			processing.add(firstNodeInProgram);
