@@ -845,6 +845,8 @@ public class Optimizer {
 						}
 						
 						else{
+							
+							System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
 							newCodeblock.addStatement(currentStatement);
 						}
 					}
