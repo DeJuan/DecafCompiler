@@ -43,6 +43,9 @@ public class SPSet {
             SPSets.add(curSet);
         }
         for (ValueID var : initialVarSet) {
+   	    if(((Var) expr).getValueID() == null){
+		throw new RuntimeException("valueID must be set in advance");
+	    }
             varSet.add(var);
         }
         for (IntLit lit : intSet) {
