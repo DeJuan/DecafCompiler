@@ -783,10 +783,10 @@ public class Optimizer {
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
-							if(assignExprValue instanceof BinExpr){
-								System.err.println("The right hand side of the current assignment is a binary expression.");
+							if(assignExprValue instanceof AddExpr){
+								System.err.println("The right hand side of the current assignment is a binary expression involving adds.");
 							}
-							if(assignExprValue.getExprType() == ExpressionType.BIN_EXPR){
+							if(assignExprValue.getExprType() == ExpressionType.ADD_EXPR){
 								System.err.println("If this prints but not a statement above telling you rhs is a binary expression, bug found.");
 							}
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
