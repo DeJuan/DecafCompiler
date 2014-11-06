@@ -479,6 +479,8 @@ public class Optimizer {
 	public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
 			 Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
 		//TODO: Fix this.  
+		System.err.println("Just entered killMappings. The current var being assigned is " + assignLhs.getName() + "." + System.getProperty("line.separator"));
+		System.err.printf("Size of varToVal is currently %d" + System.getProperty("line.separator"), varToVal.size());
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
 		setVarIDs(varToVal, varToValForArrayComponents, assignLhs);
@@ -749,6 +751,7 @@ public class Optimizer {
 							Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
 							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
+							System.err.println("currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
