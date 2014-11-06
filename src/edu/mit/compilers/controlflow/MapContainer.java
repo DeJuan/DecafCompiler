@@ -55,12 +55,14 @@ public class MapContainer {
 	}*/
 
     public MapContainer calculateIntersection(MapContainer otherContainer){
+    	if (otherContainer.equals(this)){
+    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+    	}
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
             if(varToVal.get(localDecl) == otherContainer.varToVal.get(localDecl)){
                 newVarToVal.put(localDecl, varToVal.get(localDecl));
             }
-
         }
 
         Map<SPSet, ValueID> newExprToVal = new HashMap<SPSet, ValueID>();
