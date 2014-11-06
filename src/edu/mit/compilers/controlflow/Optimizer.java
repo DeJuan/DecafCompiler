@@ -923,6 +923,13 @@ public class Optimizer {
 				}
 				
 				//TODO : Upload container to the map.
+				System.err.println("Finished processing the current FlowNode for the current method.");
+				System.err.println("The current map sizes which will be put into the container are as follows:");
+				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
+				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
+				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
+				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
+				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size());
 				MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 				containerForNode.put(currentNode, currentNodeContainer);
 			}
