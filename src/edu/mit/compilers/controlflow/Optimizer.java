@@ -744,6 +744,7 @@ public class Optimizer {
 				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), thisNodeContainer.expToTemp.size());
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
+				System.err.println("If the above are all zero, then it simply means that the method does not take any parameters.");
 				for(FlowNode parent: currentNode.getParents()){
 					if(containerForNode.get(parent) == null){
 						System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
@@ -811,7 +812,7 @@ public class Optimizer {
 									while (rhs.contains(key)){ //if we have any of those keys in our current expression
 									System.err.printf("CSE-eligible expression detected being assigned to variable %s" + System.getProperty("line.separator"), currentDestVar.getName());
 									//System.err.printf("Now proceeding to apply CSE on the SPSet for the expression %s" + System.getProperty("line.separator"), key.toString()); throws exception
-									System.err.printf("Now proceeding to apply CSE on the SPSet for the expression.");
+									System.err.println("Now proceeding to apply CSE on the SPSet for the expression.");
 									rhs.remove(key); //remove it
 									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
 									changed = true; //Need to repass over, one substitution could lead to another
@@ -966,16 +967,18 @@ public class Optimizer {
 					containerForNode.put(currentNode, currentNodeContainer);
 				}
 				
-				System.err.println("Finished processing the current FlowNode for the current method.");
+				System.err.println("~~~~~~~~~~~~~Finished processing the current FlowNode for the current method.~~~~~~~~~~~~~");
 				System.err.println("The current map sizes which were put into the container are as follows:");
 				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
 				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
 				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size()); 
+				System.err.println("~~~~~~~~~~~~~Now beginning processing for next FlowNode.~~~~~~~~~~~~~~~");
 			}
-			System.err.println("Finished one method entirely. Now moving to next method.");
+			System.err.println("***************Finished one method entirely. Now moving to next method.********************");
 		}
+		System.err.println("!!!!!!!!!! ALL METHODS HAVE BEEN PROCESSED. NOW BEGINNING CODE GENERATION PROCESS. !!!!!!!!!!");
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
 }
