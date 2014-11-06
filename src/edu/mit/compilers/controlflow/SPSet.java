@@ -66,7 +66,7 @@ public class SPSet {
         //INT_LIT, VAR, BOOL_LIT, STRING_LIT, BIN_EXPR, METHOD_CALL, NOT,
         //NEGATE, TERNARY, ADD_EXPR, COMP_EXPR, COND_EXPR, EQ_EXPR, MULT_EXPR,
         //DIV_EXPR, MOD_EXPR;
-	SPSets =  new ArrayList<SPSet>();
+    	SPSets =  new ArrayList<SPSet>();
         varSet = new ArrayList<ValueID>();
         intSet = new ArrayList<Long>();
         boolSet = new ArrayList<Boolean>();
@@ -136,8 +136,10 @@ public class SPSet {
                 SPSets.add(new SPSet(inner));
             }
         } else if (expr instanceof BinExpr) {
+        	System.err.println("SPSet currently being constructed for a binary expression.");
             BinExpr binEx = (BinExpr) expr;
             operator = binEx.getOperator();
+            System.err.printf("The operator for this SPSet is %s." + System.getProperty("line.separator"), operator.toString());
             Expression lhs = binEx.getLeftSide();
             Expression rhs = binEx.getRightSide();
             if (operator == Ops.MINUS) {
