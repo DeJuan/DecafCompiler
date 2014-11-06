@@ -764,8 +764,7 @@ public class Optimizer {
 					for(Var current : allTheVarsInBlock){
 						String nextTemp = generateNextTemp(allVarNames);
 						Declaration temp = new Declaration(new IR_FieldDecl(current.getVarDescriptor().getType(), nextTemp));
-						newCodeblock.addStatement(temp);
-						context.
+						newCodeblock.addStatement(temp);						
 						context.putSymbol(nextTemp, current.getVarDescriptor());
 						nextTempHolder.add(nextTemp);
 					}
