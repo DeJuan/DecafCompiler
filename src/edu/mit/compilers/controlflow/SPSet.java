@@ -1715,7 +1715,7 @@ public class SPSet {
 
     @Override
     public int hashCode(){
-        int hash = operator.hashCode();
+        int hash = operator==null ? 0 :operator.hashCode();
         for (SPSet cset : SPSets){
             hash = (hash + cset.hashCode()) % Integer.MAX_VALUE;
         }
