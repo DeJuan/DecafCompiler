@@ -852,6 +852,8 @@ public class Optimizer {
 				}
 				else if (currentNode instanceof Branch){
 					Branch cbranch = (Branch)currentNode;
+					Expression branchExpr = cbranch.getExpr();
+					setVarIDs(varToVal, varToValForArrayComponents, branchExpr);
 					SPSet branchExprSP = new SPSet(cbranch.getExpr());
 					boolean changed = true; //we want to run repeated checks over the expression.
 					boolean changedAtAll = false;
