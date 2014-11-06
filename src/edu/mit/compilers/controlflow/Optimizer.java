@@ -481,7 +481,9 @@ public class Optimizer {
 		SPSet killSet = new SPSet(assignLhs);
 		
 		varToVal.remove(killVar);
+		if(valToVar.get(killValID)!= null){
 		valToVar.get(killValID).remove(assignLhs);// Could have different vars mapping to the same valID due to CSE replacements/copy prop; don't want to kill those?
+		}
 		varToValForArrayComponents.remove(killVar);
 		//Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
 		
