@@ -751,10 +751,8 @@ public class Optimizer {
 							Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
 							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
-							System.err.println("currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
-							if(varToVal.containsKey(currentDestVar)){
+							System.err.println("We are currently in an Assignment. The currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
-							}
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
 							System.out.println(assignExprValue.toString());
