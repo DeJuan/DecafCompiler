@@ -702,12 +702,6 @@ public class Optimizer {
 			Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
 			Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
 			Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>();
-			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
-			containerForNode.put(initialNode, initialStateContainer);
-			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
-			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
-			List<FlowNode> processing = new ArrayList<FlowNode>();
-			processing.add(firstNodeInProgram);
 			for(IR_FieldDecl arg : initialNode.getArguments()){
 				ValueID parameterID = new ValueID();
 				List<Var> paramList = new ArrayList<Var>();
@@ -715,6 +709,12 @@ public class Optimizer {
 				varToVal.put(arg, parameterID);
 				valToVar.put(parameterID, paramList);
 			}
+			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+			containerForNode.put(initialNode, initialStateContainer);
+			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
+			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
+			List<FlowNode> processing = new ArrayList<FlowNode>();
+			processing.add(firstNodeInProgram);
 			while(!processing.isEmpty()){ //list of nodes to process
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
