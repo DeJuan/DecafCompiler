@@ -1824,6 +1824,15 @@ public class SPSet {
     }
 
     public String toString(){
+    	if (operator == null){
+    		throw new RuntimeException("Operator is somehow null!");
+    	}
+    	if (varSet == null){
+    		throw new RuntimeException("varSet is somehow null!");
+    	}
+    	if (SPSets == null){
+    		throw new RuntimeException("SPSets is somehow null.");
+    	}
         return operator.toString() + "(" + "SPSets: " + SPSets.toString() + " | VarSets: " + varSet.toString() + ")" + System.getProperty("line.separator");
     }
 }
