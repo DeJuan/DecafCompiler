@@ -332,52 +332,47 @@ public class Optimizer {
 	 * @param varToVal : Mapping of IR_FieldDecl to ValueID, used to assign ValueID to a Var, given its descriptor
 	 * @param expr The expression whose Vars we want to set the ValueIDs for
 	 */
-	public void setVarIDsAndValToVar(Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents,  Map<ValueID, List<Var>> valToVar, Expression expr){
+	public void setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, Expression expr){
 		if(expr instanceof BinExpr){
 			BinExpr bin = (BinExpr)expr;
 			Expression lhs = bin.getLeftSide();
 			Expression rhs = bin.getRightSide();
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, lhs);
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, rhs);
+			setVarIDs(varToVal, varToValForArrayComponents, lhs);
+			setVarIDs(varToVal, varToValForArrayComponents, rhs);
 		}
 		else if (expr instanceof Var){
 			Var varia = (Var)expr;
+			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
 			if(varia.getIndex() != null){
 				IR_FieldDecl varDecl = (IR_FieldDecl) varia.getVarDescriptor().getIR();
-				SPSet varArraySP = new SPSet(varia);
-				varToValForArrayComponents.get(varDecl).put(varArraySP, new ValueID()); //TODO : Sanity check.
+				SPSet varArraySP = new SPSet(varia.getIndex());
+				valID = varToValForArrayComponents.get(varDecl).get(varArraySP);
 			}
-			ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
 			if (valID == null){
 				throw new RuntimeException("Something went wrong; tried to set a ValueID with a null mapping.");
 			}
 			else{
 				varia.setValueID(valID);
-				if(!valToVar.containsKey(valID)){
-					List<Var> newVarList = new ArrayList<Var>();
-					newVarList.add(varia);
-					valToVar.put(valID, newVarList);
-				}
 			}
 		}	
 		else if(expr instanceof NotExpr){
 			NotExpr nope = (NotExpr)expr;
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, nope.getUnresolvedExpression());
+			setVarIDs(varToVal, varToValForArrayComponents, nope.getUnresolvedExpression());
 		}
 		else if(expr instanceof NegateExpr){
 			NegateExpr negate = (NegateExpr)expr;
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, negate.getExpression());
+			setVarIDs(varToVal, varToValForArrayComponents, negate.getExpression());
 		}
 		else if(expr instanceof Ternary){
 			Ternary tern = (Ternary)expr;
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, tern.getTernaryCondition());
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, tern.trueBranch);
-			setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, tern.falseBranch);
+			setVarIDs(varToVal, varToValForArrayComponents, tern.getTernaryCondition());
+			setVarIDs(varToVal, varToValForArrayComponents, tern.trueBranch);
+			setVarIDs(varToVal, varToValForArrayComponents, tern.falseBranch);
 		}
 		else if(expr instanceof MethodCall){
 			MethodCall MCHammer = (MethodCall)expr;
 			for(Expression arg : MCHammer.getArguments()){
-				setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, arg);
+				setVarIDs(varToVal, varToValForArrayComponents, arg);
 			}
 		}
 	}
@@ -718,7 +713,7 @@ public class Optimizer {
 				MapContainer thisNodeContainer = cloner.deepClone(containerForNode.get(currentNode.getParents().get(0))); //want something we can intersect with, so take first parent's set.
 				//TODO The above takes the parent's set and makes a deep clone of it; this will be non-destructive to the parent's set 
 				for(FlowNode parent: currentNode.getParents()){
-					thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
+					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
 				}
 				varToVal = thisNodeContainer.varToVal;
 				expToVal = thisNodeContainer.expToVal;
@@ -742,7 +737,7 @@ public class Optimizer {
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
 							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
-							setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
+							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
@@ -782,7 +777,13 @@ public class Optimizer {
 									//So if we had a = x + y, we now have a temp value temp1 = a.
 									IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
 									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
-									
+									//TODO: confirm with DeJuan
+									List<Var> varList = valToVar.get(currentValID);
+									if (varList == null) {
+									    varList = new ArrayList<Var>();
+									    valToVar.put(currentValID, varList);
+									}
+									varList.add(new Var(new Descriptor(rhsTempDecl), null));
 								}
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
