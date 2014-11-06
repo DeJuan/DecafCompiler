@@ -866,7 +866,11 @@ public class Optimizer {
 					}
 					
 					swapCodeblocks(cblock, newCodeblock);
+					if(containerForNode.containsKey(cblock)){
+						System.err.println("At the point where we swap codeblocks, there was an entry for the old block in the map!");
+					}
 					containerForNode.put(newCodeblock, containerForNode.get(cblock));
+					containerForNode.remove(cblock);
 					for(FlowNode child : newCodeblock.getChildren()){
 						if(!child.visited()){
 							processing.add(child);
