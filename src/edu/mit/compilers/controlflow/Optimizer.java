@@ -735,7 +735,7 @@ public class Optimizer {
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				//Set up the maps for this particular node, regardless of type. 
-				System.err.printf("We are about to get the parent Containers from the map to update available expressions. The currrent node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
+				System.err.printf("We are about to get the parent Containers from the map to update available expressions. The current node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
 				System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
 				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
 				System.err.println("The size of the Container sets for the current node before the intersection are as follows:");
@@ -783,13 +783,8 @@ public class Optimizer {
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
-							if(assignExprValue instanceof AddExpr){
-								System.err.println("The right hand side of the current assignment is a binary expression involving adds.");
-							}
-							if(assignExprValue.getExprType() == ExpressionType.ADD_EXPR){
-								System.err.println("If this prints but not a statement above telling you rhs is a binary expression, bug found.");
-							}
-							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
+							System.err.printf("The right hand side of the current assignment is a binary expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
+							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
 							if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
@@ -819,6 +814,7 @@ public class Optimizer {
 									rhs.remove(key); //remove it
 									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
 									changed = true; //Need to repass over, one substitution could lead to another
+									System.err.println("Now testing the output of the CSE to see if the replacement just executed enables another replacement.");
 									}
 								}
 							}
