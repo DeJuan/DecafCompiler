@@ -783,7 +783,7 @@ public class Optimizer {
 							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
-							System.err.printf("The right hand side of the current assignment is a binary expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
+							System.err.printf("The right hand side of the current assignment is an Expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
@@ -835,6 +835,7 @@ public class Optimizer {
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
 							newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
+							System.err.println("============Current Assignment processing complete. Moving to next Statement.=================");
 						}
 						
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
