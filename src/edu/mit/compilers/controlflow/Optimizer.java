@@ -933,6 +933,7 @@ public class Optimizer {
 				MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 				containerForNode.put(currentNode, currentNodeContainer);
 			}
+			System.err.println("Finished one method entirely. Now moving to next method.");
 		}
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
