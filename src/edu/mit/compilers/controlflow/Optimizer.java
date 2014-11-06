@@ -742,6 +742,12 @@ public class Optimizer {
 				expToTemp = thisNodeContainer.expToTemp;
 				varToValForArrayComponents = thisNodeContainer.varToValForArrayComponents;
 				valToVar = thisNodeContainer.valToVar;
+				System.err.println("The size of the Container sets for the current node after the intersection are as follows:");
+				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
+				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
+				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
+				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
+				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size());
 				if(currentNode instanceof Codeblock){ //if codeblock downcast and make new
 					Codeblock cblock = (Codeblock)currentNode; 
 					Codeblock newCodeblock = new Codeblock(); 
