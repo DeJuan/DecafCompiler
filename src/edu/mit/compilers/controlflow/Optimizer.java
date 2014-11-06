@@ -882,6 +882,7 @@ public class Optimizer {
 				else if(currentNode instanceof END){
 					END theEnd = (END)currentNode;
 					Expression returnExpr = theEnd.getReturnExpression();
+					setVarIDs(varToVal, varToValForArrayComponents, returnExpr);
 					if(returnExpr != null){
 						SPSet retSP = new SPSet(returnExpr);
 						boolean changed = true; //we want to run repeated checks over the expression.
