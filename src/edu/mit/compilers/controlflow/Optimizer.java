@@ -708,6 +708,13 @@ public class Optimizer {
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			processing.add(firstNodeInProgram);
+			for(IR_FieldDecl arg : initialNode.getArguments()){
+				ValueID parameterID = new ValueID();
+				List<Var> paramList = new ArrayList<Var>();
+				paramList.add(new Var(new Descriptor(arg),null));
+				varToVal.put(arg, parameterID);
+				valToVar.put(parameterID, paramList);
+			}
 			while(!processing.isEmpty()){ //list of nodes to process
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
