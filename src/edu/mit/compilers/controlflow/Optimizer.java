@@ -270,6 +270,9 @@ public class Optimizer {
 		for(IR_FieldDecl global : globalList){
 			allVarNames.add(global.getName());
 		}
+		for(IR_FieldDecl parameter : node.getArguments()){
+			allVarNames.add(parameter.getName());
+		}
 		processing.add(node.getChildren().get(0));
 		while (!processing.isEmpty()){
 			FlowNode currentNode = processing.remove(0);
