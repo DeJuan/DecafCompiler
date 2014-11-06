@@ -809,37 +809,22 @@ public class Assembler {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         IR_FieldDecl decl = declare.getFieldDecl();
         String name = decl.getName();
-        //Descriptor d = new Descriptor(decl);
+        Descriptor d = new Descriptor(decl);
         Type type = decl.getType();
         long size = CodegenConst.INT_SIZE;
-        LocStack loc = new LocStack();
         switch (type) {
         case INTARR:
         case BOOLARR:
-            //size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
-        	for(int i = 0; i < decl.getLength().getValue(); i++){
-        	 Descriptor desc = new Descriptor(decl);
-            loc = context.allocLocal(size);
-            LocLiteral sizeLoc = new LocLiteral(size);
-            ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
-            desc.setLocation(loc);
-            context.putSymbol(name, desc);
-        	}
+            size = decl.getLength().getValue() * CodegenConst.INT_SIZE;
             break;
         default:
-        	Descriptor d = new Descriptor(decl);
-        	loc = context.allocLocal(size);
-            LocLiteral sizeLoc= new LocLiteral(size);
-            ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
-            d.setLocation(loc);
-            context.putSymbol(name, d);
             break;
         }
-        //LocStack loc = context.allocLocal(size);
-        //LocLiteral sizeLoc= new LocLiteral(size);
-        //ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
-        //d.setLocation(loc);
-        //context.putSymbol(name, d);
+        LocStack loc = context.allocLocal(size);
+        LocLiteral sizeLoc= new LocLiteral(size);
+        ins.add(new Instruction("subq", sizeLoc, new LocReg(Regs.RSP)));
+        d.setLocation(loc);
+        context.putSymbol(name, d);
         if(type == Type.INTARR || type == Type.BOOLARR){
             LocLiteral lenLoc = new LocLiteral(size/8);
             //loop variable
