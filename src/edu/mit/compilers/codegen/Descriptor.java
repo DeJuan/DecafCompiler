@@ -4,9 +4,9 @@ import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Type;
 
 /**
- * THis class is an abstract representation of a Descriptor. It contains almost all of the methods that will be use in the 
- * descriptors that inherit from it, but since many descriptors don't need all of these fields, the fields not needed
- * will throw UnsupportedOperationExceptions for each unused method if it is called.
+ * This class is our representation of a Descriptor. It takes in an IR_Node n and stores that locally. 
+ * setLocation should also be called on this descriptor!
+ * 
  * 
  * @author DeJuan
  *

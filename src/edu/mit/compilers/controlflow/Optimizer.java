@@ -740,7 +740,7 @@ public class Optimizer {
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
 				for(FlowNode parent: currentNode.getParents()){
 					if(containerForNode.get(parent) == null){
-						System.err.println("For some reason, the parent of this node doesn't have an entry in the container?!");
+						System.err.println("The parent of this node doesn't have an entry in the container because all of its parents have not yet been processed.");
 					}
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
 				}
