@@ -743,6 +743,7 @@ public class Optimizer {
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
 							System.out.println(assignExprValue.toString());
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
+							System.err.println(assignExprValue.toString());
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
 							if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
