@@ -481,6 +481,7 @@ public class Optimizer {
 		//TODO: Fix this.  
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
+		setVarIDs(varToVal, varToValForArrayComponents, assignLhs);
 		SPSet killSet = new SPSet(assignLhs);
 		
 		varToVal.remove(killVar);
