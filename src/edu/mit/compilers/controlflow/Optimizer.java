@@ -836,8 +836,10 @@ public class Optimizer {
 								}
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
-							newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
-							globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
+							if(expToTemp.get(rhs) != null){
+								newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
+								globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
+							}
 							System.err.println("============Current Assignment processing complete. Moving to next Statement.=================");
 						}
 						
