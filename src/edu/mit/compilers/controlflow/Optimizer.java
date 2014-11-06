@@ -866,6 +866,7 @@ public class Optimizer {
 					}
 					
 					swapCodeblocks(cblock, newCodeblock);
+					containerForNode.put(newCodeblock, containerForNode.get(cblock));
 					for(FlowNode child : newCodeblock.getChildren()){
 						if(!child.visited()){
 							processing.add(child);
