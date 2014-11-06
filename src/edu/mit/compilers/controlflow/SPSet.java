@@ -81,6 +81,7 @@ public class SPSet {
         	if(((Var) expr).getValueID() == null){
         		throw new RuntimeException("valueID must be set in advance");
         	    }
+        	System.err.printf("SPSet currently being constructed for a Var. The var is %d." + System.getProperty("line.separator"), ((Var)expr).getName());
             varSet.add(((Var) expr).getValueID());
         } else if (expr instanceof Ternary) {
             ternSet.add(new SPTern((Ternary) expr));
