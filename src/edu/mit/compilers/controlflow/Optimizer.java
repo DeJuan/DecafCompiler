@@ -853,6 +853,7 @@ public class Optimizer {
 								for(SPSet arg: argMap.keySet()){
 									Expression expr = mcs.getMethodCall().getArguments().get(argMap.get(arg));
 									expr = arg.toExpression(valToVar);
+									// TODO : Strange bug may be lurking here. 
 								}
 							}
 							newCodeblock.addStatement(mcs);
@@ -866,17 +867,15 @@ public class Optimizer {
 					}
 					
 					swapCodeblocks(cblock, newCodeblock);
-					if(containerForNode.containsKey(cblock)){
-						System.err.println("At the point where we swap codeblocks, there was an entry for the old block in the map!");
-					}
-					containerForNode.put(newCodeblock, containerForNode.get(cblock));
-					containerForNode.remove(cblock);
+					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+					containerForNode.put(newCodeblock, currentNodeContainer);
 					for(FlowNode child : newCodeblock.getChildren()){
 						if(!child.visited()){
 							processing.add(child);
 						}
 					}					
 				}
+				
 				else if (currentNode instanceof Branch){
 					Branch cbranch = (Branch)currentNode;
 					Expression branchExpr = cbranch.getExpr();
@@ -898,6 +897,8 @@ public class Optimizer {
 					if(changedAtAll){ //don't do anything if we never changed the expr, no need to do busywork
 						cbranch.setExpr(branchExprSP.toExpression(valToVar)); //in place modification on block. No need to make a new one.
 					}
+					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+					containerForNode.put(currentNode, currentNodeContainer);
 				}
 				
 				else if(currentNode instanceof NoOp){
@@ -907,6 +908,8 @@ public class Optimizer {
 							processing.add(child);
 						}
 					}
+					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+					containerForNode.put(currentNode, currentNodeContainer);
 				}
 				
 				else if(currentNode instanceof START){
@@ -916,6 +919,8 @@ public class Optimizer {
 							processing.add(child);
 						}
 					}
+					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+					containerForNode.put(currentNode, currentNodeContainer);
 				}
 				
 				else if(currentNode instanceof END){
@@ -941,18 +946,17 @@ public class Optimizer {
 							theEnd.setReturnExpression(retSP.toExpression(valToVar));
 						}
 					}
+					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+					containerForNode.put(currentNode, currentNodeContainer);
 				}
 				
-				//TODO : Upload container to the map.
 				System.err.println("Finished processing the current FlowNode for the current method.");
-				System.err.println("The current map sizes which will be put into the container are as follows:");
+				System.err.println("The current map sizes which were put into the container are as follows:");
 				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
 				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
 				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
-				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size());
-				MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
-				containerForNode.put(currentNode, currentNodeContainer);
+				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size()); 
 			}
 			System.err.println("Finished one method entirely. Now moving to next method.");
 		}
