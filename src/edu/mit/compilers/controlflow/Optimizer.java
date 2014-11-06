@@ -902,8 +902,7 @@ public class Optimizer {
 				MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 				containerForNode.put(currentNode, currentNodeContainer);
 			}
-			
 		}
-		return context;
+		return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
 }

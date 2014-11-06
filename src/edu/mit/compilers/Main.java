@@ -235,8 +235,10 @@ class Main {
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
+						  List<START> startsForMethods = (List<START>) flowNodes.values();
+						  ControlflowContext optimizeCSE = optimizer.applyCSE(startsForMethods);
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
-                          context.printInstructions(ps);
+                          optimizeCSE.printInstructions(ps);
                           ps.close();
 			    	  } 
 			    	  else {
