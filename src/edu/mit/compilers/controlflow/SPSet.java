@@ -43,9 +43,6 @@ public class SPSet {
             SPSets.add(curSet);
         }
         for (ValueID var : initialVarSet) {
-   	    if(((Var) expr).getValueID() == null){
-		throw new RuntimeException("valueID must be set in advance");
-	    }
             varSet.add(var);
         }
         for (IntLit lit : intSet) {
@@ -81,6 +78,9 @@ public class SPSet {
         } else if (expr instanceof IntLit) {
             intSet.add(((IntLit) expr).getValue());
         } else if (expr instanceof Var) {
+        	if(((Var) expr).getValueID() == null){
+        		throw new RuntimeException("valueID must be set in advance");
+        	    }
             varSet.add(((Var) expr).getValueID());
         } else if (expr instanceof Ternary) {
             ternSet.add(new SPTern((Ternary) expr));
