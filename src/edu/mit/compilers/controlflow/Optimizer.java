@@ -12,6 +12,7 @@ import java.util.Set;
 import com.rits.cloning.Cloner;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
@@ -352,10 +353,7 @@ public class Optimizer {
 			}
 			else{
 				varia.setValueID(valID);
-				if(valToVar.containsKey(valID)){
-					valToVar.get(valID).add(varia);
-				}
-				else{
+				if(!valToVar.containsKey(valID)){
 					List<Var> newVarList = new ArrayList<Var>();
 					newVarList.add(varia);
 					valToVar.put(valID, newVarList);
@@ -784,6 +782,7 @@ public class Optimizer {
 									//So if we had a = x + y, we now have a temp value temp1 = a.
 									IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
 									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+									
 								}
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
@@ -793,7 +792,34 @@ public class Optimizer {
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
 							MethodCallStatement mcs = (MethodCallStatement)currentStatement;
 							List<Expression> args = mcs.getMethodCall().getArguments();
-							
+							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();
+							for(int i = 0; i < args.size(); i++){
+								if(!(args.get(i).getExprType() == ExpressionType.STRING_LIT)){
+									argMap.put(new SPSet(args.get(i)), new Integer(i));
+								}
+							}
+							boolean changedAtAll = false;
+							for(SPSet arg : argMap.keySet()){
+								boolean changed = true; //we want to run repeated checks over the expression.
+								while(changed){ //Until we reach a fixed point
+									changed = false; //say we haven't
+									for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
+										while (arg.contains(key)){ //if we have any of those keys in our current expression
+										arg.remove(key); //remove it
+										arg.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+										changed = true; //Need to repass over, one substitution could lead to another
+										changedAtAll = true;
+										}
+									}
+								}
+							}
+							if(changedAtAll){
+								for(SPSet arg: argMap.keySet()){
+									Expression expr = mcs.getMethodCall().getArguments().get(argMap.get(arg));
+									expr = arg.toExpression(valToVar);
+								}
+							}
+							newCodeblock.addStatement(mcs);
 						}
 						
 						else{
@@ -830,15 +856,45 @@ public class Optimizer {
 				}
 				
 				else if(currentNode instanceof NoOp){
-					//write a method that takes in the l
+					currentNode.visit();
+					for(FlowNode child : currentNode.getChildren()){
+						if(!child.visited()){
+							processing.add(child);
+						}
+					}
 				}
 				
 				else if(currentNode instanceof START){
-					
+					currentNode.visit();
+					for(FlowNode child : currentNode.getChildren()){
+						if(!child.visited()){
+							processing.add(child);
+						}
+					}
 				}
 				
 				else if(currentNode instanceof END){
-					//Pass, we don't need to do anything in that case, except for upload the container with no changes because consistent behavior is nice
+					END theEnd = (END)currentNode;
+					Expression returnExpr = theEnd.getReturnExpression();
+					if(returnExpr != null){
+						SPSet retSP = new SPSet(returnExpr);
+						boolean changed = true; //we want to run repeated checks over the expression.
+						boolean changedAtAll = false;
+						while(changed){ //Until we reach a fixed point
+							changed = false; //say we haven't
+							for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
+								while (retSP.contains(key)){ //if we have any of those keys in our current expression
+								retSP.remove(key); //remove it
+								retSP.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+								changed = true; //Need to repass over, one substitution could lead to another
+								changedAtAll = true;
+								}
+							}
+						}
+						if(changedAtAll){
+							theEnd.setReturnExpression(retSP.toExpression(valToVar));
+						}
+					}
 				}
 				
 				//TODO : Upload container to the map.
