@@ -810,7 +810,8 @@ public class Optimizer {
 								for (SPSet key : keySet){ //Look at all keys in expToVal
 									while (rhs.contains(key)){ //if we have any of those keys in our current expression
 									System.err.printf("CSE-eligible expression detected being assigned to variable %s" + System.getProperty("line.separator"), currentDestVar.getName());
-									System.err.printf("Now proceeding to apply CSE on the SPSet for the expression %s" + System.getProperty("line.separator"), key.toString());
+									//System.err.printf("Now proceeding to apply CSE on the SPSet for the expression %s" + System.getProperty("line.separator"), key.toString()); throws exception
+									System.err.printf("Now proceeding to apply CSE on the SPSet for the expression.");
 									rhs.remove(key); //remove it
 									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
 									changed = true; //Need to repass over, one substitution could lead to another
