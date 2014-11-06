@@ -79,8 +79,13 @@ public class MapContainer {
 		for(IR_FieldDecl declKey : varToValForArrayComponents.keySet()){
 			if(!otherVarToValForArrayComponents.contains(declKey)){
 				varToValForArrayComponents.remove(declKey); //Don't need to check the sets, if the mapping's not there at all it wouldn't matter anyway
+			}//However, this is not enough alone; what if there are keys that are contained but their sets have changed? INVESTIGATE!
+			else{
+				Map<SPSet, ValueID> currentMap = varToValForArrayComponents.get(declKey);
+				//TODO : Iterate through the inner maps for both containers, checking value IDs. If not equal, remove the key from the map. 
 			}
 		}
+		
 		
 		Set<ValueID> otherValToVar = otherContainer.valToVar.keySet();
 		for(ValueID valID : valToVar.keySet()){

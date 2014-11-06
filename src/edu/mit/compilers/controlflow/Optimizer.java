@@ -481,16 +481,14 @@ public class Optimizer {
 	 * @param varToVal
 	 */
 	public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
-			Map<SPSet, Var> exprToTemp, Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar, Map<SPSet, ValueID> expToVal){
+			 Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
 		//TODO: Fix this.  
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
 		SPSet killSet = new SPSet(assignLhs);
 		
-		exprToTemp.remove(killSet);
 		varToVal.remove(killVar);
 		valToVar.get(killValID).remove(assignLhs);// Could have different vars mapping to the same valID due to CSE replacements/copy prop; don't want to kill those?
-		expToVal.remove(killSet); //but if we kill here we remove the temp those others map to.. hmm...
 		varToValForArrayComponents.remove(killVar);
 		//Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
 		
@@ -745,7 +743,7 @@ public class Optimizer {
 							Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
 							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
-							killMappings(currentDestVar, varToValForArrayComponents, expToTemp, varToVal, valToVar, expToVal); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
+							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDsAndValToVar(varToVal, varToValForArrayComponents, valToVar, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expresion.
