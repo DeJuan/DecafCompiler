@@ -863,7 +863,7 @@ public class Optimizer {
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
 							MethodCallStatement mcs = (MethodCallStatement)currentStatement;
 							List<Expression> args = mcs.getMethodCall().getArguments();
-							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();
+							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();// Map from Arg --> Index in args. argMap.get(arg) gives Integer.
 							for(int i = 0; i < args.size(); i++){
 								if(args.get(i).getExprType() != ExpressionType.STRING_LIT){
 									Expression expr = args.get(i);
@@ -887,9 +887,9 @@ public class Optimizer {
 								}
 							}
 							if(changedAtAll){
-								for(SPSet arg: argMap.keySet()){
-									Expression expr = mcs.getMethodCall().getArguments().get(argMap.get(arg));
-									expr = arg.toExpression(valToVar);
+								for(SPSet optimizedArg: argMap.keySet()){
+									Expression optExpr = optimizedArg.toExpression(valToVar);
+									mcs.getMethodCall().setArgument(argMap.get(optimizedArg), optExpr);
 									// TODO : Strange bug may be lurking here. 
 								}
 							}
