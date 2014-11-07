@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.rits.cloning.Cloner;
 
+import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
@@ -707,8 +708,8 @@ public class Optimizer {
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
 			//Set up tables and lists we'll need.
+			long size = CodegenConst.INT_SIZE;
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
-			int offset = 8 + 8*allVarNames.size();
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
 			Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
 			Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
@@ -718,9 +719,9 @@ public class Optimizer {
 			for(IR_FieldDecl arg : initialNode.getArguments()){
 				ValueID parameterID = new ValueID();
 				List<Var> paramList = new ArrayList<Var>();
+				LocStack loc = context.allocLocal(size);
 				Descriptor paramDescriptor = new Descriptor(arg);
-				paramDescriptor.setLocation(new LocStack(offset));
-				offset+=8;
+				paramDescriptor.setLocation(loc);
 				paramList.add(new Var(paramDescriptor,null));
 				varToVal.put(arg, parameterID);
 				valToVar.put(parameterID, paramList);
