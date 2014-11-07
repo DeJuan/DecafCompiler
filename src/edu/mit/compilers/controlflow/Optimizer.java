@@ -805,12 +805,11 @@ public class Optimizer {
 							IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
 							Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
 							List<Var> varList = valToVar.get(currentValID);
-							IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
                             if (varList == null) {
                                 varList = new ArrayList<Var>();
                                 valToVar.put(currentValID, varList);
                             }
-                            varList.add(new Var(new Descriptor(rhsTempDecl), null));
+                            varList.add(currentDestVar);
 							if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
 								varToVal.put(lhs, currentValID); 
 							}
@@ -850,7 +849,9 @@ public class Optimizer {
 									expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
 									//Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
 									//So if we had a = x + y, we now have a temp value temp1 = a.
+		                            IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
 									expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
+		                            varList.add(new Var(new Descriptor(rhsTempDecl), null));
 								}
 							}
 							newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
