@@ -709,6 +709,7 @@ public class Optimizer {
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
 			//Set up tables and lists we'll need.
+			System.err.println("----------------------Now beginning new method.----------------------------");
 			long size = CodegenConst.INT_SIZE;
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
@@ -763,7 +764,7 @@ public class Optimizer {
 				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), thisNodeContainer.expToTemp.size());
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
-				System.err.println("If the above are all zero, then it simply means that the method does not take any parameters.");
+				System.err.println("If the above are all zero and we just began a new method, then it simply means that the method does not take any parameters.");
 				for(FlowNode parent: currentNode.getParents()){
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
 				}
@@ -863,6 +864,9 @@ public class Optimizer {
 						}
 						
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
+							newCodeblock.addStatement(currentStatement);
+						}
+							/*
 							MethodCallStatement mcs = (MethodCallStatement)currentStatement;
 							List<Expression> args = mcs.getMethodCall().getArguments();
 							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();// Map from Arg --> Index in args. argMap.get(arg) gives Integer.
@@ -897,7 +901,7 @@ public class Optimizer {
 							}
 							newCodeblock.addStatement(mcs);
 						}
-						
+						*/
 						else{
 							
 							System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
