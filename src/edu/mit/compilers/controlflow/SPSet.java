@@ -165,7 +165,7 @@ public class SPSet {
                     SPSets.add(new SPSet(lhs));
                 } else {
                     BinExpr innerBinEx = (BinExpr) lhs;
-                    if (innerBinEx.getOperator() == operator) {
+                    if (innerBinEx.getOperator() == operator  || (innerBinEx.getOperator() == Ops.MINUS && operator == Ops.PLUS)) {
                         populateSPSet(this, innerBinEx);
                     } else {
                         SPSets.add(new SPSet(lhs));
@@ -188,7 +188,7 @@ public class SPSet {
                     SPSets.add(new SPSet(rhs));
                 } else {
                     BinExpr innerBinEx = (BinExpr) rhs;
-                    if (innerBinEx.getOperator() == operator) {
+                    if (innerBinEx.getOperator() == operator || (innerBinEx.getOperator() == Ops.MINUS && operator == Ops.PLUS)) {
                         populateSPSet(this, innerBinEx);
                     } else {
                         SPSets.add(new SPSet(rhs));
@@ -201,6 +201,9 @@ public class SPSet {
     }
 
     private static void populateSPSet(SPSet outer, BinExpr expr) {
+        if (outer.operator == Ops.PLUS && expr.getOperator() == Ops.MINUS) {
+            expr = new AddExpr(expr.getLeftSide(), Ops.PLUS, new NegateExpr(expr.getRightSide()));
+        }
         if (outer.operator != expr.getOperator()) {
             throw new RuntimeException("populateSPSet should only be called when the operators match");
         }
