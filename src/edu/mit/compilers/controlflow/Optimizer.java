@@ -748,7 +748,6 @@ public class Optimizer {
 						System.err.println("Now delaying processing of this node until its parents are processed.");
 						currentNode.resetVisit();
 						processing.addAll(currentNode.getChildren());
-						processing.add(currentNode);
 						containerForNode.put(currentNode, MapContainer.makeEmptyContainer());
 						reset = true;
 						break;
