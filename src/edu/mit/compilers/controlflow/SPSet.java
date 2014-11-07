@@ -161,6 +161,8 @@ public class SPSet {
                     ternSet.add(new SPTern((Ternary) lhs));
                 } else if (lhs instanceof MethodCall) {
                     methodCalls.add((MethodCall) lhs);
+                } else if (lhs instanceof NegateExpr || lhs instanceof NotExpr) {
+                    SPSets.add(new SPSet(lhs));
                 } else {
                     BinExpr innerBinEx = (BinExpr) lhs;
                     if (innerBinEx.getOperator() == operator) {
@@ -182,6 +184,8 @@ public class SPSet {
                     ternSet.add(tern);
                 } else if (rhs instanceof MethodCall) {
                     methodCalls.add((MethodCall) rhs);
+                } else if (rhs instanceof NegateExpr || rhs instanceof NotExpr) {
+                    SPSets.add(new SPSet(rhs));
                 } else {
                     BinExpr innerBinEx = (BinExpr) rhs;
                     if (innerBinEx.getOperator() == operator) {
