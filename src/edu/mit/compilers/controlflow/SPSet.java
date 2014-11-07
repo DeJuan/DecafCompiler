@@ -507,6 +507,48 @@ public class SPSet {
                 throw new RuntimeException("something is screwy");
             }
             return comparisons.get(0).toExpression(valToVar);
+        } else if ( operator == Ops.NEGATE ){
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 0)){
+                throw new RuntimeException("something is screwy");
+            }
+            if (!SPSets.isEmpty()) {
+                return new NegateExpr(SPSets.get(0).toExpression(valToVar));
+            } else if (!varSet.isEmpty()) {
+                return new NegateExpr(valToVar.get(varSet.get(0)).get(0));
+            } else if (!intSet.isEmpty()) {
+                return new NegateExpr(new IntLit(intSet.get(0)));
+            } else if (!boolSet.isEmpty()) {
+                throw new RuntimeException("can't negate a boolean");
+            } else if (!ternSet.isEmpty()) {
+                return new NegateExpr(ternSet.get(0).toExpression(valToVar));
+            } else if (!methodCalls.isEmpty()) {
+                return new NegateExpr(methodCalls.get(0));
+            } else if (!comparisons.isEmpty()) {
+                throw new RuntimeException("can't negate a comparison");
+            } else {
+                throw new RuntimeException("missing a case");
+            }
+        } else if ( operator == Ops.NOT ){
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 0)){
+                throw new RuntimeException("something is screwy");
+            }
+            if (!SPSets.isEmpty()) {
+                return new NotExpr(SPSets.get(0).toExpression(valToVar));
+            } else if (!varSet.isEmpty()) {
+                return new NotExpr(valToVar.get(varSet.get(0)).get(0));
+            } else if (!intSet.isEmpty()) {
+                throw new RuntimeException("can't not an int");
+            } else if (!boolSet.isEmpty()) {
+                return new NotExpr(new BoolLit(boolSet.get(0)));
+            } else if (!ternSet.isEmpty()) {
+                return new NotExpr(ternSet.get(0).toExpression(valToVar));
+            } else if (!methodCalls.isEmpty()) {
+                return new NotExpr(methodCalls.get(0));
+            } else if (!comparisons.isEmpty()) {
+                return new NotExpr(comparisons.get(0).toExpression(valToVar));
+            } else {
+                throw new RuntimeException("missing a case");
+            }
         } else {
             Expression lhs = null;
             for (SPSet set : SPSets) {
