@@ -796,8 +796,8 @@ public class Optimizer {
 							Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
 							Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
 							System.err.println("We are currently in an Assignment. The currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
-							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
+							killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
 							ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
 							System.err.printf("The right hand side of the current assignment is an Expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
 							SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.

@@ -153,6 +153,10 @@ public class SPSet {
             } else {
                 if (lhs instanceof Var) {
                     varSet.add(((Var) lhs).getValueID());
+                } else if (lhs instanceof IntLit) {
+                    intSet.add(((IntLit) lhs).getValue());
+                } else if (lhs instanceof BoolLit) {
+                    boolSet.add(((BoolLit) lhs).getTruthValue());
                 } else if (lhs instanceof Ternary) {
                     ternSet.add(new SPTern((Ternary) lhs));
                 } else if (lhs instanceof MethodCall) {
@@ -168,6 +172,10 @@ public class SPSet {
                 if (rhs instanceof Var) {
                     Var varRHS = (Var) rhs;
                     varSet.add(varRHS.getValueID());
+                } else if (rhs instanceof IntLit) {
+                    intSet.add(((IntLit) rhs).getValue());
+                } else if (rhs instanceof BoolLit) {
+                    boolSet.add(((BoolLit) rhs).getTruthValue());
                 } else if (rhs instanceof Ternary) {
                     Ternary ternRHS = (Ternary) rhs;
                     SPTern tern = new SPTern(ternRHS);
