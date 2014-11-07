@@ -508,7 +508,7 @@ public class SPSet {
             }
             return comparisons.get(0).toExpression(valToVar);
         } else if ( operator == Ops.NEGATE ){
-            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 0)){
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 1)){
                 throw new RuntimeException("something is screwy");
             }
             if (!SPSets.isEmpty()) {
@@ -529,7 +529,7 @@ public class SPSet {
                 throw new RuntimeException("missing a case");
             }
         } else if ( operator == Ops.NOT ){
-            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 0)){
+            if (!(SPSets.size() + varSet.size() + intSet.size() + boolSet.size() + ternSet.size() + + comparisons.size() + methodCalls.size() == 1)){
                 throw new RuntimeException("something is screwy");
             }
             if (!SPSets.isEmpty()) {
