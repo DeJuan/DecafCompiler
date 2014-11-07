@@ -53,5 +53,9 @@ public class MethodCall extends Expression {
 	public List<Expression> getArguments(){
 		return args;
 	}
+	
+	public void setArgument(int i, Expression newArg){
+		args.set(i, newArg);
+	}
 
 }
