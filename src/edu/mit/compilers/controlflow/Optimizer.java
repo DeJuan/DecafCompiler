@@ -745,11 +745,22 @@ public class Optimizer {
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
 				System.err.println("If the above are all zero, then it simply means that the method does not take any parameters.");
+				boolean reset = false;
 				for(FlowNode parent: currentNode.getParents()){
 					if(containerForNode.get(parent) == null){
 						System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
-					}
-					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.  
+						System.err.println("Now delaying processing of this node until its parents are processed.");
+						currentNode.resetVisit();
+						processing.add(currentNode);
+						reset = true;
+						break;
+					}	
+				}
+				if (reset) {
+					continue;
+				}
+				for(FlowNode parent: currentNode.getParents()){
+					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
 				}
 				varToVal = thisNodeContainer.varToVal;
 				expToVal = thisNodeContainer.expToVal;
