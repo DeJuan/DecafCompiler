@@ -931,7 +931,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) { 
-                    for (Long intLit : intSet) {
+                    for (Long intLit : set.intSet) {
                         if (!copy.intSet.contains(intLit)) {
                             doneYet = true;
                             break;
@@ -940,7 +940,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) { 
-                    for (Boolean boolLit : boolSet) {
+                    for (Boolean boolLit : set.boolSet) {
                         if (!copy.boolSet.contains(boolLit)) {
                             doneYet = true;
                             break;
@@ -949,7 +949,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) {
-                    for (SPTern ternary : ternSet) {
+                    for (SPTern ternary : set.ternSet) {
                         if (!copy.ternSet.contains(ternary)) {
                             doneYet = true;
                             break;
@@ -958,7 +958,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) {
-                    for (SPComp comp : comparisons) {
+                    for (SPComp comp : set.comparisons) {
                         if (!copy.comparisons.contains(comp)) {
                             doneYet = true;
                             break;
@@ -1425,7 +1425,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) { 
-                    for (Long intLit : intSet) {
+                    for (Long intLit : set.intSet) {
                         if (!copy.intSet.contains(intLit)) {
                             doneYet = true;
                             break;
@@ -1434,7 +1434,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) { 
-                    for (Boolean boolLit : boolSet) {
+                    for (Boolean boolLit : set.boolSet) {
                         if (!copy.boolSet.contains(boolLit)) {
                             doneYet = true;
                             break;
@@ -1443,7 +1443,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) {
-                    for (SPTern ternary : ternSet) {
+                    for (SPTern ternary : set.ternSet) {
                         if (!copy.ternSet.contains(ternary)) {
                             doneYet = true;
                             break;
@@ -1452,7 +1452,7 @@ public class SPSet {
                         }
                     }
                 } if (!doneYet) {
-                    for (SPComp comp : comparisons) {
+                    for (SPComp comp : set.comparisons) {
                         if (!copy.comparisons.contains(comp)) {
                             doneYet = true;
                             break;
