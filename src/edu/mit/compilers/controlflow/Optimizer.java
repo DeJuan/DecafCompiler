@@ -863,6 +863,9 @@ public class Optimizer {
 						}
 						
 						else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
+							newCodeblock.addStatement(currentStatement);
+						}
+							/*
 							MethodCallStatement mcs = (MethodCallStatement)currentStatement;
 							List<Expression> args = mcs.getMethodCall().getArguments();
 							Map<SPSet,Integer> argMap = new HashMap<SPSet, Integer>();// Map from Arg --> Index in args. argMap.get(arg) gives Integer.
@@ -897,7 +900,7 @@ public class Optimizer {
 							}
 							newCodeblock.addStatement(mcs);
 						}
-						
+						*/
 						else{
 							
 							System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
