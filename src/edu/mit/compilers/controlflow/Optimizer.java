@@ -13,6 +13,7 @@ import com.rits.cloning.Cloner;
 
 import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.codegen.LocStack;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
@@ -785,9 +786,9 @@ public class Optimizer {
 					List<Var> allTheVarsInBlock = checkVariablesAssigned(cblock);
 					for(Var current : allTheVarsInBlock){
 						String nextTemp = generateNextTemp(allVarNames);
-						Declaration temp = new Declaration(new IR_FieldDecl(current.getVarDescriptor().getType(), nextTemp));
-						newCodeblock.addStatement(temp);						
-						context.putSymbol(nextTemp, current.getVarDescriptor());
+						Descriptor d = new Descriptor(new IR_FieldDecl(current.getVarDescriptor().getIR().getType(), nextTemp));
+				        d.setLocation(new LocLabel(nextTemp));
+				        context.putSymbol(nextTemp, d);
 						nextTempHolder.add(nextTemp);
 					}
 					for(Statement currentStatement : cblock.getStatements()){ //for each statement 
