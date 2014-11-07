@@ -488,10 +488,6 @@ public class Optimizer {
 		System.err.printf("Size of varToVal is currently %d" + System.getProperty("line.separator"), varToVal.size());
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
-		if(varToVal.containsKey((IR_FieldDecl) assignLhs.getVarDescriptor().getIR())){
-			setVarIDs(varToVal, varToValForArrayComponents, assignLhs);
-			SPSet killSet = new SPSet(assignLhs);
-		}
 		
 		varToVal.remove(killVar);
 		if(valToVar.get(killValID)!= null){
