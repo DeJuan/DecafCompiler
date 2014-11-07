@@ -62,10 +62,11 @@ public class MapContainer {
         Map<ValueID, List<Var>> valToVarN = new HashMap<ValueID, List<Var>>();
         return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN);
     }
+    
     public MapContainer calculateIntersection(MapContainer otherContainer){
-    	if (otherContainer.equals(this)){
-    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
-    	}
+    	//if (otherContainer.equals(this)){
+    	//	return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+    	//}
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
             if(varToVal.get(localDecl) == otherContainer.varToVal.get(localDecl)){
