@@ -26,7 +26,7 @@ public class MapContainer {
         this.varToValForArrayComponents = varToValForArrayComponents;
         this.valToVar = valToVar;
     }
-
+    
     /*
      * 	
 		//TODO: make sure keys can be shallow copied 
@@ -53,7 +53,15 @@ public class MapContainer {
 
 		this.valToVar = valToVar;
 	}*/
-
+    
+    public static MapContainer makeEmptyContainer(){
+    	Map<IR_FieldDecl, ValueID> varToValN = new HashMap<IR_FieldDecl, ValueID>();
+        Map<SPSet, ValueID> expToValN = new HashMap<SPSet, ValueID>();
+        Map<SPSet, Var> expToTempN = new HashMap<SPSet, Var>();
+        Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponentsN = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
+        Map<ValueID, List<Var>> valToVarN = new HashMap<ValueID, List<Var>>();
+        return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN);
+    }
     public MapContainer calculateIntersection(MapContainer otherContainer){
     	if (otherContainer.equals(this)){
     		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);

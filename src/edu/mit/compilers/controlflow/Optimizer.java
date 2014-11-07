@@ -735,9 +735,26 @@ public class Optimizer {
 			while(!processing.isEmpty()){ //list of nodes to process
 				FlowNode currentNode = processing.remove(0); //get first node in list
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
-				//Set up the maps for this particular node, regardless of type. 
+				//Set up the maps for this particular node, regardless of type.
+				boolean changedAtAll = false;
+				boolean reset = false;
 				System.err.printf("We are about to get the parent Containers from the map to update available expressions. The current node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
 				System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
+				for(FlowNode parent: currentNode.getParents()){
+					if(containerForNode.get(parent) == null){
+						System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
+						System.err.println("Now delaying processing of this node until its parents are processed.");
+						currentNode.resetVisit();
+						processing.addAll(currentNode.getChildren());
+						processing.add(currentNode);
+						containerForNode.put(currentNode, MapContainer.makeEmptyContainer());
+						reset = true;
+						break;
+					}	
+				}
+				if (reset) {
+					continue;
+				}
 				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
 				System.err.println("The size of the Container sets for the current node before the intersection are as follows:");
 				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), thisNodeContainer.varToVal.size());
@@ -746,20 +763,6 @@ public class Optimizer {
 				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
 				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
 				System.err.println("If the above are all zero, then it simply means that the method does not take any parameters.");
-				boolean reset = false;
-				for(FlowNode parent: currentNode.getParents()){
-					if(containerForNode.get(parent) == null){
-						System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
-						System.err.println("Now delaying processing of this node until its parents are processed.");
-						currentNode.resetVisit();
-						processing.add(currentNode);
-						reset = true;
-						break;
-					}	
-				}
-				if (reset) {
-					continue;
-				}
 				for(FlowNode parent: currentNode.getParents()){
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
 				}
@@ -818,6 +821,7 @@ public class Optimizer {
 								innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
 							}
 							boolean changed = true; //we want to run repeated checks over the expression.
+							changedAtAll = false;
 							while(changed){ //Until we reach a fixed point
 								changed = false; //say we haven't
 								for (SPSet key : keySet){ //Look at all keys in expToVal
@@ -829,6 +833,7 @@ public class Optimizer {
 									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
 									changed = true; //Need to repass over, one substitution could lead to another
 									System.err.println("Now testing the output of the CSE to see if the replacement just executed enables another replacement.");
+									changedAtAll = true;
 									}
 								}
 							}
@@ -866,7 +871,7 @@ public class Optimizer {
 									argMap.put(new SPSet(expr), new Integer(i));
 								}
 							}
-							boolean changedAtAll = false;
+							
 							for(SPSet arg : argMap.keySet()){
 								boolean changed = true; //we want to run repeated checks over the expression.
 								while(changed){ //Until we reach a fixed point
@@ -901,11 +906,18 @@ public class Optimizer {
 					swapCodeblocks(cblock, newCodeblock);
 					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 					containerForNode.put(newCodeblock, currentNodeContainer);
-					for(FlowNode child : newCodeblock.getChildren()){
-						if(!child.visited()){
+					if(changedAtAll){
+						for(FlowNode child : newCodeblock.getChildren()){
 							processing.add(child);
 						}
-					}					
+					}
+					else{
+						for(FlowNode child : newCodeblock.getChildren()){
+							if(!child.visited()){
+								processing.add(child);
+							}
+						}
+					}
 				}
 				
 				else if (currentNode instanceof Branch){
@@ -914,7 +926,6 @@ public class Optimizer {
 					setVarIDs(varToVal, varToValForArrayComponents, branchExpr);
 					SPSet branchExprSP = new SPSet(cbranch.getExpr());
 					boolean changed = true; //we want to run repeated checks over the expression.
-					boolean changedAtAll = false;
 					while(changed){ //Until we reach a fixed point
 						changed = false; //say we haven't
 						for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
@@ -931,6 +942,18 @@ public class Optimizer {
 					}
 					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 					containerForNode.put(currentNode, currentNodeContainer);
+					if(changedAtAll){
+						for(FlowNode child : currentNode.getChildren()){
+							processing.add(child);
+						}
+					}
+					else{
+						for(FlowNode child : currentNode.getChildren()){
+							if(!child.visited()){
+								processing.add(child);
+							}
+						}
+					}
 				}
 				
 				else if(currentNode instanceof NoOp){
@@ -942,6 +965,7 @@ public class Optimizer {
 					}
 					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 					containerForNode.put(currentNode, currentNodeContainer);
+					
 				}
 				
 				else if(currentNode instanceof START){
@@ -962,7 +986,6 @@ public class Optimizer {
 					if(returnExpr != null){
 						SPSet retSP = new SPSet(returnExpr);
 						boolean changed = true; //we want to run repeated checks over the expression.
-						boolean changedAtAll = false;
 						while(changed){ //Until we reach a fixed point
 							changed = false; //say we haven't
 							for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
