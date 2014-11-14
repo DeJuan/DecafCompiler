@@ -726,7 +726,6 @@ public class Optimizer {
 			}
 			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 			containerForNode.put(initialNode, initialStateContainer);
-			
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			processing.add(firstNodeInProgram);
@@ -884,6 +883,7 @@ public class Optimizer {
 									}
 								}
 							}
+							
 							if(changedAtAll){
 								for(SPSet optimizedArg: argMap.keySet()){
 									Expression optExpr = optimizedArg.toExpression(valToVar);
@@ -893,7 +893,6 @@ public class Optimizer {
 							}
 							newCodeblock.addStatement(mcs);
 						} else{
-							
 							System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
 							newCodeblock.addStatement(currentStatement);
 						}

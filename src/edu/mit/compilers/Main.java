@@ -246,9 +246,9 @@ class Main {
 			    	  } 
 			    	  else {
 			    		  // =============== DIRECT TO ASSEMBLY =================
-			    		  CodegenContext context = new CodegenContext();
-				    	  Codegen.generateProgram(root, context);
-			    	      // ControlflowContext context = Assembler.generateProgram(root);
+			    		  //CodegenContext context = new CodegenContext();
+			    		  //Codegen.generateProgram(root, context);
+			    	      ControlflowContext context = Assembler.generateProgram(root);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
 				    	  ps.close();
