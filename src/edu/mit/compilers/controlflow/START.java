@@ -101,7 +101,7 @@ public class START extends FlowNode {
 	}
 	
 	/**
-	 * Reset the visited flag of this FlowNode and its children.
+	 * Reset the visited flag of this FlowNode and its immediate children.
 	 * 
 	 * Note: It will only reset the child if the child has been visited,
 	 * meaning that resetVisit will successfully reset all visited nodes
@@ -114,6 +114,28 @@ public class START extends FlowNode {
 			for (FlowNode child : children) {
 				if (child.visited())
 					child.resetVisit();
+			}
+		}
+	}
+	
+	/**
+	 * Reset the visited flag of this FlowNode and every node reachable from it.
+	 * This is a forward chaining analysis that scans over the entire structure and
+	 * just makes sure that every node has value false for visited when it is done.
+	 */
+	public void totalVisitReset(){
+		visited = false;
+		if (children.size() > 0){
+			List<FlowNode> processing = new ArrayList<FlowNode>();
+			for (FlowNode child : children){
+				processing.add(child);
+			}
+			while(!processing.isEmpty()){
+				FlowNode cNode = processing.remove(0);
+				if(cNode.visited()){
+					cNode.resetVisit();
+					processing.addAll(cNode.getChildren());
+				}
 			}
 		}
 	}

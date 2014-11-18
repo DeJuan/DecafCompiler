@@ -2,14 +2,14 @@ package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.rits.cloning.Cloner;
 
 import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
@@ -33,7 +33,7 @@ public class Optimizer {
 	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
-	Cloner cloner = new Cloner();
+	
 
 	private int tempCounter = 0;
 	/**
@@ -296,7 +296,7 @@ public class Optimizer {
 				}
 			}
 		}
-		node.resetVisit();
+		node.totalVisitReset();
 		return allVarNames;
 	}
 	
@@ -668,6 +668,349 @@ public class Optimizer {
 
 		return IN;
 	}
+	
+	/**
+	 * Thi sis the method used to do dead code elimination; it takes in a list of start nodes
+	 * for all the methods,a nd iterates throught all the codeblocks that have pointers from that start or its children.
+	 * 
+	 * General plan of attack:
+	 * 
+	 * Iterate through all the statements given in the code.
+	 * Memorize the variables on the left hand side of expressions or for declarations.
+	 * Keep these memorized variables in a map, call it candidates for death or something.
+	 * The key to the map will be the memorized variables, while the value will be the Statement.
+	 * We also get the vars from the rhs of the equation and check if they are in candidatesForDeath. Use the helper method getVarsFromExpression(expr)
+	 * If they are, remove them; they've had a use and so aren't dead.
+	 *  ALWAYS REMOVE BEFORE CHECKING THE LHS; use before redefinition is not dead!
+	 *  Example:
+	 *  x = y;
+	 *  x = 3 + x;
+	 *  The first definition of X is used in the redefinition. If we checked first, we'd say x=y is dead and remove it, breaking the code.
+	 *  but because we check rhs first, we'd find x in candidatesForDeath and remove it. 
+	 *  
+	 * Then, for each assignment we find,
+	 *  check if the left hand side is in candidatesForDeath as a key.
+	 *  If it is, put the statement that is its current value in a seperate ArrayList, call it deadStatements.
+	 *  Then ovewrite the value in the map. 
+	 *  
+	 *  Once done with a block, create an iterator over the block's statementList, and remove the statements we put in the deadStatements list.
+	 *  Any leftover statements that are still candidates for death pass to the children. 
+	 * What it does:
+	 * 1) For branches, it checks the expression; if anything in candidatesForDeath matches it, remove the expression. 
+	 * 2) Create copies of the candidatesForDeath list, and pass them to children. 
+	 * 
+	 * First pass at writing this, don't worry about branches. 
+	 * Second pass at writimg this, Worry about them!
+	 * 
+	 * @param startsForMethods
+	 */
+	/*
+	public void applyDeadCodeEliminationForwardNoBranches(List<START> startsForMethods){
+		for (START methodStart : startsForMethods){ //main loop. For each method we have in the prog...
+			Map<String, Statement> candidatesForDeath = new HashMap<String, Statement>(); //set up the map of Var names to Statements
+			
+			FlowNode initialFlownode = methodStart.getChildren().get(0); //valid; STARTs only ever have one child.
+			List<FlowNode> processing = new ArrayList<FlowNode>();
+			boolean anythingRemoved = false;
+			processing.add(initialFlownode);
+			while(!processing.isEmpty()){
+				List<Statement> deadStatements = new ArrayList<Statement>(); //set up the list of dead things
+				FlowNode currentFlownode = processing.remove(0); //get the next node.
+				if(currentFlownode instanceof Codeblock){
+					Codeblock cblock = (Codeblock)currentFlownode;
+					List<Statement> statementList = cblock.getStatements();
+					for (Statement currentState : statementList){//three kinds: Decl, MethodCallSta, Assign.
+						if (currentState instanceof Assignment){
+							//Remember; examine rhs first. 
+							Assignment assign = (Assignment)currentState;
+							List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+							for(Var varia : varsInRHS){
+								if(candidatesForDeath.containsKey(varia.getName())){
+									candidatesForDeath.remove(varia.getName());
+								}
+							}
+							String lhs = assign.getDestVar().getName();
+							if(candidatesForDeath.containsKey(lhs)){
+								deadStatements.add(candidatesForDeath.get(lhs)); //store the currently present statement, which was unused, as dead before we overwrite it
+							}
+							candidatesForDeath.put(lhs, assign); //put the var in the candidates list, with its assignment as svalue. 
+						}
+						
+						else if(currentState instanceof Declaration){//Declarations can be dead code too!
+							Declaration decl = (Declaration)currentState;
+							candidatesForDeath.put(decl.getName(), decl);
+						}
+					
+						else{//Method call. They don't confirm death, but can ward it; variables used are protected.
+							MethodCallStatement mcall = (MethodCallStatement)currentState;
+							List<Expression> args = mcall.getMethodCall().getArguments();
+							List<Var> varsInArgs = new ArrayList<Var>();
+							for(Expression expr : args){
+								varsInArgs.addAll(getVarsFromExpression(expr));
+							}
+							for (Var variable : varsInArgs){
+								if(candidatesForDeath.containsKey(variable.getName())){
+									candidatesForDeath.remove(variable.getName());
+								}
+							}
+						}
+					}
+				}
+				
+				else if(currentFlownode instanceof Branch){ //This is a join point, need to union across the parents. 
+					throw new UnsupportedOperationException("Haven't finished logic for branches yet.");
+				}
+				
+				else if(currentFlownode instanceof START){
+					FlowNode child = currentFlownode.getChildren().get(0);
+					if(!child.visited()){
+						processing.add(child);
+					}
+				}
+				
+				else if (currentFlownode instanceof NoOp){
+					//TODO 
+				}
+				else{ //only remaining case is an END
+					//do nothing. Just put it here to explicitly say, Do Nothing.
+				}
+				
+			}
+		}
+	}
+	*/
+	
+	/**
+	 * Helper method which may be completely unnecessary; makes absolutely certain to
+	 * deep copy the String, Integer map that I use to track bit vectors.
+	 * @param liveVector : The bitvector map we want to copy.
+	 */
+	public Map<String, Integer> copyVectorMap(Map<String, Integer> liveVector){
+		Map<String, Integer> vectorCopy = new HashMap<String, Integer>();
+		for (String key : liveVector.keySet()){
+			vectorCopy.put(key, new Integer(liveVector.get(key)));
+		}
+		return vectorCopy;
+	}
+	
+	/**
+	 * This is the method we'll be actually using to do DCE. 
+	 * It works backwards in reverse from each END in the program. 
+	 * It uses a bit vector representation of liveness and traces through the code,
+	 * deleting any statements that are unneeded.
+	 * 
+	 * Currently does NOT handle dead declarations (there's a justification for that, actually)
+	 * and has not yet been tested. 
+	 * 
+	 * @param startsForMethods : List of START nodes for the given methods in the program. 
+	 */
+	public void applyDeadCodeElimination(List<START> startsForMethods){
+		for(START methodStart : startsForMethods){
+			//First things first: We will be called after CSE or another optimization, so reset visits before we do anything else.
+			methodStart.totalVisitReset(); 
+			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
+			scanning.add(methodStart);
+			Set<END> endNodes = new LinkedHashSet<END>();
+			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				if(currentNode instanceof END){ 
+					endNodes.add((END)currentNode);
+				}
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			Set<String> allVars = getAllVarNamesInMethod(methodStart); //Get all the var names from the declarations in the method
+			for(END initialNode : endNodes){
+				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
+				Map<String, Integer> liveVector = new HashMap<String, Integer>(); //set up the map of Var names to Statements. 
+				Map<FlowNode, Map<String, Integer>> vectorStorage = new HashMap<FlowNode, Map<String, Integer>>(); //set up place to store maps for parent retrieval.
+				for(String varName : allVars){
+					liveVector.put(varName, 0); //initialize bitvector to all 0s
+				}
+				if(initialNode.getReturnExpression() != null){
+					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
+						liveVector.put(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
+					}
+				}
+				vectorStorage.put(initialNode, liveVector);
+				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
+				List<FlowNode> processing = new ArrayList<FlowNode>();
+				processing.addAll(initialNode.getParents());
+				while(!processing.isEmpty()){
+					FlowNode currentNode = processing.remove(0);
+					for(FlowNode child : currentNode.getChildren()){
+						if(vectorStorage.get(child) == null){
+							System.err.println("CurrentNode has an unprocessed child. Now putting off visiting this node until all children are done.");
+							continue; //Be careful, might not continue properly. Need to debug and see. 
+						}
+					}
+					currentNode.visit();
+					if(currentNode.getChildren().size() == 1){
+						liveVector = vectorStorage.get(currentNode.getChildren().get(0));
+					}
+					else{
+						liveVector = vectorUnison(currentNode.getChildren(), vectorStorage, allVars);
+					}
+					if(currentNode instanceof Codeblock){
+						Codeblock cblock = (Codeblock)currentNode;
+						List<Statement> statementList = cblock.getStatements();
+						Collections.reverse(statementList); //reverse the list so we can go backwards through it
+						Iterator<Statement> statementIter = statementList.iterator();
+						while(statementIter.hasNext()){
+							Statement currentState = statementIter.next();
+							if(currentState instanceof Assignment){
+								//Remember, always check the right hand side first before removal. 
+								Assignment assign = (Assignment)currentState;
+								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+								for(Var varia : varsInRHS){
+									String varName = varia.getName();
+									if(liveVector.get(varName) == 0){
+										liveVector.put(varName, 1); //It's alive, was just used.
+									}
+								}
+								String lhs = assign.getDestVar().getName();
+								if(liveVector.get(lhs) == 0){ //If this is dead, we don't need it, remove the statement.
+									statementIter.remove();
+								}
+								else{
+									liveVector.put(lhs, 0); //We've seen a use of this thing later on, so this definition is safe, but a prior def is still questionable. 
+								}
+							}
+
+							/**
+							 * TODO : Reason this is commented out: Consider the following scenario being read from bottom to top:
+							 * 
+							 * int x;
+							 * x = 5;
+							 * z = x + 9;
+							 * 
+							 * When we see x on the rhs of the definition for Z, X would be alive. 
+							 * When we then see the definition for X, we'd set x to 0 in the bitvector.
+							 * Then we'd hit the declaration for x. The bit vector is 0 for x, so with this type of mentality, 
+							 * we'd delete the declaration! This is bad, so don't do it! Maybe just leave declarations alone?
+							 * Probably not worth the complexity increase to deal with them, actually...Would need to seperately track an 
+							 * "if ever used" quality and use that instead; if we ever set the vector to 1, then ifEverUsed becomes true.
+							 * If we see the declaration, check ifEverUsed ; if true, leave decl alone, else, remove it. Would get iffy around branches. 
+							 */
+							else if(currentState instanceof Declaration){ 
+								//if var declared isn't ever alive, could remove the decl; but have to make sure... 
+							}
+
+							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
+								MethodCallStatement mcall = (MethodCallStatement)currentState;
+								List<Expression> args = mcall.getMethodCall().getArguments();
+								List<Var> varsInArgs = new ArrayList<Var>();
+								for(Expression expr : args){
+									varsInArgs.addAll(getVarsFromExpression(expr));
+								}
+								for(Var varia : varsInArgs){
+									if(liveVector.get(varia.getName()) == 0){
+										liveVector.put(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+									}
+								}
+							}
+						}
+						vectorStorage.put(currentNode, copyVectorMap(liveVector));
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+					}
+
+					else if (currentNode instanceof Branch){ //join point. Live vector would be handled before we got here by unisonVector, so assume we're golden.
+						Branch cBranch = (Branch)currentNode;
+						for(Var varia : getVarsFromExpression(cBranch.getExpr())){
+							liveVector.put(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
+						}
+						vectorStorage.put(currentNode, copyVectorMap(liveVector));
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+					}
+
+					else if(currentNode instanceof NoOp){ //split point. No expr here, so don't have to scan it.
+						vectorStorage.put(currentNode, liveVector);
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+					}
+
+					else if(currentNode instanceof START){
+						START cStart = (START)currentNode;
+						List<IR_FieldDecl> args = cStart.getArguments();
+						for (IR_FieldDecl arg : args){
+							String argName = arg.getName();
+							if(liveVector.get(argName) == 0){
+								liveVector.put(argName, 1); 
+							}
+						}
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+						vectorStorage.put(currentNode, copyVectorMap(liveVector));
+					}
+
+					else if(currentNode instanceof END){
+						END cEnd = (END)currentNode;
+						if(cEnd.getReturnExpression() != null){
+							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
+								String varName = varia.getName();
+								if(liveVector.get(varName) == 0){
+									liveVector.put(varName, 1);
+								}
+							}
+						}
+						for(FlowNode parent : cEnd.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+						vectorStorage.put(currentNode, copyVectorMap(liveVector));
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Simple helper method for computing the unison of bitvectors.
+	 * It starts with an all zero bitvector, and scans through all the vectors that need to be unisoned; 
+	 * If an entry in one of the scanned vectors is one, the originally all-zero bitvector is updated to have a 1 in that position.
+	 * Thus, once iteration is finished, if any vector in the set for unification had a one in a given position, the final bitvector will have a one
+	 * in that position, otherwise, it will have a zero. This is correct behavior.
+	 * 
+	 * @param children : List<FlowNode> of the children for the current FlowNode. Since we walk backwards, need children, not parents.
+	 * @param vectorStorage : The Map<FlowNode, Map<String, Integer>> we use to keep track of the bit vector for a given FlowNode at exit of that node. 
+	 * @param Set<String> allVars : List of all Var names in the program, so we can easily initialize the all-zero bitvector. 
+	 */
+	private Map<String, Integer> vectorUnison(List<FlowNode> children, Map<FlowNode, Map<String, Integer>> vectorStorage, Set<String> allVars) {
+			
+		Map<String, Integer> nextMap;
+		Map<String, Integer> finalMap = new HashMap<String, Integer>();
+		for (String var : allVars){
+			finalMap.put(var, 0); //initialize everything to 0s in finalMap. 
+		}
+		for(int i = 0; i < children.size(); i++){ //For all children of this node
+			nextMap = vectorStorage.get(children.get(i)); //get their map from storage
+			for(String key : nextMap.keySet()){ //iterate through the keys in the map
+				if(nextMap.get(key) == 1){ //if we find a key with a value of one
+					finalMap.put(key, 1); //put 1 in the finalMap in that location. 
+				}
+			}
+		}
+		return finalMap; //Any map that had a 1 for a var will have set a 1 for the corresponding place in finalMap; everything else will be 0 as intended.
+	}
 
 	/**
 	 * This is the method you call to do actual CSE. It takes in a List of
@@ -704,8 +1047,10 @@ public class Optimizer {
 	 */
 	public ControlflowContext applyCSE (List<START> startsForMethods){
 		for(START initialNode : startsForMethods){
-			//Set up tables and lists we'll need.
+			//Set up tables and lists we'll need. 
 			System.err.println("----------------------Now beginning new method.----------------------------");
+			//First thing we should do is reset visits, in case we're called after another optimization.
+			initialNode.totalVisitReset(); 
 			long size = CodegenConst.INT_SIZE;
 			Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
 			Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
@@ -1010,6 +1355,7 @@ public class Optimizer {
 				System.err.println("~~~~~~~~~~~~~Now beginning processing for next FlowNode.~~~~~~~~~~~~~~~");
 			}
 			System.err.println("***************Finished one method entirely. Now moving to next method.********************");
+			initialNode.resetVisit();
 		}
 		System.err.println("!!!!!!!!!! ALL METHODS HAVE BEEN PROCESSED. NOW BEGINNING CODE GENERATION PROCESS. !!!!!!!!!!");
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);
