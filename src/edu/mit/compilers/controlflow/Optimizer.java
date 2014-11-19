@@ -411,7 +411,15 @@ public class Optimizer {
 					newBlock.addParent(oldParent);
 				}
 				else if(oldP instanceof START){
+				    for (FlowNode c: oldP.getChildren()) {
+				        System.err.println("HAS CHILD: " + c);
+				    }
+				    System.err.println("REMOVING CHILD: " + old);
 					START oldParent = (START)oldP;
+                    for (FlowNode c: oldParent.getChildren()) {
+                        System.err.println("HAS CHILD: " + c);
+                    }
+                    System.err.println("REMOVING CHILD: " + old);
 					oldParent.removeChild(old);
 					oldParent.addChild(newBlock);
 					newBlock.addParent(oldParent);
@@ -484,8 +492,6 @@ public class Optimizer {
 	public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
 			 Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
 		//TODO: Fix this.  
-		System.err.println("Just entered killMappings. The current var being assigned is " + assignLhs.getName() + ", so we shall kill entries in the maps containing it." + System.getProperty("line.separator"));
-		System.err.printf("Size of varToVal is currently %d" + System.getProperty("line.separator"), varToVal.size());
 		IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
 		ValueID killValID = varToVal.get(killVar);
 		
@@ -1097,13 +1103,6 @@ public class Optimizer {
 					continue;
 				}
 				MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
-				System.err.println("The size of the Container sets for the current node before the intersection are as follows:");
-				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), thisNodeContainer.varToVal.size());
-				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  thisNodeContainer.expToVal.size());
-				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), thisNodeContainer.expToTemp.size());
-				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), thisNodeContainer.varToValForArrayComponents.size());
-				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), thisNodeContainer.valToVar.size());
-				System.err.println("If the above are all zero and we just began a new method, then it simply means that the method does not take any parameters.");
 				for(FlowNode parent: currentNode.getParents()){
 					thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
 				}
@@ -1112,12 +1111,6 @@ public class Optimizer {
 				expToTemp = thisNodeContainer.expToTemp;
 				varToValForArrayComponents = thisNodeContainer.varToValForArrayComponents;
 				valToVar = thisNodeContainer.valToVar;
-				System.err.println("The size of the Container sets for the current node after the intersection are as follows:");
-				System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
-				System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
-				System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
-				System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
-				System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size());
 				if(currentNode instanceof Codeblock){ //if codeblock downcast and make new
 					Codeblock cblock = (Codeblock)currentNode; 
 					Codeblock newCodeblock = new Codeblock(); 
