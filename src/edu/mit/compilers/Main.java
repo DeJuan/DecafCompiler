@@ -209,7 +209,9 @@ class Main {
 			    	  if (CLI.outfile != null) {
 			    		  outFile = CLI.outfile;
 			    	  }
-			    	  
+			    	  for(boolean optEnabled : CLI.opts){
+			    		  System.err.println(optEnabled);
+			    	  }
 			    	  if (CLI.opts[0]) {
 			    		  // common subexpression elimination optimization is turned on.
 			    		  // =============== GENERATE LOW-LEVEL IR =================
