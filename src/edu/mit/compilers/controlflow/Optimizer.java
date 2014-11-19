@@ -1176,8 +1176,7 @@ public class Optimizer {
 									System.err.printf("CSE-eligible expression detected being assigned to variable %s" + System.getProperty("line.separator"), currentDestVar.getName());
 									//System.err.printf("Now proceeding to apply CSE on the SPSet for the expression %s" + System.getProperty("line.separator"), key.toString()); throws exception
 									System.err.println("Now proceeding to apply CSE on the SPSet for the expression.");
-									rhs.remove(key); //remove it
-									rhs.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+									rhs.replace(key, expToVal.get(key));
 									changed = true; //Need to repass over, one substitution could lead to another
 									System.err.println("Now testing the output of the CSE to see if the replacement just executed enables another replacement.");
 									changedAtAll = true;
@@ -1185,7 +1184,8 @@ public class Optimizer {
 								}
 							}
 							if (!keySet.contains(rhs)){ //If the rhs is something new that we haven't seen yet,
-								if((rhs.SPSets.size() +rhs.intSet.size() +rhs.boolSet.size() + rhs.ternSet.size() + rhs.methodCalls.size() +rhs.comparisons.size()) !=0 || (rhs.varSet.size() > 1)){
+								if(((rhs.SPSets.size() +rhs.intSet.size() +rhs.boolSet.size() + rhs.ternSet.size() + rhs.comparisons.size() + rhs.varSet.size()) > 1 
+								    || (rhs.SPSets.size() + rhs.ternSet.size() + rhs.comparisons.size() != 0)) && rhs.methodCalls.size() == 0){
 									expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
 									//Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
 									//So if we had a = x + y, we now have a temp value temp1 = a.
