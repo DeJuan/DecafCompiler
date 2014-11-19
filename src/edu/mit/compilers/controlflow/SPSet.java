@@ -752,7 +752,7 @@ public class SPSet {
             throw new RuntimeException("shouldn't reach here");
         } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
             if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
-                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
                 throw new RuntimeException("Not/Negate should have only one component");
             }
             if (!set.SPSets.isEmpty()) {
@@ -1184,7 +1184,7 @@ public class SPSet {
             throw new RuntimeException("shouldn't reach here");
         } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
             if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
-                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
                 throw new RuntimeException("Not/Negate should have only one component");
             }
             if (!set.SPSets.isEmpty()) {
