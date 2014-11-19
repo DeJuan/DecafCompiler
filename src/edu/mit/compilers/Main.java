@@ -210,7 +210,9 @@ class Main {
 			    		  outFile = CLI.outfile;
 			    	  }
 			    	  for(boolean optEnabled : CLI.opts){
-			    		  System.err.println(optEnabled);
+			    		  if(optEnabled){
+			    			  System.err.println("Detected an enabled optimization.");
+			    		  }
 			    	  }
 			    	  if (CLI.opts[0]) {
 			    		  // common subexpression elimination optimization is turned on.
