@@ -211,7 +211,7 @@ class Main {
 			    	  }
 			    	  for(boolean optEnabled : CLI.opts){
 			    		  if(optEnabled){
-			    			  System.err.println("Detected an enabled optimization.");
+			    			  System.err.println(optEnabled);
 			    		  }
 			    	  }
 			    	  if (CLI.opts[0]) {
