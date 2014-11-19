@@ -803,13 +803,15 @@ public class Optimizer {
 	 * and has not yet been tested. 
 	 * 
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
+	 * @return 
 	 */
-	public void applyDeadCodeElimination(List<START> startsForMethods){
+	public ControlflowContext applyDeadCodeElimination(List<START> startsForMethods){
 		for(START methodStart : startsForMethods){
 			//First things first: We will be called after CSE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset(); 
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
+			boolean anythingChanged = false;
 			Set<END> endNodes = new LinkedHashSet<END>();
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
@@ -862,22 +864,22 @@ public class Optimizer {
 						Iterator<Statement> statementIter = statementList.iterator();
 						while(statementIter.hasNext()){
 							Statement currentState = statementIter.next();
-							if(currentState instanceof Assignment){
-								//Remember, always check the right hand side first before removal. 
+							if(currentState instanceof Assignment){ 
 								Assignment assign = (Assignment)currentState;
-								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
-								for(Var varia : varsInRHS){
-									String varName = varia.getName();
-									if(liveVector.get(varName) == 0){
-										liveVector.put(varName, 1); //It's alive, was just used.
-									}
-								}
 								String lhs = assign.getDestVar().getName();
 								if(liveVector.get(lhs) == 0){ //If this is dead, we don't need it, remove the statement.
 									statementIter.remove();
+									anythingChanged = true;
 								}
 								else{
 									liveVector.put(lhs, 0); //We've seen a use of this thing later on, so this definition is safe, but a prior def is still questionable. 
+									List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+									for(Var varia : varsInRHS){
+										String varName = varia.getName();
+										if(liveVector.get(varName) == 0){
+											liveVector.put(varName, 1); //It's alive, was just used.
+										}
+									}
 								}
 							}
 
@@ -981,6 +983,7 @@ public class Optimizer {
 				}
 			}
 		}
+		return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
 
 	/**
