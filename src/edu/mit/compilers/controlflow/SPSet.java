@@ -222,6 +222,8 @@ public class SPSet {
             outer.intSet.add(((IntLit) l).getValue());
         } else if (l instanceof BoolLit) {
             outer.boolSet.add(((BoolLit) l).getTruthValue());
+        } else if (l instanceof NegateExpr || l instanceof NotExpr) {
+            outer.SPSets.add(new SPSet(l));
         } else {
             BinExpr innerBinEx = (BinExpr) l;
             if (innerBinEx.getOperator() == outer.operator) {
@@ -236,10 +238,12 @@ public class SPSet {
             outer.ternSet.add(new SPTern((Ternary) r));
         } else if (r instanceof MethodCall) {
             outer.methodCalls.add((MethodCall) r);
-        } else if (l instanceof IntLit) {
-            outer.intSet.add(((IntLit) l).getValue());
-        } else if (l instanceof BoolLit) {
-            outer.boolSet.add(((BoolLit) l).getTruthValue());
+        } else if (r instanceof IntLit) {
+            outer.intSet.add(((IntLit) r).getValue());
+        } else if (r instanceof BoolLit) {
+            outer.boolSet.add(((BoolLit) r).getTruthValue());
+        } else if (r instanceof NegateExpr || r instanceof NotExpr) {
+            outer.SPSets.add(new SPSet(r));
         } else {
             BinExpr innerBinEx = (BinExpr) r;
             if (innerBinEx.getOperator() == outer.operator) {
