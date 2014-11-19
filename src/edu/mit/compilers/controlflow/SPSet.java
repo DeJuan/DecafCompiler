@@ -642,8 +642,15 @@ public class SPSet {
             if (comparisons.contains(target)) {
                 return true;
             }
-            for (SPComp comp : comparisons) {
-                if (comp.getLhs().comparisons.contains(target) || comp.getRhs().comparisons.contains(target)) {
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set)) {
+                    return true;
+                }
+            }
+            for (SPTern tern: ternSet) {
+                if (tern.getTernaryCondition().contains(set) 
+                        || tern.getTrueBranch().contains(set) 
+                        || tern.getFalseBranch().contains(set)) {
                     return true;
                 }
             }
@@ -660,19 +667,19 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.varSet.contains(target)) {
+                    if (curSet.contains(set)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().varSet.contains(target) 
-                            || tern.getTrueBranch().varSet.contains(target) 
-                            || tern.getFalseBranch().varSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().varSet.contains(target) || comp.getRhs().varSet.contains(target)) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
                         return true;
                     }
                 }
@@ -683,19 +690,19 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.intSet.contains(target)) {
+                    if (curSet.contains(set)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().intSet.contains(target) 
-                            || tern.getTrueBranch().intSet.contains(target) 
-                            || tern.getFalseBranch().intSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().intSet.contains(target) || comp.getRhs().intSet.contains(target)) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
                         return true;
                     }
                 }
@@ -706,19 +713,19 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.boolSet.contains(target)) {
+                    if (curSet.contains(set)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().boolSet.contains(target) 
-                            || tern.getTrueBranch().boolSet.contains(target) 
-                            || tern.getFalseBranch().boolSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().boolSet.contains(target) || comp.getRhs().boolSet.contains(target)) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
                         return true;
                     }
                 }
@@ -729,19 +736,19 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.ternSet.contains(target)) {
+                    if (curSet.contains(set)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().ternSet.contains(target) 
-                            || tern.getTrueBranch().ternSet.contains(target) 
-                            || tern.getFalseBranch().ternSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set) 
+                            || tern.getTrueBranch().contains(set) 
+                            || tern.getFalseBranch().contains(set)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().ternSet.contains(target) || comp.getRhs().ternSet.contains(target)) {
+                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
                         return true;
                     }
                 }
@@ -1024,7 +1031,7 @@ public class SPSet {
                     tern.falseBranch.comparisons.remove(target);
                     return;
                 } else if (tern.trueBranch.comparisons.contains(target)){
-                    tern.falseBranch.comparisons.remove(target);
+                    tern.trueBranch.comparisons.remove(target);
                     return;
                 }
             }
@@ -1371,7 +1378,7 @@ public class SPSet {
                 SPComp target = set.comparisons.get(0);
                 if (operator == set.operator) {
                     if (comparisons.contains(target)) {
-                        varSet.remove(target);
+                        comparisons.remove(target);
                         return;
                     }
                 }
@@ -1512,6 +1519,542 @@ public class SPSet {
                     return;
                 } else if (comp.getRhs().contains(set)) {
                     comp.getRhs().remove(set);
+                    return;
+                }
+            }
+            throw new RuntimeException("Shouldn't get here");
+        }
+    }
+    
+    void replace(SPSet set, ValueID var) {
+        if (!contains(set)) {
+            throw new RuntimeException("Can't replace what isn't there");
+        }
+        if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
+            if (!set.SPSets.isEmpty() || !set.varSet.isEmpty() || !set.intSet.isEmpty() 
+                    || !set.boolSet.isEmpty() || !set.ternSet.isEmpty() || !set.methodCalls.isEmpty() 
+                    || !(set.comparisons.size() == 1)) {
+                throw new RuntimeException("Unexpected behavior - talk to Maddie");
+            }
+            SPComp target = set.comparisons.get(0);
+            if (comparisons.contains(target)) {
+                comparisons.remove(target);
+                varSet.add(var);
+                return;
+            }
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set)) {
+                    curSet.replace(set, var);
+                    return;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set)) {
+                    tern.cond.replace(set, var);
+                    return;
+                } else if (tern.falseBranch.contains(set) ) {
+                    tern.falseBranch.replace(set, var);
+                    return;
+                } else if (tern.trueBranch.contains(set)){
+                    tern.trueBranch.replace(set, var);
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set)) {
+                    comp.getLhs().replace(set, var);
+                    return;
+                }   else if (comp.getRhs().contains(set)) {
+                    comp.getRhs().replace(set, var);
+                    return;
+                }
+            }
+            throw new RuntimeException("shouldn't be here");
+        } else if (set.operator == null) {
+            if (!set.SPSets.isEmpty() || !set.comparisons.isEmpty()) {
+                throw new RuntimeException("this means something is wonky with the constructor");
+            } if (set.varSet.size() + set.intSet.size() + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() != 1) {
+                throw new RuntimeException("An SPSet containing more than one thing should have an operator set");
+            }
+            if(!set.varSet.isEmpty()){
+                ValueID target = set.varSet.get(0);
+                if (varSet.contains(target)) {
+                    varSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (intSet.contains(target)) {
+                    intSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (boolSet.contains(target)) {
+                    boolSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (ternSet.contains(target)) {
+                    ternSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            }
+            throw new RuntimeException("shouldn't reach here");
+        } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
+            if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
+                throw new RuntimeException("Not/Negate should have only one component");
+            }
+            if (!set.SPSets.isEmpty()) {
+                SPSet target = set.SPSets.get(0);
+                if (operator == set.operator) {
+                    if (SPSets.contains(target)) {
+                        SPSets.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.varSet.isEmpty()) {
+                ValueID target = set.varSet.get(0);
+                if (operator == set.operator) {
+                    if (varSet.contains(target)) {
+                        varSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (operator == set.operator) {
+                    if (intSet.contains(target)) {
+                        intSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (operator == set.operator) {
+                    if (boolSet.contains(target)) {
+                        boolSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (operator == set.operator) {
+                    if (ternSet.contains(target)) {
+                        ternSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.comparisons.isEmpty()) {
+                SPComp target = set.comparisons.get(0);
+                if (operator == set.operator) {
+                    if (comparisons.contains(target)) {
+                        comparisons.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set)) {
+                        curSet.replace(set, var);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.getTernaryCondition().contains(set)) {
+                        tern.getTernaryCondition().replace(set, var);
+                        return;
+                    } else if (tern.getTrueBranch().contains(set)) {
+                        tern.getTrueBranch().replace(set, var);
+                        return;
+                    }else if (tern.getFalseBranch().contains(set)) {
+                        tern.getFalseBranch().replace(set, var);
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set)) {
+                        comp.getLhs().replace(set, var);
+                        return;
+                    } else if (comp.getRhs().contains(set)) {
+                        comp.getRhs().replace(set, var);
+                        return;
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            }
+            throw new RuntimeException("should not be reachable");
+
+        } else {
+            // all binex other than comp
+            if (operator == set.operator) {
+                boolean doneYet = false;
+                SPSet copy = copy(this);
+                for (SPSet innerSet : set.SPSets) {
+                    if (!copy.SPSets.contains(innerSet)) {
+                        doneYet = true;
+                        break;
+                    } else {
+                        copy.remove(innerSet);
+                    }
+                } if (!doneYet) {
+                    for (ValueID id : set.varSet) {
+
+                        if (!copy.varSet.contains(id)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.varSet.remove(id);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Long intLit : set.intSet) {
+                        if (!copy.intSet.contains(intLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.intSet.remove(intLit);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Boolean boolLit : set.boolSet) {
+                        if (!copy.boolSet.contains(boolLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.boolSet.remove(boolLit);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPTern ternary : set.ternSet) {
+                        if (!copy.ternSet.contains(ternary)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.ternSet.remove(ternary);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPComp comp : set.comparisons) {
+                        if (!copy.comparisons.contains(comp)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.comparisons.remove(comp);
+                        }
+                    }
+                }
+                if (!doneYet) {
+                    for (SPSet innerSet : set.SPSets) {
+                        SPSets.remove(innerSet);
+                    }
+                    for (ValueID id : set.varSet) {
+                        varSet.remove(id);
+                    }
+                    for (Long intLit : set.intSet) {
+                        intSet.remove(intLit);
+                    }
+                    for (Boolean boolLit : set.boolSet) {
+                        boolSet.remove(boolLit);
+                    }
+                    for (SPTern tern : set.ternSet) {
+                        ternSet.remove(tern);
+                    }
+                    for (SPComp comp : set.comparisons) {
+                        comparisons.remove(comp);
+                    }
+                    varSet.add(var);
+                    return;
+                }
+            }
+            for (SPSet currentSP : SPSets){
+                if (currentSP.contains(set)) {
+                    currentSP.replace(set, var);
+                    return;
+                }
+            }
+
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set)) {
+                    tern.cond.replace(set, var);
+                    return;
+                } else if (tern.falseBranch.contains(set)) {
+                    tern.falseBranch.replace(set, var);
+                    return;
+                } else if (tern.trueBranch.contains(set)) {
+                    tern.trueBranch.replace(set, var);
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set)) {
+                    comp.getLhs().replace(set, var);
+                    return;
+                } else if (comp.getRhs().contains(set)) {
+                    comp.getRhs().replace(set, var);
                     return;
                 }
             }
