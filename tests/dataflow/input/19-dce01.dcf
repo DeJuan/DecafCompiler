@@ -1,5 +1,5 @@
 //This test case checks that we have working DCE in the case of a simple block with no branching. If it works, we should see c= 0, d = 0, and b = c + b get eliminated. 
-
+callout printf;
 int get_int ( int x ) {
   return x;
 }
