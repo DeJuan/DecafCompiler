@@ -1099,7 +1099,6 @@ public class Optimizer {
                 System.err.printf("We are about to get the parent Containers from the map to update available expressions. The current node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
                 System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
                 MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
-                boolean changedAtAll = !thisNodeContainer.complete;
                 for(FlowNode parent: currentNode.getParents()){
                     thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
                 }
@@ -1110,16 +1109,23 @@ public class Optimizer {
                         currentNode.resetVisit();
                         processing.addAll(currentNode.getChildren());
                         processing.add(currentNode);
-                        thisNodeContainer.complete = false;
                         reset = true;
                     } else {
-                        thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent));
+                        if (thisNodeContainer == null) {
+                            thisNodeContainer = containerForNode.get(parent);
+                        } else {
+                            thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent));
+                        }
                     }
                 }
                 if (reset) {
+                    if (thisNodeContainer == null) {
+                        thisNodeContainer = MapContainer.makeEmptyContainer();
+                    }
                     containerForNode.put(currentNode, thisNodeContainer);
                     continue;
                 }
+                boolean changedAtAll = !thisNodeContainer.complete;
                 thisNodeContainer.complete = true;
                 varToVal = thisNodeContainer.varToVal;
                 expToVal = thisNodeContainer.expToVal;
