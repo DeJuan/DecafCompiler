@@ -1100,9 +1100,6 @@ public class Optimizer {
                 System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
                 MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
                 for(FlowNode parent: currentNode.getParents()){
-                    thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent)); //redundant on first parent but does nothing in that case, meaningful otherwise.
-                }
-                for(FlowNode parent: currentNode.getParents()){
                     if(containerForNode.get(parent) == null){
                         System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
                         System.err.println("processing of this node will be delayed until its parents are processed.");
