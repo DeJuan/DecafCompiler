@@ -257,7 +257,7 @@ class Main {
 			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
 			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-			    		  // TODO: Process flowNodes and generate assembly code.
+			    		  //Process flowNodes and generate assembly code.
 			    		  context = Assembler.generateProgram(root);
 			    		  // Print things for debugging purposes.
 			    		  System.out.println("\nCallouts:");
@@ -277,9 +277,9 @@ class Main {
 						  for(String key : flowNodes.keySet()){
 							  startsForMethods.add(flowNodes.get(key));
 						  }
-						  ControlflowContext optimizeCSE = optimizer.applyDeadCodeElimination(startsForMethods);
+						  ControlflowContext optimizeDCE = optimizer.applyDeadCodeElimination(startsForMethods);
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
-                          optimizeCSE.printInstructions(ps);
+                          optimizeDCE.printInstructions(ps);
                           ps.close();
 			    	  }
 			    	  else {

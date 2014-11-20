@@ -916,6 +916,7 @@ public class Optimizer {
 								}
 							}
 						}
+						Collections.reverse(statementList); //We reversed the list to iterate through it backwards, so fix it before we move on!
 						vectorStorage.put(currentNode, copyVectorMap(liveVector));
 						for(FlowNode parent : currentNode.getParents()){
 							if(!parent.visited()){
