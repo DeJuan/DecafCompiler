@@ -12,5 +12,6 @@ int main ( ) {
   d = 0;
   c = b + a;
   b = c + b;
+  printf ( "%d\n", c );
   return c;
   }
