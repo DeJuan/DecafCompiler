@@ -14,17 +14,20 @@ public class MapContainer {
     Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
     Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
     Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
+    boolean complete;
 
     public MapContainer(Map<IR_FieldDecl, ValueID> varToVal, 
             Map<SPSet, ValueID> expToVal,
             Map<SPSet, Var> expToTemp,
             Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents,
-            Map<ValueID, List<Var>> valToVar){
+            Map<ValueID, List<Var>> valToVar, boolean complete){
         this.varToVal = varToVal;
         this.expToVal = expToVal;
         this.expToTemp = expToTemp;
         this.varToValForArrayComponents = varToValForArrayComponents;
         this.valToVar = valToVar;
+        this.complete = complete;
+        
     }
     
     /*
@@ -60,12 +63,12 @@ public class MapContainer {
         Map<SPSet, Var> expToTempN = new HashMap<SPSet, Var>();
         Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponentsN = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
         Map<ValueID, List<Var>> valToVarN = new HashMap<ValueID, List<Var>>();
-        return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN);
+        return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN, false);
     }
     
     public MapContainer calculateIntersection(MapContainer otherContainer){
     	if (otherContainer.equals(this)){
-    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
+    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, complete);
     	}
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
@@ -144,6 +147,6 @@ public class MapContainer {
                 }
             }
         }
-        return new MapContainer(newVarToVal, newExprToVal, newExprToTemp, newComponents, newValToVar);
+        return new MapContainer(newVarToVal, newExprToVal, newExprToTemp, newComponents, newValToVar, complete && otherContainer.complete);
     }
 }
