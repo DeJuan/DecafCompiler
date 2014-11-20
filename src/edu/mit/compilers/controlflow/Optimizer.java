@@ -387,6 +387,8 @@ public class Optimizer {
                 worked = worked && setVarIDs(varToVal, varToValForArrayComponents, arg);
             }
             return worked;
+        } else if (expr instanceof IntLit || expr instanceof BoolLit) {
+            return true;
         } else {
             throw new RuntimeException("Should be unreachable");
         }
