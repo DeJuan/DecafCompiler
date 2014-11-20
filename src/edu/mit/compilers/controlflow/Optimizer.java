@@ -1340,23 +1340,26 @@ public class Optimizer {
                 else if(currentNode instanceof END){
                     END theEnd = (END)currentNode;
                     Expression returnExpr = theEnd.getReturnExpression();
-                    setVarIDs(varToVal, varToValForArrayComponents, returnExpr);
                     if(returnExpr != null){
-                        SPSet retSP = new SPSet(returnExpr);
-                        boolean changed = true; //we want to run repeated checks over the expression.
-                        while(changed){ //Until we reach a fixed point
-                            changed = false; //say we haven't
-                            for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
-                                while (retSP.contains(key)){ //if we have any of those keys in our current expression
-                                    retSP.remove(key); //remove it
-                                    retSP.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
-                                    changed = true; //Need to repass over, one substitution could lead to another
-                                    changedAtAll = true;
+                        boolean canOpt = setVarIDs(varToVal, varToValForArrayComponents, returnExpr);
+                        if (canOpt) {
+                            SPSet retSP = new SPSet(returnExpr);
+                            boolean changed = true; //we want to run repeated checks over the expression.
+                            while(changed){ //Until we reach a fixed point
+                                changed = false; //say we haven't
+                                for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
+                                    while (retSP.contains(key)){ //if we have any of those keys in our current expression
+                                        retSP.remove(key); //remove it
+                                        retSP.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
+                                        changed = true; //Need to repass over, one substitution could lead to another
+                                        changedAtAll = true;
+                                    }
                                 }
                             }
-                        }
-                        if(changedAtAll){
-                            theEnd.setReturnExpression(retSP.toExpression(valToVar));
+
+                            if(changedAtAll){
+                                theEnd.setReturnExpression(retSP.toExpression(valToVar));
+                            }
                         }
                     }
                     containerForNode.put(currentNode, thisNodeContainer);
