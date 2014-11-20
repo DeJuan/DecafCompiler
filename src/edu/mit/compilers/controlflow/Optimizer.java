@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1078,10 +1079,11 @@ public class Optimizer {
 			MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 			containerForNode.put(initialNode, initialStateContainer);
 			FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
-			List<FlowNode> processing = new ArrayList<FlowNode>();
+			Set<FlowNode> processing = new HashSet<FlowNode>();
 			processing.add(firstNodeInProgram);
 			while(!processing.isEmpty()){ //list of nodes to process
-				FlowNode currentNode = processing.remove(0); //get first node in list
+			    FlowNode currentNode = processing.iterator().next(); //get node out of set
+				processing.remove(currentNode);
 				currentNode.visit(); //set its visited attribute so we don't loop back to it
 				//Set up the maps for this particular node, regardless of type.
 				boolean changedAtAll = false;
@@ -1237,6 +1239,7 @@ public class Optimizer {
 					}
 					
 					swapCodeblocks(cblock, newCodeblock);
+					newCodeblock.visit();
 					MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
 					containerForNode.put(newCodeblock, currentNodeContainer);
 					if(changedAtAll){
