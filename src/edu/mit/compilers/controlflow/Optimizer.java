@@ -670,117 +670,6 @@ public class Optimizer {
 	}
 	
 	/**
-	 * Thi sis the method used to do dead code elimination; it takes in a list of start nodes
-	 * for all the methods,a nd iterates throught all the codeblocks that have pointers from that start or its children.
-	 * 
-	 * General plan of attack:
-	 * 
-	 * Iterate through all the statements given in the code.
-	 * Memorize the variables on the left hand side of expressions or for declarations.
-	 * Keep these memorized variables in a map, call it candidates for death or something.
-	 * The key to the map will be the memorized variables, while the value will be the Statement.
-	 * We also get the vars from the rhs of the equation and check if they are in candidatesForDeath. Use the helper method getVarsFromExpression(expr)
-	 * If they are, remove them; they've had a use and so aren't dead.
-	 *  ALWAYS REMOVE BEFORE CHECKING THE LHS; use before redefinition is not dead!
-	 *  Example:
-	 *  x = y;
-	 *  x = 3 + x;
-	 *  The first definition of X is used in the redefinition. If we checked first, we'd say x=y is dead and remove it, breaking the code.
-	 *  but because we check rhs first, we'd find x in candidatesForDeath and remove it. 
-	 *  
-	 * Then, for each assignment we find,
-	 *  check if the left hand side is in candidatesForDeath as a key.
-	 *  If it is, put the statement that is its current value in a seperate ArrayList, call it deadStatements.
-	 *  Then ovewrite the value in the map. 
-	 *  
-	 *  Once done with a block, create an iterator over the block's statementList, and remove the statements we put in the deadStatements list.
-	 *  Any leftover statements that are still candidates for death pass to the children. 
-	 * What it does:
-	 * 1) For branches, it checks the expression; if anything in candidatesForDeath matches it, remove the expression. 
-	 * 2) Create copies of the candidatesForDeath list, and pass them to children. 
-	 * 
-	 * First pass at writing this, don't worry about branches. 
-	 * Second pass at writimg this, Worry about them!
-	 * 
-	 * @param startsForMethods
-	 */
-	/*
-	public void applyDeadCodeEliminationForwardNoBranches(List<START> startsForMethods){
-		for (START methodStart : startsForMethods){ //main loop. For each method we have in the prog...
-			Map<String, Statement> candidatesForDeath = new HashMap<String, Statement>(); //set up the map of Var names to Statements
-			
-			FlowNode initialFlownode = methodStart.getChildren().get(0); //valid; STARTs only ever have one child.
-			List<FlowNode> processing = new ArrayList<FlowNode>();
-			boolean anythingRemoved = false;
-			processing.add(initialFlownode);
-			while(!processing.isEmpty()){
-				List<Statement> deadStatements = new ArrayList<Statement>(); //set up the list of dead things
-				FlowNode currentFlownode = processing.remove(0); //get the next node.
-				if(currentFlownode instanceof Codeblock){
-					Codeblock cblock = (Codeblock)currentFlownode;
-					List<Statement> statementList = cblock.getStatements();
-					for (Statement currentState : statementList){//three kinds: Decl, MethodCallSta, Assign.
-						if (currentState instanceof Assignment){
-							//Remember; examine rhs first. 
-							Assignment assign = (Assignment)currentState;
-							List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
-							for(Var varia : varsInRHS){
-								if(candidatesForDeath.containsKey(varia.getName())){
-									candidatesForDeath.remove(varia.getName());
-								}
-							}
-							String lhs = assign.getDestVar().getName();
-							if(candidatesForDeath.containsKey(lhs)){
-								deadStatements.add(candidatesForDeath.get(lhs)); //store the currently present statement, which was unused, as dead before we overwrite it
-							}
-							candidatesForDeath.put(lhs, assign); //put the var in the candidates list, with its assignment as svalue. 
-						}
-						
-						else if(currentState instanceof Declaration){//Declarations can be dead code too!
-							Declaration decl = (Declaration)currentState;
-							candidatesForDeath.put(decl.getName(), decl);
-						}
-					
-						else{//Method call. They don't confirm death, but can ward it; variables used are protected.
-							MethodCallStatement mcall = (MethodCallStatement)currentState;
-							List<Expression> args = mcall.getMethodCall().getArguments();
-							List<Var> varsInArgs = new ArrayList<Var>();
-							for(Expression expr : args){
-								varsInArgs.addAll(getVarsFromExpression(expr));
-							}
-							for (Var variable : varsInArgs){
-								if(candidatesForDeath.containsKey(variable.getName())){
-									candidatesForDeath.remove(variable.getName());
-								}
-							}
-						}
-					}
-				}
-				
-				else if(currentFlownode instanceof Branch){ //This is a join point, need to union across the parents. 
-					throw new UnsupportedOperationException("Haven't finished logic for branches yet.");
-				}
-				
-				else if(currentFlownode instanceof START){
-					FlowNode child = currentFlownode.getChildren().get(0);
-					if(!child.visited()){
-						processing.add(child);
-					}
-				}
-				
-				else if (currentFlownode instanceof NoOp){
-					//TODO 
-				}
-				else{ //only remaining case is an END
-					//do nothing. Just put it here to explicitly say, Do Nothing.
-				}
-				
-			}
-		}
-	}
-	*/
-	
-	/**
 	 * Helper method which may be completely unnecessary; makes absolutely certain to
 	 * deep copy the String, Integer map that I use to track bit vectors.
 	 * @param liveVector : The bitvector map we want to copy.
@@ -812,6 +701,7 @@ public class Optimizer {
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			boolean anythingChanged = false;
+			boolean needToContinue = false;
 			Set<END> endNodes = new LinkedHashSet<END>();
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
@@ -847,8 +737,13 @@ public class Optimizer {
 					for(FlowNode child : currentNode.getChildren()){
 						if(vectorStorage.get(child) == null){
 							System.err.println("CurrentNode has an unprocessed child. Now putting off visiting this node until all children are done.");
-							continue; //Be careful, might not continue properly. Need to debug and see. 
+							needToContinue = true; //indicate we need to skip this node
+							break; //break out of this for loop 
 						}
+					}
+					if(needToContinue){ // if we just broke out of the for loop, this flag will be set
+						needToContinue = false; //reset it so we don't mess up future iterations
+						continue; //skip this node and continue to next on processing.
 					}
 					currentNode.visit();
 					if(currentNode.getChildren().size() == 1){
