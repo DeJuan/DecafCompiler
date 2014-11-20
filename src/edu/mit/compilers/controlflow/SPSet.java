@@ -557,6 +557,13 @@ public class SPSet {
                 throw new RuntimeException("missing a case");
             }
         } else {
+            for (Map.Entry<ValueID, List<Var>> entry : valToVar.entrySet()) {
+                System.err.println("KEY: " + entry.getKey());
+                System.err.println("HAS " + entry.getValue().size() + " VARS");
+                for (Var v : entry.getValue()) {
+                    System.err.println(v.getName());
+                }
+            }
             Expression lhs = null;
             for (SPSet set : SPSets) {
                 if (lhs == null) {

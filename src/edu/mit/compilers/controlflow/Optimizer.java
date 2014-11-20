@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1088,7 +1087,7 @@ public class Optimizer {
             MapContainer initialStateContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, true);
             containerForNode.put(initialNode, initialStateContainer);
             FlowNode firstNodeInProgram = initialNode.getChildren().get(0);
-            Set<FlowNode> processing = new HashSet<FlowNode>();
+            Set<FlowNode> processing = new LinkedHashSet<FlowNode>();
             processing.add(firstNodeInProgram);
             while(!processing.isEmpty()){ //list of nodes to process
                 FlowNode currentNode = processing.iterator().next(); //get node out of set
@@ -1148,8 +1147,10 @@ public class Optimizer {
                             Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
                             Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
                             System.err.println("We are currently in an Assignment. The currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
+                            for (Map.Entry<IR_FieldDecl, ValueID> entry: varToVal.entrySet()) {
+                                System.err.println(entry.getKey().getName() + " MAPS TO " + entry.getValue());
+                            }
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
-                            killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
@@ -1157,30 +1158,11 @@ public class Optimizer {
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
                             System.err.printf("The right hand side of the current assignment is an Expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
-                            IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
                             Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
                             List<Var> varList = valToVar.get(currentValID);
                             if (varList == null) {
                                 varList = new ArrayList<Var>();
                                 valToVar.put(currentValID, varList);
-                            }
-                            varList.add(currentDestVar);
-                            if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
-                                varToVal.put(lhs, currentValID); 
-                            }
-                            else{
-                                if(!varToVal.containsKey(lhs)){
-                                    varToVal.put(lhs, new ValueID());
-                                }
-                                Map<SPSet, ValueID> innerMap;
-                                if(varToValForArrayComponents.containsKey(lhs)){
-                                    innerMap = varToValForArrayComponents.get(lhs);
-                                }
-                                else{
-                                    innerMap = new HashMap<SPSet, ValueID>();
-                                    varToValForArrayComponents.put(lhs, innerMap);
-                                }
-                                innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
                             }
                             boolean changed = true; //we want to run repeated checks over the expression.
                             changedAtAll = false;
@@ -1210,6 +1192,27 @@ public class Optimizer {
                                 }
                             }
                             newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
+                            // kill old mapping only after doing the assignment (j = j + 1 should use the old value of j on the right side)
+                            IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
+                            killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
+                            varList.add(currentDestVar);
+                            if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
+                                varToVal.put(lhs, currentValID); 
+                            }
+                            else{
+                                if(!varToVal.containsKey(lhs)){
+                                    varToVal.put(lhs, new ValueID());
+                                }
+                                Map<SPSet, ValueID> innerMap;
+                                if(varToValForArrayComponents.containsKey(lhs)){
+                                    innerMap = varToValForArrayComponents.get(lhs);
+                                }
+                                else{
+                                    innerMap = new HashMap<SPSet, ValueID>();
+                                    varToValForArrayComponents.put(lhs, innerMap);
+                                }
+                                innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
+                            }
                             if(expToTemp.get(rhs) != null){
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
                                 globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
