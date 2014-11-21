@@ -1101,6 +1101,17 @@ public class Optimizer {
 							}
 						}
 					}
+					else if(currentState instanceof MethodCallStatement){
+						MethodCallStatement mcall = (MethodCallStatement)currentState;
+						List<Expression> args = mcall.getMethodCall().getArguments();
+						List<Var> varsInArgs = new ArrayList<Var>();
+						for(Expression expr : args){
+							varsInArgs.addAll(getVarsFromExpression(expr));
+						}
+						for(Var varia : varsInArgs){
+							liveCheck.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+						}
+					}
 				}
 				Collections.reverse(statementList);
 			}
