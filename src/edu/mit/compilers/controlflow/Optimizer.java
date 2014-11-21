@@ -340,7 +340,7 @@ public class Optimizer {
      * @param varToVal : Mapping of IR_FieldDecl to ValueID, used to assign ValueID to a Var, given its descriptor
      * @param expr The expression whose Vars we want to set the ValueIDs for
      */
-    public boolean setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, Expression expr){
+    public static boolean setVarIDs(Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, Expression expr){
         if(expr instanceof BinExpr){
             BinExpr bin = (BinExpr)expr;
             Expression lhs = bin.getLeftSide();
@@ -513,6 +513,7 @@ public class Optimizer {
             for (Var v : valToVar.get(killValID)) {
                 if (v.getDecl() == killVar) {
                     valToVar.get(killValID).remove(v);
+                    break;
                 }
             }
         }
@@ -1182,7 +1183,7 @@ public class Optimizer {
                             for (Map.Entry<IR_FieldDecl, ValueID> entry: varToVal.entrySet()) {
                                 System.err.println(entry.getKey().getName() + " MAPS TO " + entry.getValue());
                             }
-                            boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there, and update valToVar.
+                            boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;

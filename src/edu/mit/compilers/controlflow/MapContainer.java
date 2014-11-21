@@ -73,7 +73,8 @@ public class MapContainer {
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
             if(varToVal.get(localDecl) == otherContainer.varToVal.get(localDecl)){
-                newVarToVal.put(localDecl, varToVal.get(localDecl));
+                ValueID id = varToVal.get(localDecl);
+                newVarToVal.put(localDecl, id);
             }
         }
 
@@ -120,32 +121,23 @@ public class MapContainer {
             }
         }
 
-
-        Set<ValueID> otherValToVar = otherContainer.valToVar.keySet();
         Map<ValueID, List<Var>> newValToVar = new HashMap<ValueID, List<Var>>();
         for(ValueID valID : valToVar.keySet()){
             List<Var> newList = new ArrayList<Var>();
-            boolean valid = true;
-            if(!otherValToVar.contains(valID)){
-                continue;
-            } else {
-                List<Var> myList = valToVar.get(valID);
-                List<Var> otherList = otherContainer.valToVar.get(valID);
-                if (myList.size() != otherList.size()) {
-                    continue;
-                }
-                for (int i = 0; i < myList.size() - 1; i++) {
-                    if (otherList.get(i).getDecl() != myList.get(i).getDecl()) {
-                        valid = false;
-                        break;
-                    } else {
-                        newList.add(myList.get(i));
+            for (Var v : valToVar.get(valID)) {
+                if (v.getIndex() == null) {
+                    if (newVarToVal.get(v.getDecl()) == valID) {
+                        newList.add(v);
+                    }
+                } else {
+                    if (Optimizer.setVarIDs(newVarToVal, newComponents, v.getIndex())) {
+                        if (newComponents.get(v.getDecl()).get(new SPSet(v.getIndex()))  == valID) {
+                            newList.add(v);
+                        }
                     }
                 }
-                if (valid) {
-                    newValToVar.put(valID, newList);
-                }
             }
+            newValToVar.put(valID, newList);
         }
         return new MapContainer(newVarToVal, newExprToVal, newExprToTemp, newComponents, newValToVar, complete && otherContainer.complete);
     }
