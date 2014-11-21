@@ -881,7 +881,225 @@ public class Optimizer {
 		}
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
+	
+	/**
+	 * This is the method we'll be actually using to generate liveness vectors to do DCE. 
+	 * It works backwards in reverse from each END in the program. 
+	 * It uses a bit vector representation of liveness and traces through the code,
+	 * calculating liveness until there is convergence.
+	 * 
+	 * Currently does NOT handle dead declarations (there's a justification for that, actually)
+	 * and has not yet been tested. 
+	 * 
+	 * @param startsForMethods : List of START nodes for the given methods in the program. 
+	 * @return 
+	 */
+	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
+		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for parent retrieval.
+		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for parent retrieval.
+		for(START methodStart : startsForMethods){
+			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
+			methodStart.totalVisitReset();
+			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
+			scanning.add(methodStart);
+			Set<END> endNodes = new LinkedHashSet<END>();
+			Set<String> allVars = getAllVarNamesInMethod(methodStart); //Get all the var names from the declarations in the method
+			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
+			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				if(!vectorStorageIN.containsKey(currentNode)){
+					vectorStorageIN.put(currentNode, zeroVector); //Set bitvectors to all zeros
+				}
+				if(!vectorStorageOUT.containsKey(currentNode)){
+					vectorStorageOUT.put(currentNode, zeroVector);
+				}
+				if(currentNode instanceof END){ 
+					endNodes.add((END)currentNode);
+				}
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			for(END initialNode : endNodes){
+				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
+				Bitvector liveVector = new Bitvector(zeroVector); //set up the map of Var names to Statements. Initialized to all zeros.
+				if(initialNode.getReturnExpression() != null){
+					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
+						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
+					}
+				}
+				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
+				vectorStorageOUT.put(initialNode, liveVector.copyBitvector());
+				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
+				List<FlowNode> processing = new ArrayList<FlowNode>();
+				processing.addAll(initialNode.getParents());
+				while(!processing.isEmpty()){
+					FlowNode currentNode = processing.remove(0);
+					currentNode.visit();
+					if(currentNode.getChildren().size() == 1){
+						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0));
+					}
+					else{
+						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, zeroVector);
+					}
+					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
+					if(currentNode instanceof Codeblock){
+						Codeblock cblock = (Codeblock)currentNode;
+						List<Statement> statementList = cblock.getStatements();
+						Collections.reverse(statementList); //reverse the list so we can go backwards through it
+						Iterator<Statement> statementIter = statementList.iterator();
+						while(statementIter.hasNext()){
+							Statement currentState = statementIter.next();
+							if(currentState instanceof Assignment){ 
+								Assignment assign = (Assignment)currentState;
+								String lhs = assign.getDestVar().getName();
+								//Look at rhs first. 
+								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+								for(Var varia : varsInRHS){
+									liveVector.setVectorVal(varia.getName(), 1); //It's alive, was just used.
+								}
+								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
+									liveVector.setVectorVal(lhs, 0);
+								} 
+							}
 
+							/**
+							 * TODO : Reason this is commented out: Consider the following scenario being read from bottom to top:
+							 * 
+							 * int x;
+							 * x = 5;
+							 * z = x + 9;
+							 * 
+							 * When we see x on the rhs of the definition for Z, X would be alive. 
+							 * When we then see the definition for X, we'd set x to 0 in the bitvector.
+							 * Then we'd hit the declaration for x. The bit vector is 0 for x, so with this type of mentality, 
+							 * we'd delete the declaration! This is bad, so don't do it! Maybe just leave declarations alone?
+							 * Probably not worth the complexity increase to deal with them, actually...Would need to seperately track an 
+							 * "if ever used" quality and use that instead; if we ever set the vector to 1, then ifEverUsed becomes true.
+							 * If we see the declaration, check ifEverUsed ; if true, leave decl alone, else, remove it. Would get iffy around branches. 
+							 */
+							else if(currentState instanceof Declaration){ 
+								//if var declared isn't ever alive, could remove the decl; but have to make sure... 
+							}
+
+							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
+								MethodCallStatement mcall = (MethodCallStatement)currentState;
+								List<Expression> args = mcall.getMethodCall().getArguments();
+								List<Var> varsInArgs = new ArrayList<Var>();
+								for(Expression expr : args){
+									varsInArgs.addAll(getVarsFromExpression(expr));
+								}
+								for(Var varia : varsInArgs){
+									liveVector.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+								}
+							}
+						}
+						Collections.reverse(statementList); //We reversed the list to iterate through it backwards, so fix it before we move on!
+					}
+
+					else if (currentNode instanceof Branch){ //join point. Live vector would be handled before we got here by unisonVector, so assume we're golden.
+						Branch cBranch = (Branch)currentNode;
+						for(Var varia : getVarsFromExpression(cBranch.getExpr())){
+							liveVector.setVectorVal(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
+						}
+					}
+
+					else if(currentNode instanceof NoOp){ //split point. No expr here, so don't have to scan it.
+						vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+					}
+
+					else if(currentNode instanceof START){
+						START cStart = (START)currentNode;
+						List<IR_FieldDecl> args = cStart.getArguments();
+						for (IR_FieldDecl arg : args){
+							liveVector.setVectorVal(arg.getName(), 1); 
+						}	
+					}
+
+					else if(currentNode instanceof END){
+						END cEnd = (END)currentNode;
+						if(cEnd.getReturnExpression() != null){
+							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
+								String varName = varia.getName();
+								if(liveVector.get(varName) == 0){
+									liveVector.setVectorVal(varName, 1);
+								}
+							}
+						}
+						for(FlowNode parent : cEnd.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+						vectorStorageOUT.put(currentNode, liveVector.copyBitvector());
+					}
+					
+					boolean changed;
+					changed = liveVector.compareBitvectorEquality(vectorStorageIN.get(currentNode));
+					vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
+					if(!changed){
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
+					}
+					else{
+						for(FlowNode parent : currentNode.getParents()){
+							processing.add(parent);
+						}
+					}
+				}
+			}
+			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
+		}
+		return vectorStorageIN;
+	}
+	
+	public ControlflowContext applyDCE(List<START> startsForMethods){
+		Map<FlowNode, Bitvector> liveness = generateLivenessMap(startsForMethods);
+		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
+		for (START initialNode : startsForMethods){
+			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
+			scanning.add(initialNode);
+			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				if(currentNode instanceof Codeblock){
+					listOfCodeblocks.add((Codeblock)currentNode);
+				}
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			initialNode.totalVisitReset(); //fix the visited parameters.
+			for (Codeblock cblock : listOfCodeblocks){
+				Bitvector liveCheck = liveness.get(cblock);
+				Iterator<Statement> statementIter = cblock.getStatements().iterator();
+				while(statementIter.hasNext()){
+					Statement currentState = statementIter.next();
+					if(currentState instanceof Assignment){
+						Assignment assign = (Assignment)currentState;
+						if(liveCheck.get(assign.getDestVar().getName()) == 0){
+							statementIter.remove();
+						}
+					}
+				}
+			}
+		}
+		return Assembler.generateProgram(calloutList, globalList, flowNodes);
+	}
+	
 	/**
 	 * Simple helper method for computing the unison of bitvectors.
 	 * It starts with an all zero bitvector, and scans through all the vectors that need to be unisoned; 

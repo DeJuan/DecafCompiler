@@ -277,7 +277,7 @@ class Main {
 						  for(String key : flowNodes.keySet()){
 							  startsForMethods.add(flowNodes.get(key));
 						  }
-						  ControlflowContext optimizeDCE = optimizer.applyDeadCodeElimination(startsForMethods);
+						  ControlflowContext optimizeDCE = optimizer.applyDCE(startsForMethods);
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
                           optimizeDCE.printInstructions(ps);
                           ps.close();
