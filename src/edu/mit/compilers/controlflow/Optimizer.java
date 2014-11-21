@@ -1084,10 +1084,13 @@ public class Optimizer {
 							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
+							String nameofVar = assign.getDestVar().getName();
 							for(Var varia : getVarsFromExpression(assign.getValue())){
 								liveCheck.setVectorVal(varia.getName(), 1);
 								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varia.getName());
 							}
+							liveCheck.setVectorVal(nameofVar, 0);
+							System.err.printf("Bitvector entry for variable %s has been set to 0 due to beinga assigned.." + System.getProperty("line.separator"), nameofVar);
 						}
 					}
 					else if(currentState instanceof MethodCallStatement){
