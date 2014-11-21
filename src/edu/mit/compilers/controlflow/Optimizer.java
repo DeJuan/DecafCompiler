@@ -20,6 +20,7 @@ import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.Ops;
+import edu.mit.compilers.ir.Type;
 
 //Code to get OS-independent newlines: System.getProperty("line.separator");
 
@@ -1029,6 +1030,21 @@ public class Optimizer {
         }
         return finalMap; //Any map that had a 1 for a var will have set a 1 for the corresponding place in finalMap; everything else will be 0 as intended.
     }
+    
+    /**
+     * Computes correct type of a temp variable, given the type of an assignment destination
+     * INTARR, INT --> INT
+     * BOOLARR, BOOL --> BOOL
+     */
+    private Type getTempType(Type destType) {
+        if (destType == Type.BOOL || destType == Type.BOOLARR) {
+            return Type.BOOL;
+        } else if (destType == Type.INT || destType == Type.INTARR) {
+            return Type.INT;
+        } else {
+            throw new RuntimeException("What the actual hell are you doing - don't use this method");
+        }
+    }
 
     /**
      * This is the method you call to do actual CSE. It takes in a List of
@@ -1139,7 +1155,7 @@ public class Optimizer {
                     List<Var> allTheVarsInBlock = checkVariablesAssigned(cblock);
                     for(Var current : allTheVarsInBlock){
                         String nextTemp = generateNextTemp(allVarNames);
-                        Descriptor d = new Descriptor(new IR_FieldDecl(current.getVarDescriptor().getIR().getType(), nextTemp));
+                        Descriptor d = new Descriptor(new IR_FieldDecl(getTempType(current.getVarDescriptor().getIR().getType()), nextTemp));
                         d.setLocation(new LocLabel(nextTemp));
                         context.putSymbol(nextTemp, d);
                         nextTempHolder.add(nextTemp);
@@ -1189,7 +1205,7 @@ public class Optimizer {
                                     expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
                                     //Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
                                     //So if we had a = x + y, we now have a temp value temp1 = a.
-                                    IR_FieldDecl rhsTempDecl = new IR_FieldDecl(currentDestVar.getVarDescriptor().getType(), nextTempHolder.remove(0));
+                                    IR_FieldDecl rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
                                     expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
                                     varList.add(new Var(new Descriptor(rhsTempDecl), null));
                                 }
