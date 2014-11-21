@@ -1085,7 +1085,9 @@ public class Optimizer {
 			initialNode.totalVisitReset(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
-				Iterator<Statement> statementIter = cblock.getStatements().iterator();
+				List<Statement> statementList = cblock.getStatements();
+				Collections.reverse(statementList);
+				Iterator<Statement> statementIter = statementList.iterator();
 				while(statementIter.hasNext()){
 					Statement currentState = statementIter.next();
 					if(currentState instanceof Assignment){
@@ -1093,8 +1095,14 @@ public class Optimizer {
 						if(liveCheck.get(assign.getDestVar().getName()) == 0){
 							statementIter.remove();
 						}
+						else{
+							for(Var varia : getVarsFromExpression(assign.getValue())){
+								liveCheck.setVectorVal(varia.getName(), 1);
+							}
+						}
 					}
 				}
+				Collections.reverse(statementList);
 			}
 		}
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);
