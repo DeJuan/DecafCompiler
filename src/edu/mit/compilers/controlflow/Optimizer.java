@@ -353,6 +353,9 @@ public class Optimizer {
             ValueID valID = varToVal.get((IR_FieldDecl)varia.getVarDescriptor().getIR());
             if(varia.getIndex() != null){
                 IR_FieldDecl varDecl = (IR_FieldDecl) varia.getVarDescriptor().getIR();
+                if (!setVarIDs(varToVal, varToValForArrayComponents, varia.getIndex())) {
+                    return false;
+                }
                 SPSet varArraySP = new SPSet(varia.getIndex());
                 valID = varToValForArrayComponents.get(varDecl).get(varArraySP);
             }
