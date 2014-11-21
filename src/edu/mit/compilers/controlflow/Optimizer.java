@@ -1008,12 +1008,7 @@ public class Optimizer {
 					}
 
 					else if(currentNode instanceof NoOp){ //split point. No expr here, so don't have to scan it.
-						vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
-						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited()){
-								processing.add(parent);
-							}
-						}
+						//Do nothing, just move onward to post-block processing.
 					}
 
 					else if(currentNode instanceof START){
@@ -1028,10 +1023,7 @@ public class Optimizer {
 						END cEnd = (END)currentNode;
 						if(cEnd.getReturnExpression() != null){
 							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
-								String varName = varia.getName();
-								if(liveVector.get(varName) == 0){
-									liveVector.setVectorVal(varName, 1);
-								}
+								liveVector.setVectorVal(varia.getName(), 1);
 							}
 						}
 					}
@@ -1059,6 +1051,7 @@ public class Optimizer {
 	}
 	
 	public ControlflowContext applyDCE(List<START> startsForMethods){
+		System.err.println("Now applying DCE.");
 		Map<FlowNode, Bitvector> liveness = generateLivenessMap(startsForMethods);
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
@@ -1088,10 +1081,12 @@ public class Optimizer {
 						Assignment assign = (Assignment)currentState;
 						if(liveCheck.get(assign.getDestVar().getName()) == 0){
 							statementIter.remove();
+							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
 							for(Var varia : getVarsFromExpression(assign.getValue())){
 								liveCheck.setVectorVal(varia.getName(), 1);
+								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varia.getName());
 							}
 						}
 					}
@@ -1103,7 +1098,8 @@ public class Optimizer {
 							varsInArgs.addAll(getVarsFromExpression(expr));
 						}
 						for(Var varia : varsInArgs){
-							liveCheck.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+							liveCheck.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive.
+							System.err.printf("Bitvector entry for variable %s has been set to 1 by a method call." + System.getProperty("line.separator"), varia.getName());
 						}
 					}
 				}
