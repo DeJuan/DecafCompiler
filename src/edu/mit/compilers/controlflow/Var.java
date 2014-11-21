@@ -11,6 +11,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 public class Var extends Expression {
 	private Descriptor var;
 	private String name;
+	private IR_FieldDecl decl;
 	private Expression index;
 	private ValueID val;
 	
@@ -22,6 +23,7 @@ public class Var extends Expression {
 	public Var(Descriptor variable, Expression index) {
 	    this.var = variable;
 	    IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+	    this.decl = ir;
 	    this.name = ir.getName();
 	    this.index = index;
 	}
@@ -41,6 +43,10 @@ public class Var extends Expression {
 	 */
 	public Descriptor getVarDescriptor(){
 		return var;
+	}
+	
+	public IR_FieldDecl getDecl(){
+	    return decl;
 	}
 	
 	/**

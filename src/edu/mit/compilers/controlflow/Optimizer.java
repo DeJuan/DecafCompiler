@@ -14,7 +14,7 @@ import java.util.Set;
 import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.LocLabel;
-import edu.mit.compilers.codegen.LocStack;
+import edu.mit.compilers.codegen.LocationMem;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
@@ -510,7 +510,11 @@ public class Optimizer {
 
         varToVal.remove(killVar);
         if(valToVar.get(killValID)!= null){
-            valToVar.get(killValID).remove(assignLhs);// Could have different vars mapping to the same valID due to CSE replacements/copy prop; don't want to kill those
+            for (Var v : valToVar.get(killValID)) {
+                if (v.getDecl() == killVar) {
+                    valToVar.get(killValID).remove(v);
+                }
+            }
         }
         varToValForArrayComponents.remove(killVar);
         //Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
@@ -1085,7 +1089,6 @@ public class Optimizer {
             System.err.println("----------------------Now beginning new method.----------------------------");
             //First thing we should do is reset visits, in case we're called after another optimization.
             initialNode.totalVisitReset(); 
-            long size = CodegenConst.INT_SIZE;
             Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
             Map<IR_FieldDecl, ValueID> varToVal = new HashMap<IR_FieldDecl, ValueID>();
             Map<SPSet, ValueID> expToVal = new HashMap<SPSet, ValueID>();
@@ -1093,13 +1096,23 @@ public class Optimizer {
             Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
             Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
             Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>();
-            for(IR_FieldDecl arg : initialNode.getArguments()){
+            for(int i = 0; i < initialNode.getArguments().size(); i++){
+                IR_FieldDecl arg = initialNode.getArguments().get(i);
+                Descriptor argd = new Descriptor(arg);
+                context.putSymbol(arg.getName(), argd);
+
+                LocationMem argSrc = Assembler.argLoc(i);
+                LocationMem argDst = argSrc;
+                if(i<CodegenConst.N_REG_ARG){
+                    //save register arguments on the stack
+                    context.push(argSrc);
+                    argDst = context.getRsp();
+                    context.allocLocal(CodegenConst.INT_SIZE);
+                }
+                argd.setLocation(argDst);
                 ValueID parameterID = new ValueID();
                 List<Var> paramList = new ArrayList<Var>();
-                LocStack loc = context.allocLocal(size);
-                Descriptor paramDescriptor = new Descriptor(arg);
-                paramDescriptor.setLocation(loc);
-                paramList.add(new Var(paramDescriptor,null));
+                paramList.add(new Var(argd, null));
                 varToVal.put(arg, parameterID);
                 valToVar.put(parameterID, paramList);
             }
@@ -1206,8 +1219,9 @@ public class Optimizer {
                                     //Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
                                     //So if we had a = x + y, we now have a temp value temp1 = a.
                                     IR_FieldDecl rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
-                                    expToTemp.put(rhs, new Var(new Descriptor(rhsTempDecl), null));
-                                    varList.add(new Var(new Descriptor(rhsTempDecl), null));
+                                    Var tempVar = new Var(context.findSymbol(rhsTempDecl.getName()), null);
+                                    expToTemp.put(rhs, tempVar);
+                                    varList.add(tempVar);
                                 }
                             }
                             newCodeblock.addStatement(new Assignment(currentDestVar, currentAssign.getOperator(), rhs.toExpression(valToVar))); //put the optimized expression in the codeblock

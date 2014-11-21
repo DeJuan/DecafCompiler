@@ -135,7 +135,7 @@ public class MapContainer {
                     continue;
                 }
                 for (int i = 0; i < myList.size() - 1; i++) {
-                    if (otherList.get(i) != myList.get(i)) {
+                    if (otherList.get(i).getDecl() != myList.get(i).getDecl()) {
                         valid = false;
                         break;
                     } else {

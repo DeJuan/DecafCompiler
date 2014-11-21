@@ -894,7 +894,7 @@ public class Assembler {
     private static final Regs regArg[] = {Regs.RDI, Regs.RSI, Regs.RDX,
         Regs.RCX, Regs.R8, Regs.R9};
 
-    private static LocationMem argLoc(int idx){
+    static LocationMem argLoc(int idx){
         if(idx<CodegenConst.N_REG_ARG){
             return new LocReg(regArg[idx]);
         }
