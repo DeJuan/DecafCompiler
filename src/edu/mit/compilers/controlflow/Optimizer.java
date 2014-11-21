@@ -1090,7 +1090,7 @@ public class Optimizer {
 								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varia.getName());
 							}
 							liveCheck.setVectorVal(nameofVar, 0);
-							System.err.printf("Bitvector entry for variable %s has been set to 0 due to beinga assigned.." + System.getProperty("line.separator"), nameofVar);
+							System.err.printf("Bitvector entry for variable %s has been set to 0 due to being assigned." + System.getProperty("line.separator"), nameofVar);
 						}
 					}
 					else if(currentState instanceof MethodCallStatement){
