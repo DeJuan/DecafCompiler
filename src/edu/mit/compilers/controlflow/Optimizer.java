@@ -1122,8 +1122,6 @@ public class Optimizer {
                         System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
                         System.err.println("processing of this node will be delayed until its parents are processed.");
                         currentNode.resetVisit();
-                        processing.addAll(currentNode.getChildren());
-                        processing.add(currentNode);
                         reset = true;
                     } else {
                         if (thisNodeContainer == null) {
@@ -1134,8 +1132,10 @@ public class Optimizer {
                     }
                 }
                 if (reset) {
+                    processing.addAll(currentNode.getChildren());
+                    processing.add(currentNode);
                     if (thisNodeContainer == null) {
-                        thisNodeContainer = MapContainer.makeEmptyContainer();
+                        throw new RuntimeException("HOW DID YOU GET IN PROCESSING IF NONE OF YOUR PARENTS HAVE BEEN PROCESSED");
                     }
                     containerForNode.put(currentNode, thisNodeContainer);
                     continue;
@@ -1279,6 +1279,7 @@ public class Optimizer {
                     newCodeblock.visit();
                     MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, true);
                     containerForNode.put(newCodeblock, currentNodeContainer);
+                    containerForNode.remove(cblock);
                     if(changedAtAll){
                         for(FlowNode child : newCodeblock.getChildren()){
                             processing.add(child);
