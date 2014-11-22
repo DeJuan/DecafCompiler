@@ -1047,7 +1047,7 @@ public class Optimizer {
 			}
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
-		return vectorStorageOUT;
+		return vectorStorageIN;
 	}
 	
 	public ControlflowContext applyDCE(List<START> startsForMethods){
