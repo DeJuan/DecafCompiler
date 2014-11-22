@@ -895,24 +895,24 @@ public class Optimizer {
 	 * @return 
 	 */
 	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
-		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for parent retrieval.
-		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for parent retrieval.
+		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
+		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 		for(START methodStart : startsForMethods){
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
-			Set<String> allVars = getAllVarNamesInMethod(methodStart); //Get all the var names from the declarations in the method
+			Set<String> allVars = getAllVarNamesInMethod(methodStart); //Get all the var names from within the method
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
 				if(!vectorStorageIN.containsKey(currentNode)){
-					vectorStorageIN.put(currentNode, zeroVector); //Set bitvectors to all zeros
+					vectorStorageIN.put(currentNode, zeroVector.copyBitvector()); //Set bitvectors to all zeros
 				}
 				if(!vectorStorageOUT.containsKey(currentNode)){
-					vectorStorageOUT.put(currentNode, zeroVector);
+					vectorStorageOUT.put(currentNode, zeroVector.copyBitvector());
 				}
 				if(currentNode instanceof END){ 
 					endNodes.add((END)currentNode);
@@ -925,7 +925,7 @@ public class Optimizer {
 			}
 			for(END initialNode : endNodes){
 				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
-				Bitvector liveVector = new Bitvector(zeroVector); //set up the map of Var names to Statements. Initialized to all zeros.
+				Bitvector liveVector = zeroVector.copyBitvector(); //set up the bitvector. Initialized to all zeros.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
 						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
@@ -940,10 +940,11 @@ public class Optimizer {
 					FlowNode currentNode = processing.remove(0);
 					currentNode.visit();
 					if(currentNode.getChildren().size() == 1){
-						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0));
+						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
 					}
 					else{
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, zeroVector);
+						System.err.println("We are processing a node with more than one child.");
 					}
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
 					if(currentNode instanceof Codeblock){
@@ -956,17 +957,24 @@ public class Optimizer {
 							if(currentState instanceof Assignment){ 
 								Assignment assign = (Assignment)currentState;
 								String lhs = assign.getDestVar().getName();
+								List<String> changedVectorEntry = new ArrayList<String>();
 								//Look at rhs first. 
 								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
 								for(Var varia : varsInRHS){
-									liveVector.setVectorVal(varia.getName(), 1); //It's alive, was just used.
+									String varName = varia.getName();
+									if(liveVector.get(varName) == 0){
+										liveVector.setVectorVal(varName, 1); //It's potentially alive, was just used.
+										changedVectorEntry.add(varName);
+									}
 								}
 								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
 									liveVector.setVectorVal(lhs, 0);
 								} 
-								else{
+								else{ //the lhs is actually dead, so we need to revert any changes we made on rhs.
 									for(Var varia : varsInRHS){
-										liveVector.setVectorVal(varia.getName(), 0); //rhs is not alive, because the assignment as a whole is dead.
+										if(changedVectorEntry.contains(varia.getName())){
+											liveVector.setVectorVal(varia.getName(), 0); //rhs if we changed it is not alive, because the assignment as a whole is dead.
+										}
 									}
 								}
 							}
