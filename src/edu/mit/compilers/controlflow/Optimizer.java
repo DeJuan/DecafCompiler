@@ -932,7 +932,7 @@ public class Optimizer {
 					}
 				}
 				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
-				vectorStorageOUT.put(initialNode, liveVector.vectorUnison(vectorStorageOUT.get(initialNode)));
+				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
 				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
 				List<FlowNode> processing = new ArrayList<FlowNode>();
 				processing.addAll(initialNode.getParents());
@@ -945,7 +945,7 @@ public class Optimizer {
 					else{
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, zeroVector);
 					}
-					vectorStorageIN.put(currentNode, liveVector.vectorUnison(vectorStorageIN.get(currentNode)));
+					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
 					if(currentNode instanceof Codeblock){
 						Codeblock cblock = (Codeblock)currentNode;
 						List<Statement> statementList = cblock.getStatements();
@@ -1032,7 +1032,7 @@ public class Optimizer {
 					
 					boolean changed;
 					changed = liveVector.compareBitvectorEquality(vectorStorageIN.get(currentNode));
-					vectorStorageOUT.put(currentNode, liveVector.vectorUnison(vectorStorageOUT.get(currentNode)));
+					vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
 					if(!changed){
 						System.err.println("Finished processing a FlowNode whose bitvector did not change.");
 						for(FlowNode parent : currentNode.getParents()){
