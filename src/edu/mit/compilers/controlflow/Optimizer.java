@@ -932,7 +932,7 @@ public class Optimizer {
 					}
 				}
 				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
-				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
+				vectorStorageOUT.put(initialNode, liveVector.vectorUnison(vectorStorageOUT.get(initialNode)));
 				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
 				List<FlowNode> processing = new ArrayList<FlowNode>();
 				processing.addAll(initialNode.getParents());
@@ -945,7 +945,7 @@ public class Optimizer {
 					else{
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, zeroVector);
 					}
-					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
+					vectorStorageIN.put(currentNode, liveVector.vectorUnison(vectorStorageIN.get(currentNode)));
 					if(currentNode instanceof Codeblock){
 						Codeblock cblock = (Codeblock)currentNode;
 						List<Statement> statementList = cblock.getStatements();
@@ -988,7 +988,7 @@ public class Optimizer {
 							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
 								MethodCallStatement mcall = (MethodCallStatement)currentState;
 								List<Expression> args = mcall.getMethodCall().getArguments();
-								List<Var> varsInArgs = new ArrayList<Var>();
+								Set<Var> varsInArgs = new LinkedHashSet<Var>();
 								for(Expression expr : args){
 									varsInArgs.addAll(getVarsFromExpression(expr));
 								}
@@ -1016,6 +1016,7 @@ public class Optimizer {
 						List<IR_FieldDecl> args = cStart.getArguments();
 						for (IR_FieldDecl arg : args){
 							liveVector.setVectorVal(arg.getName(), 1); 
+							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
 						}	
 					}
 
@@ -1024,21 +1025,24 @@ public class Optimizer {
 						if(cEnd.getReturnExpression() != null){
 							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
 								liveVector.setVectorVal(varia.getName(), 1);
+								System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
 							}
 						}
 					}
 					
 					boolean changed;
 					changed = liveVector.compareBitvectorEquality(vectorStorageIN.get(currentNode));
-					vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
+					vectorStorageOUT.put(currentNode, liveVector.vectorUnison(vectorStorageOUT.get(currentNode)));
 					if(!changed){
+						System.err.println("Finished processing a FlowNode whose bitvector did not change.");
 						for(FlowNode parent : currentNode.getParents()){
 							if(!parent.visited()){
 								processing.add(parent);
 							}
 						}
 					}
-					else{
+					else
+						System.err.println("Finished processing a FlowNode whose bitvector did change; will now visit all parents.");{
 						for(FlowNode parent : currentNode.getParents()){
 							processing.add(parent);
 						}
@@ -1055,7 +1059,7 @@ public class Optimizer {
 		Map<FlowNode, Bitvector> liveness = generateLivenessMap(startsForMethods);
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
-			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
+			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 				FlowNode currentNode = scanning.remove(0);
