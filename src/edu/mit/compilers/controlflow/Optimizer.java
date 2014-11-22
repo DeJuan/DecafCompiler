@@ -964,6 +964,11 @@ public class Optimizer {
 								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
 									liveVector.setVectorVal(lhs, 0);
 								} 
+								else{
+									for(Var varia : varsInRHS){
+										liveVector.setVectorVal(varia.getName(), 0); //rhs is not alive, because the assignment as a whole is dead.
+									}
+								}
 							}
 
 							/**
@@ -1041,8 +1046,8 @@ public class Optimizer {
 							}
 						}
 					}
-					else
-						System.err.println("Finished processing a FlowNode whose bitvector did change; will now visit all parents.");{
+					else{
+						System.err.println("Finished processing a FlowNode whose bitvector did change; will now visit all parents.");
 						for(FlowNode parent : currentNode.getParents()){
 							processing.add(parent);
 						}
