@@ -1047,7 +1047,7 @@ public class Optimizer {
 			}
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
-		return vectorStorageIN;
+		return vectorStorageOUT;
 	}
 	
 	public ControlflowContext applyDCE(List<START> startsForMethods){
@@ -1073,7 +1073,7 @@ public class Optimizer {
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
 				List<Statement> statementList = cblock.getStatements();
-				Collections.reverse(statementList);
+				//Collections.reverse(statementList);
 				Iterator<Statement> statementIter = statementList.iterator();
 				while(statementIter.hasNext()){
 					Statement currentState = statementIter.next();
@@ -1106,7 +1106,7 @@ public class Optimizer {
 						}
 					}
 				}
-				Collections.reverse(statementList);
+				//Collections.reverse(statementList);
 			}
 		}
 		return Assembler.generateProgram(calloutList, globalList, flowNodes);

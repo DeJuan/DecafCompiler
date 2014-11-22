@@ -1,6 +1,6 @@
 //This test case checks that we have working DCE in the case of a simple block with loops and no return statement. If it works, we should see almost everything get eliminated.
 //The only remaining things in main should be:
-//int a, b, c,d; 
+//int a, b, c,d; vi
 //int i, j, sum;
 //  sum = 0;
 //  for ( j = 0, 10 ) {
@@ -22,7 +22,7 @@ void main ( ) {
     sum += j;
   }
   if ( sum != 45 ) {
-    printf ( "ERROR: for loop is bad (1)\n" );
+    printf ( "ERROR: for loop is bad: Sum should be 45, is %f\n", sum );
   }
   a = get_int ( 2 );
   b = get_int ( 3 );
