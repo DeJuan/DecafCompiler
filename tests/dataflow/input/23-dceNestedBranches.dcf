@@ -1,0 +1,42 @@
+callout printf;
+int get_int ( int x ) {
+  return x;
+}
+
+void main ( ) {
+  int a, b, c, d;
+  int i, j, sum;
+  j = 24;
+  sum = 5;
+  a = 3;
+  j = 0;
+  if (sum == 5){
+  	if( i != 0){
+  		printf("Something has gone wrong; i should be zero!!!"\n);
+  	}
+  	else if(j != 0){
+  		printf ("J is not zero, what is happening?!\n");	
+  	}
+  	else if(a == 3){
+  		printf("This is the block we want to see! A has value %i!\n", a);
+  	}
+  	else{
+  		printf("Something is broken. This is sad."\n);
+  	}
+  else{
+  	printf ("DCE is not working properly, sum isn\'t five!!");
+  }
+  
+  a = get_int ( 2 );
+  b = get_int ( 3 );
+  c = 0;
+  d = 0;
+  b = get_int ( 5 );
+  if (a + b == 7){
+  	printf ("A and b still have the right values. All green!!!\n");
+  }
+  else{
+  	printf ("A and B were not preserved properly. -cry-");
+  }
+  b = i + j;
+}

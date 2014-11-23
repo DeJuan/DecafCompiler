@@ -8,10 +8,10 @@ void main ( ) {
   int i, j, sum;
   sum = 5;
   if (sum == 5){
-  	printf( "Yeah, sum is five and DCE is working");
+  	printf( "Yeah, sum is five and DCE is working\n);
   	}
   else{
-  	printf ("DCE is not working properly, sum isn\'t five!!");
+  	printf ("DCE is not working properly, sum isn\'t five!!"\n);
   }
   
   a = get_int ( 2 );
@@ -19,10 +19,10 @@ void main ( ) {
   c = 0;
   d = 0;
   if (a + b == 5){
-  	printf ("A and b were preserved thanks to the if condition. All green!!!");
+  	printf ("A and b were preserved thanks to the if condition. All green!!!"\n);
   }
   else{
-  	printf ("A and B were not preserved properly. -cry-");
+  	printf ("A and B were not preserved properly. -cry-"\n);
   }
   b = i + j;
 }
