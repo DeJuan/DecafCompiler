@@ -12,7 +12,7 @@ void main ( ) {
   j = 0;
   if (sum == 5){
   	if( i != 0){
-  		printf("Something has gone wrong; i should be zero!!!"\n);
+  		printf("Something has gone wrong; i should be zero!!!\n");
   	}
   	else if(j != 0){
   		printf ("J is not zero, what is happening?!\n");	
@@ -21,10 +21,10 @@ void main ( ) {
   		printf("This is the block we want to see! A has value %i!\n", a);
   	}
   	else{
-  		printf("Something is broken. This is sad."\n);
+  		printf("Something is broken. This is sad.\n");
   	}
   else{
-  	printf ("DCE is not working properly, sum isn\'t five!!");
+  	printf ("DCE is not working properly, sum isn\'t five!!\n");
   }
   
   a = get_int ( 2 );
@@ -36,7 +36,7 @@ void main ( ) {
   	printf ("A and b still have the right values. All green!!!\n");
   }
   else{
-  	printf ("A and B were not preserved properly. -cry-");
+  	printf ("A and B were not preserved properly. -cry-\n");
   }
   b = i + j;
 }
