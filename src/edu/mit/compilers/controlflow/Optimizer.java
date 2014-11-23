@@ -1213,22 +1213,25 @@ public class Optimizer {
                                     }
                                 }
                             }
+                            newCodeblock.addStatement(new Assignment(currentDestVar, currentAssign.getOperator(), rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
+                            // kill old mapping only after doing the assignment (j = j + 1 should use the old value of j on the right side)
+                            IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
+                            killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
+                            IR_FieldDecl rhsTempDecl = null;
+                            // Update valToVar for temp, expToVal for expression, and expToTemp
                             if (!keySet.contains(rhs)){ //If the rhs is something new that we haven't seen yet,
                                 if(((rhs.SPSets.size() +rhs.intSet.size() +rhs.boolSet.size() + rhs.ternSet.size() + rhs.comparisons.size() + rhs.varSet.size()) > 1 
                                         || (rhs.SPSets.size() + rhs.ternSet.size() + rhs.comparisons.size() != 0)) && rhs.methodCalls.size() == 0){
                                     expToVal.put(rhs, currentValID); // put the rhs in the expToVal table with the ID we made earlier
                                     //Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
                                     //So if we had a = x + y, we now have a temp value temp1 = a.
-                                    IR_FieldDecl rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
-                                    Var tempVar = new Var(context.findSymbol(rhsTempDecl.getName()), null);
+                                    rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
+                                    Var tempVar = new Var(context.findSymbol(rhsTempDecl.getName()), null, true);
                                     expToTemp.put(rhs, tempVar);
                                     varList.add(tempVar);
                                 }
                             }
-                            newCodeblock.addStatement(new Assignment(currentDestVar, currentAssign.getOperator(), rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
-                            // kill old mapping only after doing the assignment (j = j + 1 should use the old value of j on the right side)
-                            IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
-                            killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
+                            // Update valToVar to dest
                             if (currentDestVar.getIndex() == null || setVarIDs(varToVal, varToValForArrayComponents, currentDestVar.getIndex())) {
                                 varList.add(currentDestVar);
                                 if(currentDestVar.getIndex() == null){ //Changed this from != when simulating execution. 
@@ -1249,7 +1252,7 @@ public class Optimizer {
                                     innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
                                 }
                             }
-                            if(expToTemp.get(rhs) != null){
+                            if(rhsTempDecl != null){
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
                                 globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
                             }

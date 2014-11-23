@@ -485,6 +485,15 @@ public class SPSet {
             throw new RuntimeException("Should never reach here");
         }
     }
+    
+    private Var findBestVar(List<Var> potVars) {
+        for (Var v : potVars) {
+            if (!v.isCompilerTemp()) {
+                return v;
+            }
+        }
+        return potVars.get(0);
+    }
 
     public Expression toExpression(Map<ValueID, List<Var>> valToVar){
         if (operator == null) {
@@ -494,7 +503,7 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return SPSets.get(0).toExpression(valToVar);
             } else if (!varSet.isEmpty()) {
-                return valToVar.get(varSet.get(0)).get(0);
+                return findBestVar(valToVar.get(varSet.get(0)));
             } else if (!intSet.isEmpty()) {
                 return new IntLit(intSet.get(0));
             } else if (!boolSet.isEmpty()) {
@@ -521,7 +530,7 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NegateExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NegateExpr(valToVar.get(varSet.get(0)).get(0));
+                return new NegateExpr(findBestVar(valToVar.get(varSet.get(0))));
             } else if (!intSet.isEmpty()) {
                 return new NegateExpr(new IntLit(intSet.get(0)));
             } else if (!boolSet.isEmpty()) {
@@ -542,7 +551,7 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NotExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NotExpr(valToVar.get(varSet.get(0)).get(0));
+                return new NotExpr(findBestVar(valToVar.get(varSet.get(0))));
             } else if (!intSet.isEmpty()) {
                 throw new RuntimeException("can't not an int");
             } else if (!boolSet.isEmpty()) {
@@ -574,10 +583,10 @@ public class SPSet {
             }
             for (ValueID var : varSet) {
                 if (lhs == null) {
-                    lhs = valToVar.get(var).get(0);
+                    lhs = findBestVar(valToVar.get(var));
                     continue;
                 }
-                lhs = joinSides(lhs, valToVar.get(var).get(0));
+                lhs = joinSides(lhs, findBestVar(valToVar.get(var)));
             }
             for (Long integer : intSet) {
                 if (lhs == null) {

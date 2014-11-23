@@ -14,6 +14,7 @@ public class Var extends Expression {
 	private IR_FieldDecl decl;
 	private Expression index;
 	private ValueID val;
+	private boolean isCompilerTemp;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
@@ -26,7 +27,22 @@ public class Var extends Expression {
 	    this.decl = ir;
 	    this.name = ir.getName();
 	    this.index = index;
+	    isCompilerTemp = false;
 	}
+	
+	/**
+     * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
+     * @param variable
+     * @param index : the index into an array, or null if int/bool
+     */
+    public Var(Descriptor variable, Expression index, boolean temp) {
+        this.var = variable;
+        IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+        this.decl = ir;
+        this.name = ir.getName();
+        this.index = index;
+        isCompilerTemp = temp;
+    }
 	
 	@Override
 	/**
@@ -63,6 +79,10 @@ public class Var extends Expression {
 	
 	public ValueID getValueID() {
 	    return val;
+	}
+	
+	public boolean isCompilerTemp(){
+	    return isCompilerTemp;
 	}
 	
 	/**
