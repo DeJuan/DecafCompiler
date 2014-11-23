@@ -23,6 +23,7 @@ void main ( ) {
   	else{
   		printf("Something is broken. This is sad.\n");
   	}
+  }
   else{
   	printf ("DCE is not working properly, sum isn\'t five!!\n");
   }
