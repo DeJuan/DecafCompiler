@@ -11,7 +11,7 @@ void main ( ) {
   	printf( "Yeah, sum is five and DCE is working");
   	}
   else{
-  	printf ("DCE is not working properly, sum isn't five!!");
+  	printf ("DCE is not working properly, sum isn\'t five!!");
   }
   
   a = get_int ( 2 );
