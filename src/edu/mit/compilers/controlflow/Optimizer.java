@@ -958,26 +958,26 @@ public class Optimizer {
 								Assignment assign = (Assignment)currentState;
 								String lhs = assign.getDestVar().getName();
 								List<String> changedVectorEntry = new ArrayList<String>();
-								//Look at rhs first. 
 								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+								//Look at rhs first.
+								for(Var varia : varsInRHS){
+									String varName = varia.getName();
+									if(liveVector.get(varName) == 0){
+										liveVector.setVectorVal(varName, 1); //It's potentially alive, was just used.
+										System.err.printf("Bitvector entry for variable %s has been flipped from 0 to 1 in building phase by use in assignment rhs." + System.getProperty("line.separator"), varia.getName());
+										changedVectorEntry.add(varName);
+									}
+								}
 								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
 									liveVector.setVectorVal(lhs, 0);
 									System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment." + System.getProperty("line.separator"), lhs);
-									for(Var varia : varsInRHS){
-										String varName = varia.getName();
-										if(liveVector.get(varName) == 0){
-											liveVector.setVectorVal(varName, 1); //It's potentially alive, was just used.
-											System.err.printf("Bitvector entry for variable %s has been flipped from 0 to 1 in building phase by use in assignment rhs." + System.getProperty("line.separator"), varia.getName());
-											//changedVectorEntry.add(varName);
-										}
-									}
 								} 
 								else{ //the lhs is actually dead, so we need to revert any changes we made on rhs.
 									for(Var varia : varsInRHS){
-										//if(changedVectorEntry.contains(varia.getName())){
+										if(changedVectorEntry.contains(varia.getName())){
 											liveVector.setVectorVal(varia.getName(), 0); //rhs if we changed it is not alive, because the assignment as a whole is dead.
 											System.err.printf("Bitvector entry for variable %s has been reset to 0 in building phase because the assignment is dead." + System.getProperty("line.separator"), varia.getName());
-										//}
+										}
 									}
 								}
 							}
