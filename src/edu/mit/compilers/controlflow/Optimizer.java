@@ -987,6 +987,17 @@ public class Optimizer {
 								String lhs = assign.getDestVar().getName();
 								List<String> changedVectorEntry = new ArrayList<String>();
 								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
+								//LEFT HAND FIRST LOGIC
+								if(liveVector.get(lhs) == 1){ //If this is alive, flip the bit 
+									liveVector.setVectorVal(lhs, 0);
+									System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment." + System.getProperty("line.separator"), lhs);
+									for(Var varia : varsInRHS){
+										liveVector.setVectorVal(varia.getName(), 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
+										System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment." + System.getProperty("line.separator"), varia.getName());
+									}
+								}
+								
+								/* RIGHT HAND FIRST LOGIC
 								//Look at rhs first.
 								for(Var varia : varsInRHS){
 									String varName = varia.getName();
@@ -1008,6 +1019,7 @@ public class Optimizer {
 										}
 									}
 								}
+								*/
 							}
 
 							/**
