@@ -948,7 +948,8 @@ public class Optimizer {
 						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
 					}
 					else{
-						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
+						Bitvector superCombinedValues = vectorStorageIN.get(currentNode).copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode));
+						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, superCombinedValues);
 						System.err.println("We are processing a node with more than one child.");
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
