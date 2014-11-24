@@ -73,9 +73,9 @@ public class Bitvector {
 	 * @param vectorStorage : The Map<FlowNode, Map<String, Integer>> we use to keep track of the bit vector for a given FlowNode at exit of that node. 
 	 * @param Set<String> allVars : List of all Var names in the program, so we can easily initialize the all-zero bitvector. 
 	 */
-	public static Bitvector childVectorUnison(List<FlowNode> children, Map<FlowNode, Bitvector> vectorStorageOUT, Bitvector zeroVector) {
+	public static Bitvector childVectorUnison(List<FlowNode> children, Map<FlowNode, Bitvector> vectorStorageOUT, Bitvector currentValues) {
 		Map<String, Integer> nextMap;
-		Bitvector finalMap = zeroVector.copyBitvector(); //make new bit vector of all zeros
+		Bitvector finalMap = currentValues.copyBitvector(); //make new bit vector copy of what you currently care about
 		for(int i = 0; i < children.size(); i++){ //For all children of this node
 			nextMap = vectorStorageOUT.get(children.get(i)).getVectorMap(); //get their map from storage
 			for(String key : nextMap.keySet()){ //iterate through the keys in the map
