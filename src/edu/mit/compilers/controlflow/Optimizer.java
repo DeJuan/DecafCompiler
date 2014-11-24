@@ -948,8 +948,7 @@ public class Optimizer {
 						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
 					}
 					else{
-						Bitvector superCombinedValues = vectorStorageIN.get(currentNode).copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode));
-						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, superCombinedValues);
+						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
 						System.err.println("We are processing a node with more than one child.");
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
@@ -1111,9 +1110,18 @@ public class Optimizer {
 						}
 					}
 					else{
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
-						for(FlowNode parent : currentNode.getParents()){
-							processing.add(parent);
+						if(currentNode instanceof NoOp){
+							for(FlowNode parent : currentNode.getParents()){
+								if(!parent.visited()){
+									processing.add(parent);
+								}
+							}
+						}
+						else{
+							System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
+							for(FlowNode parent : currentNode.getParents()){
+								processing.add(parent);
+							}
 						}
 					}
 					previousNode = currentNode;
