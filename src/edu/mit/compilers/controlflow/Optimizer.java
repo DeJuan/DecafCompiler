@@ -940,6 +940,7 @@ public class Optimizer {
 				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
 				List<FlowNode> processing = new ArrayList<FlowNode>();
 				processing.addAll(initialNode.getParents());
+				FlowNode previousNode = initialNode;
 				while(!processing.isEmpty()){
 					FlowNode currentNode = processing.remove(0);
 					currentNode.visit();
@@ -950,7 +951,7 @@ public class Optimizer {
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
 						System.err.println("We are processing a node with more than one child.");
 					}
-					Bitvector previousIN = vectorStorageIN.get(currentNode);
+					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
 					boolean needToReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
 					boolean skipNode = false;
@@ -967,6 +968,9 @@ public class Optimizer {
 							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. No need to reprocess.");
 							skipNode = true;
 						}
+					}
+					if (previousNode == currentNode){
+						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
 					}
 					if(skipNode){
 						continue;
@@ -1091,6 +1095,7 @@ public class Optimizer {
 							processing.add(parent);
 						}
 					}
+					previousNode = currentNode;
 				}
 			}
 			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
