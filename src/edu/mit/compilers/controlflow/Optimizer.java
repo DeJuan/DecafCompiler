@@ -897,6 +897,7 @@ public class Optimizer {
 	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
 		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
+		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 		for(START methodStart : startsForMethods){
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.resetVisit();
@@ -925,6 +926,9 @@ public class Optimizer {
 			}
 			for(END initialNode : endNodes){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
+				for(FlowNode node : vectorStorageIN.keySet()){
+					ticksForRevisit.put(node, 0); //set up a ticker so we can see if we want to do revisits
+				}
 				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
@@ -948,9 +952,23 @@ public class Optimizer {
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode);
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
-					boolean needToReprocess = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
-					if(!needToReprocess){
-						System.err.println("The current node's IN has not changed since last processing; no need to recompute.");
+					boolean needToReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
+					boolean skipNode = false;
+					if(!needToReprocessFlag){
+						if(ticksForRevisit.get(currentNode).equals(0)){
+							System.err.println("The current node's IN has not changed since last processing. We will compute at most twice to be safe.");
+							ticksForRevisit.put(currentNode, 1);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(1)){
+							System.err.println("The current node's IN has not changed since last processing, and has been processed once. One more computation to be safe.");
+							ticksForRevisit.put(currentNode, 2);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(2)){
+							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. No need to reprocess.");
+							skipNode = true;
+						}
+					}
+					if(skipNode){
 						continue;
 					}
 					if(currentNode instanceof Codeblock){
