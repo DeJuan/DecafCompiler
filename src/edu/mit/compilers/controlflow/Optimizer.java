@@ -899,7 +899,7 @@ public class Optimizer {
 		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 		for(START methodStart : startsForMethods){
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
-			methodStart.totalVisitReset();
+			methodStart.resetVisit();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
@@ -924,7 +924,7 @@ public class Optimizer {
 				}
 			}
 			for(END initialNode : endNodes){
-				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
+				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
 				Bitvector liveVector = zeroVector.copyBitvector(); //set up the bitvector. Initialized to all zeros.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
@@ -1066,7 +1066,7 @@ public class Optimizer {
 					}
 				}
 			}
-			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
+			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
 		}
 		return vectorStorageIN;
 	}
@@ -1092,7 +1092,7 @@ public class Optimizer {
 					}
 				}
 			}
-			initialNode.totalVisitReset(); //fix the visited parameters.
+			initialNode.resetVisit(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
 				List<Statement> statementList = cblock.getStatements();
