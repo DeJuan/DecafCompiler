@@ -1051,6 +1051,7 @@ public class Optimizer {
 					Bitvector previousOut = vectorStorageOUT.get(currentNode).copyBitvector();
 					Bitvector newOut = liveVector.copyBitvector().vectorUnison(previousOut);
 					changed = previousOut.compareBitvectorEquality(newOut);
+					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
 						System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
@@ -1060,7 +1061,6 @@ public class Optimizer {
 						}
 					}
 					else{
-						vectorStorageOUT.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(currentNode)));
 						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; will now visit all parents.");
 						for(FlowNode parent : currentNode.getParents()){
 							processing.add(parent);
