@@ -8,7 +8,7 @@ void main ( ) {
   int i, j, sum;
   sum = 5;
   if (sum == 5){
-  	printf( "Yeah, sum is five and DCE is working\n);
+  	printf("Yeah, sum is five and DCE is working\n");
   	}
   else{
   	printf ("DCE is not working properly, sum isn\'t five!!"\n);
