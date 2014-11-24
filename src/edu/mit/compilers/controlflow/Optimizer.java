@@ -946,7 +946,13 @@ public class Optimizer {
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
 						System.err.println("We are processing a node with more than one child.");
 					}
+					Bitvector previousIN = vectorStorageIN.get(currentNode);
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
+					boolean needToReprocess = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
+					if(!needToReprocess){
+						System.err.println("The current node's IN has not changed since last processing; no need to recompute.");
+						continue;
+					}
 					if(currentNode instanceof Codeblock){
 						Codeblock cblock = (Codeblock)currentNode;
 						List<Statement> statementList = cblock.getStatements();
@@ -1062,7 +1068,7 @@ public class Optimizer {
 						}
 					}
 					else{
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; will now visit all parents.");
+						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
 						for(FlowNode parent : currentNode.getParents()){
 							processing.add(parent);
 						}
