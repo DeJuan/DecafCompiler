@@ -14,8 +14,8 @@ public class Bitvector {
 		}
 	}
 	
-	public Bitvector(Map<String, Integer> startingZeroVector){
-		this.vector = startingZeroVector;
+	public Bitvector(Map<String, Integer> startingVector){
+		this.vector = startingVector;
 	}
 	
 	public Bitvector(Bitvector vectorToCopy){
@@ -43,7 +43,7 @@ public class Bitvector {
 	public Map<String, Integer> copyVectorMap(){
 		Map<String, Integer> vectorCopy = new HashMap<String, Integer>();
 		for (String key : vector.keySet()){
-			vectorCopy.put(new String(key), new Integer(vector.get(key)));
+			vectorCopy.put(key,vector.get(key));
 		}
 		return vectorCopy;
 	}
@@ -56,7 +56,7 @@ public class Bitvector {
 	public boolean compareBitvectorEquality(Bitvector other){
 		Map<String, Integer> otherMap = other.getVectorMap();
 		for (String key : otherMap.keySet()){
-			if (otherMap.get(key) != (vector.get(key))){
+			if (!otherMap.get(key).equals(vector.get(key))){
 				return false;
 			}
 		}
@@ -79,7 +79,7 @@ public class Bitvector {
 		for(int i = 0; i < children.size(); i++){ //For all children of this node
 			nextMap = vectorStorageOUT.get(children.get(i)).getVectorMap(); //get their map from storage
 			for(String key : nextMap.keySet()){ //iterate through the keys in the map
-				if(nextMap.get(key) == 1){ //if we find a key with a value of one
+				if(nextMap.get(key).equals(1)){ //if we find a key with a value of one
 					finalMap.setVectorVal(key, 1); //put 1 in the finalMap in that location. 
 				}
 			}
@@ -91,7 +91,7 @@ public class Bitvector {
 		Bitvector currentCopy = new Bitvector(this.copyVectorMap());
 		Map<String, Integer> otherMap = other.getVectorMap();
 		for (String key : otherMap.keySet()){
-			if(otherMap.get(key) == 1){
+			if(otherMap.get(key).equals(1)){
 				currentCopy.setVectorVal(key, 1);
 			}
 		}

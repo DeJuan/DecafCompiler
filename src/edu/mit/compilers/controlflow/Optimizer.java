@@ -702,7 +702,7 @@ public class Optimizer {
 			scanning.add(methodStart);
 			boolean anythingChanged = false;
 			boolean needToContinue = false;
-			Set<END> endNodes = new LinkedHashSet<END>();
+			List<END> endNodes = new ArrayList<END>();
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
