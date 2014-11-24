@@ -1000,6 +1000,9 @@ public class Optimizer {
 										liveVector.setVectorVal(lhs, 0);
 										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 									}
+									else{
+										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
+									}
 								}
 								
 								/* RIGHT HAND FIRST LOGIC
