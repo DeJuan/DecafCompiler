@@ -56,7 +56,7 @@ public class Bitvector {
 	public boolean compareBitvectorEquality(Bitvector other){
 		Map<String, Integer> otherMap = other.getVectorMap();
 		for (String key : otherMap.keySet()){
-			if (!otherMap.get(key).equals(vector.get(key))){
+			if (otherMap.get(key) != (vector.get(key))){
 				return false;
 			}
 		}

@@ -943,7 +943,7 @@ public class Optimizer {
 						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
 					}
 					else{
-						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageOUT.get(currentNode).vectorUnison(vectorStorageIN.get(currentNode)));
+						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
 						System.err.println("We are processing a node with more than one child.");
 					}
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
@@ -970,6 +970,7 @@ public class Optimizer {
 								}
 								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
 									liveVector.setVectorVal(lhs, 0);
+									System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment." + System.getProperty("line.separator"), lhs);
 								} 
 								else{ //the lhs is actually dead, so we need to revert any changes we made on rhs.
 									for(Var varia : varsInRHS){
