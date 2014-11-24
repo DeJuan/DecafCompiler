@@ -925,7 +925,7 @@ public class Optimizer {
 			}
 			for(END initialNode : endNodes){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
-				Bitvector liveVector = zeroVector.copyBitvector(); //set up the bitvector. Initialized to all zeros.
+				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
 						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
