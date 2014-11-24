@@ -1154,20 +1154,30 @@ public class Optimizer {
 					Statement currentState = statementIter.next();
 					if(currentState instanceof Assignment){
 						Assignment assign = (Assignment)currentState;
-						if(liveCheck.get(assign.getDestVar().getName()) == 0){
+						String lhs = assign.getDestVar().getName();
+						if(liveCheck.get(lhs) == 0){
 							statementIter.remove();
 							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
+							List<String> rhsNames = new ArrayList<String>();
 							String nameofVar = assign.getDestVar().getName();
 							for(Var varia : getVarsFromExpression(assign.getValue())){
-								liveCheck.setVectorVal(varia.getName(), 1);
-								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varia.getName());
+								String varName = varia.getName();
+								liveCheck.setVectorVal(varName, 1);
+								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varName);
+								rhsNames.add(varName);
 							}
-							liveCheck.setVectorVal(nameofVar, 0);
-							System.err.printf("Bitvector entry for variable %s has been set to 0 due to being assigned." + System.getProperty("line.separator"), nameofVar);
+							if(!rhsNames.contains(lhs)){
+								liveCheck.setVectorVal(lhs, 0);
+								System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
+							}
+							else{
+								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
+							}
 						}
 					}
+					
 					else if(currentState instanceof MethodCallStatement){
 						MethodCallStatement mcall = (MethodCallStatement)currentState;
 						List<Expression> args = mcall.getMethodCall().getArguments();
