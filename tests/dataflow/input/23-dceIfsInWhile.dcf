@@ -25,7 +25,7 @@ void main () {
   		sum+=1;
   	}
   	else{
-  		printf("Something is broken. This is sad.\n");
+  		printf("Something is broken. A has value %i \n", a);
   		sum+=1;
   	}
   }
