@@ -964,6 +964,7 @@ public class Optimizer {
 									String varName = varia.getName();
 									if(liveVector.get(varName) == 0){
 										liveVector.setVectorVal(varName, 1); //It's potentially alive, was just used.
+										System.err.printf("Bitvector entry for variable %s has been flipped from 0 to 1 in building phase by use in assignment rhs." + System.getProperty("line.separator"), varia.getName());
 										changedVectorEntry.add(varName);
 									}
 								}
@@ -974,6 +975,7 @@ public class Optimizer {
 									for(Var varia : varsInRHS){
 										if(changedVectorEntry.contains(varia.getName())){
 											liveVector.setVectorVal(varia.getName(), 0); //rhs if we changed it is not alive, because the assignment as a whole is dead.
+											System.err.printf("Bitvector entry for variable %s has been reset to 0 in building phase because the assignment is dead." + System.getProperty("line.separator"), varia.getName());
 										}
 									}
 								}
@@ -1007,6 +1009,7 @@ public class Optimizer {
 								}
 								for(Var varia : varsInArgs){
 									liveVector.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+									System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
 								}
 							}
 						}
@@ -1017,6 +1020,7 @@ public class Optimizer {
 						Branch cBranch = (Branch)currentNode;
 						for(Var varia : getVarsFromExpression(cBranch.getExpr())){
 							liveVector.setVectorVal(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
+							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
 						}
 					}
 
@@ -1069,7 +1073,9 @@ public class Optimizer {
 	
 	public ControlflowContext applyDCE(List<START> startsForMethods){
 		System.err.println("Now applying DCE.");
+		System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
 		Map<FlowNode, Bitvector> liveness = generateLivenessMap(startsForMethods);
+		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks

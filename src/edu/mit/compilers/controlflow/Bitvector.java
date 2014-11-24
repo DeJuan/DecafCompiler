@@ -55,8 +55,8 @@ public class Bitvector {
 	
 	public boolean compareBitvectorEquality(Bitvector other){
 		Map<String, Integer> otherMap = other.getVectorMap();
-		for (String key : vector.keySet()){
-			if (otherMap.get(key) != vector.get(key)){
+		for (String key : otherMap.keySet()){
+			if (!otherMap.get(key).equals(vector.get(key))){
 				return false;
 			}
 		}
@@ -75,7 +75,7 @@ public class Bitvector {
 	 */
 	public static Bitvector childVectorUnison(List<FlowNode> children, Map<FlowNode, Bitvector> vectorStorageOUT, Bitvector zeroVector) {
 		Map<String, Integer> nextMap;
-		Bitvector finalMap = new Bitvector(zeroVector); //make new bit vector of all zeros
+		Bitvector finalMap = zeroVector.copyBitvector(); //make new bit vector of all zeros
 		for(int i = 0; i < children.size(); i++){ //For all children of this node
 			nextMap = vectorStorageOUT.get(children.get(i)).getVectorMap(); //get their map from storage
 			for(String key : nextMap.keySet()){ //iterate through the keys in the map
@@ -88,7 +88,7 @@ public class Bitvector {
 	}
 	
 	public Bitvector vectorUnison(Bitvector other){
-		Bitvector currentCopy = new Bitvector(this);
+		Bitvector currentCopy = new Bitvector(this.copyVectorMap());
 		Map<String, Integer> otherMap = other.getVectorMap();
 		for (String key : otherMap.keySet()){
 			if(otherMap.get(key) == 1){
