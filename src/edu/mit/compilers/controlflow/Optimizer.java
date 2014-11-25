@@ -1110,24 +1110,16 @@ public class Optimizer {
 						}
 					}
 					else{
-						if(currentNode instanceof NoOp){
-							for(FlowNode parent : currentNode.getParents()){
-								if(!parent.visited()){
-									processing.add(parent);
-								}
-							}
+						if(currentNode instanceof START || currentNode instanceof NoOp){
+							ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
 						}
-						else{
-							if(currentNode instanceof START){
-								ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-							}
-							System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
-							for(FlowNode parent : currentNode.getParents()){
-								processing.add(parent);
-							}
+						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
+						for(FlowNode parent : currentNode.getParents()){
+							processing.add(parent);
 						}
 					}
-					previousNode = currentNode;
+				
+				previousNode = currentNode;
 				}
 			}
 			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
