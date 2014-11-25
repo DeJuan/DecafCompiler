@@ -7,4 +7,5 @@ public abstract class Statement {
 	};
 	
 	public abstract StatementType getStatementType();
+	public abstract Bitvector getLiveMap();
 }

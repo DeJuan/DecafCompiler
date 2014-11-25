@@ -58,4 +58,10 @@ public class Assignment extends Statement {
 	public StatementType getStatementType() {
 		return StatementType.ASSIGNMENT;
 	}
+
+	@Override
+	public Bitvector getLiveMap() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
