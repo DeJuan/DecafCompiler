@@ -47,4 +47,11 @@ public class Declaration extends Statement {
 		return null;
 	}
 
+
+	@Override
+	public void setLiveMap(Bitvector bv) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

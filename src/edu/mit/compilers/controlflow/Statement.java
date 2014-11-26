@@ -8,4 +8,5 @@ public abstract class Statement {
 	
 	public abstract StatementType getStatementType();
 	public abstract Bitvector getLiveMap();
+	public abstract void setLiveMap(Bitvector bv);
 }

@@ -64,4 +64,10 @@ public class Assignment extends Statement {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public void setLiveMap(Bitvector bv) {
+		// TODO Auto-generated method stub
+		
+	}
 }
