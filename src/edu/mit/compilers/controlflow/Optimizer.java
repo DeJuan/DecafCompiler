@@ -293,6 +293,26 @@ public class Optimizer {
 					}
 				}
 			}
+			if(currentNode instanceof Branch){
+				Branch bblock = (Branch)currentNode;
+				for (Var varia : getVarsFromExpression(bblock.getExpr())){
+					allVarNames.add(varia.getName());
+				}
+			}
+			if(currentNode instanceof START){
+				START sBlock = (START)currentNode;
+				for(IR_FieldDecl arg : sBlock.getArguments()){
+					allVarNames.add(arg.getName());
+				}
+			}
+			if(currentNode instanceof END){
+				END eBlock = (END)currentNode;
+				if(eBlock.getReturnExpression() != null){
+					for(Var varia : getVarsFromExpression(eBlock.getReturnExpression())){
+						allVarNames.add(varia.getName());
+					}
+				}
+			}
 			for(FlowNode child : currentNode.getChildren()){
 				if(!child.visited()){
 					processing.add(child);
