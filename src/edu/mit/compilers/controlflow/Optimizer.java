@@ -277,6 +277,9 @@ public class Optimizer {
 		for(IR_FieldDecl parameter : node.getArguments()){
 			allVarNames.add(parameter.getName());
 		}
+		for(IR_FieldDecl arg : node.getArguments()){
+			allVarNames.add(arg.getName());
+		}
 		processing.add(node.getChildren().get(0));
 		while (!processing.isEmpty()){
 			FlowNode currentNode = processing.remove(0);
@@ -296,7 +299,7 @@ public class Optimizer {
 				}
 			}
 		}
-		node.totalVisitReset();
+		node.resetVisit();
 		return allVarNames;
 	}
 	
@@ -898,10 +901,6 @@ public class Optimizer {
 		// TODO : What about putting these Vectors in a map from START --> Vector so that if we have multiple methods with different scopes,
 		// the variables don't spill across scopes? This is a good idea that will probably fix bugs. 
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
-		Set<String> allVars = new LinkedHashSet<String>();
-		for(START methodStart : startsForMethods){
-			allVars.addAll(getAllVarNamesInMethod(methodStart));
-		}
 		for(START methodStart : startsForMethods){
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
@@ -911,6 +910,7 @@ public class Optimizer {
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
+			Set<String> allVars = getAllVarNamesInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
