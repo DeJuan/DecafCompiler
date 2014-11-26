@@ -293,19 +293,19 @@ public class Optimizer {
 					}
 				}
 			}
-			if(currentNode instanceof Branch){
+			else if(currentNode instanceof Branch){
 				Branch bblock = (Branch)currentNode;
 				for (Var varia : getVarsFromExpression(bblock.getExpr())){
 					allVarNames.add(varia.getName());
 				}
 			}
-			if(currentNode instanceof START){
+			else if(currentNode instanceof START){
 				START sBlock = (START)currentNode;
 				for(IR_FieldDecl arg : sBlock.getArguments()){
 					allVarNames.add(arg.getName());
 				}
 			}
-			if(currentNode instanceof END){
+			else if(currentNode instanceof END){
 				END eBlock = (END)currentNode;
 				if(eBlock.getReturnExpression() != null){
 					for(Var varia : getVarsFromExpression(eBlock.getReturnExpression())){
@@ -918,8 +918,6 @@ public class Optimizer {
 	 * @return 
 	 */
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
-		// TODO : What about putting these Vectors in a map from START --> Vector so that if we have multiple methods with different scopes,
-		// the variables don't spill across scopes? This is a good idea that will probably fix bugs. 
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
 		for(START methodStart : startsForMethods){
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
@@ -1003,6 +1001,11 @@ public class Optimizer {
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
 					}
 					if(skipNode){
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
 						continue;
 					}
 					if(currentNode instanceof Codeblock){
@@ -1152,8 +1155,8 @@ public class Optimizer {
 				previousNode = currentNode;
 				}
 			}
-			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
 			liveStorage.put(methodStart, vectorStorageIN);
+			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
 		}
 		return liveStorage;
 	}
