@@ -894,11 +894,14 @@ public class Optimizer {
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
 	 */
-	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
-		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
-		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
-		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
+	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
+		// TODO : What about putting these Vectors in a map from START --> Vector so that if we have multiple methods with different scopes,
+		// the variables don't spill across scopes? This is a good idea that will probably fix bugs. 
+		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
 		for(START methodStart : startsForMethods){
+			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
+			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
+			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.resetVisit();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
@@ -927,7 +930,7 @@ public class Optimizer {
 			for(END initialNode : endNodes){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
-					ticksForRevisit.put(node, 0); //set up a ticker so we can see if we want to do revisits
+					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
 				}
 				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
 				if(initialNode.getReturnExpression() != null){
@@ -1123,14 +1126,15 @@ public class Optimizer {
 				}
 			}
 			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
+			liveStorage.put(methodStart, vectorStorageIN);
 		}
-		return vectorStorageIN;
+		return liveStorage;
 	}
 	
 	public ControlflowContext applyDCE(List<START> startsForMethods){
 		System.err.println("Now applying DCE.");
 		System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
-		Map<FlowNode, Bitvector> liveness = generateLivenessMap(startsForMethods);
+		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
 		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
@@ -1148,6 +1152,7 @@ public class Optimizer {
 					}
 				}
 			}
+			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
 			initialNode.resetVisit(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
