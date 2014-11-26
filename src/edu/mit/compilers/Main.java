@@ -279,13 +279,6 @@ class Main {
 							  startsForMethods.add(flowNodes.get(key));
 						  }
 						  ControlflowContext optimizeDCE = optimizer.applyDCE(startsForMethods);
-						  if (CLI.opts[2]) {
-							  // Register allocation
-							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
-							  ig.buildGraph();
-							  Coloring coloring = new Coloring(ig, 16);
-							  HashMap<GraphNode, Integer> assignments = coloring.run();
-						  }
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
                           optimizeDCE.printInstructions(ps);
                           ps.close();
