@@ -960,15 +960,19 @@ public class Optimizer {
 					boolean skipNode = false;
 					if(!needToReprocessFlag){
 						if(ticksForRevisit.get(currentNode).equals(0)){
-							System.err.println("The current node's IN has not changed since last processing. We will compute at most twice to be safe.");
+							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
 							ticksForRevisit.put(currentNode, 1);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(1)){
-							System.err.println("The current node's IN has not changed since last processing, and has been processed once. One more computation to be safe.");
+							System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
 							ticksForRevisit.put(currentNode, 2);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(2)){
-							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. No need to reprocess.");
+							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
+							ticksForRevisit.put(currentNode, 3);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
+							System.err.println("We have processed this node at least three times, and no changes have occurred to its IN. No further reprocessing is required.");
 							skipNode = true;
 						}
 					}
@@ -1138,6 +1142,7 @@ public class Optimizer {
 		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
+			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
@@ -1152,7 +1157,6 @@ public class Optimizer {
 					}
 				}
 			}
-			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
 			initialNode.resetVisit(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
