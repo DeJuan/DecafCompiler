@@ -14,8 +14,6 @@ import antlr.ASTFactory;
 import antlr.Token;
 import antlr.collections.AST;
 import edu.mit.compilers.ast.CommonASTWithLines;
-import edu.mit.compilers.codegen.Codegen;
-import edu.mit.compilers.codegen.CodegenContext;
 import edu.mit.compilers.controlflow.Assembler;
 import edu.mit.compilers.controlflow.Branch;
 import edu.mit.compilers.controlflow.Codeblock;
@@ -34,6 +32,7 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
+import edu.mit.regalloc.*;
 
 class Main {
 	
@@ -125,7 +124,7 @@ class Main {
   
   public static void main(String[] args) {
     try {
-      String[] optimizations = {"cse", "dce"};
+      String[] optimizations = {"cse", "dce", "regalloc"};
       CLI.parse(args, optimizations);
       InputStream inputStream = args.length == 0 ?
           System.in : new java.io.FileInputStream(CLI.infile);
@@ -209,9 +208,11 @@ class Main {
 			    	  if (CLI.outfile != null) {
 			    		  outFile = CLI.outfile;
 			    	  }
+			    	  boolean optimize = false;
 			    	  for(boolean optEnabled : CLI.opts){
 			    		  if(optEnabled){
-			    			  System.err.println(optEnabled);
+			    			  optimize = true;
+			    			  break;
 			    		  }
 			    	  }
 			    	  if (CLI.opts[0]) {
@@ -248,8 +249,8 @@ class Main {
                           optimizeCSE.printInstructions(ps);
                           ps.close();
 			    	  } 
-			    	  else if (CLI.opts[1]){
-			    		  //Dead Code Elimination is turned on, CSE is not. 
+			    	  if (CLI.opts[1]){
+			    		  //Dead Code Elimination or register allocation is turned on. Either one needs liveness analysis.
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
@@ -278,11 +279,18 @@ class Main {
 							  startsForMethods.add(flowNodes.get(key));
 						  }
 						  ControlflowContext optimizeDCE = optimizer.applyDCE(startsForMethods);
+						  if (CLI.opts[2]) {
+							  // Register allocation
+							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
+							  ig.buildGraph();
+							  Coloring coloring = new Coloring(ig, 16);
+							  HashMap<GraphNode, Integer> assignments = coloring.run();
+						  }
 						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
                           optimizeDCE.printInstructions(ps);
                           ps.close();
 			    	  }
-			    	  else {
+			    	  if (!optimize) {
 			    		  // =============== DIRECT TO ASSEMBLY =================
 			    		  //CodegenContext context = new CodegenContext();
 			    		  //Codegen.generateProgram(root, context);
