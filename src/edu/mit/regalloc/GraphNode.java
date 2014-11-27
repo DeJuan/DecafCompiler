@@ -1,5 +1,6 @@
 package edu.mit.regalloc;
 
+import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.Statement;
 
@@ -8,6 +9,8 @@ public class GraphNode {
 	String varName;
 	Boolean isGlobal = false;
 	Boolean isParam = false;
+	
+	Regs register = null;
 	
 	public GraphNode(Statement st) {
 		this.varName = "";
@@ -26,5 +29,18 @@ public class GraphNode {
 		this.isGlobal = isGlobal;
 		this.isParam = isParam;
 	}
+	
+	public boolean hasAssignedRegister() {
+		return (register != null);
+	}
+	
+	public Regs getRegister() {
+		return register;
+	}
+	
+	public void setRegister(Regs register) {
+		this.register = register;
+	}
+	
 
 }

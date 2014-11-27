@@ -36,8 +36,8 @@ public class InterferenceGraph {
 	private List<GraphNode> nodes = new ArrayList<GraphNode>();
 	private HashMap<String, Stack<GraphNode>> varToNodes = new HashMap<String, Stack<GraphNode>>();
 	
-	private HashMap<GraphNode, Set<GraphNode>> adjList;
-	private HashMap<Set<GraphNode>, Boolean> bitMatrix;
+	private HashMap<GraphNode, Set<GraphNode>> adjList = new HashMap<GraphNode, Set<GraphNode>>();
+	private HashSet<HashSet<GraphNode>> bitMatrix = new HashSet<HashSet<GraphNode>>();
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;
@@ -296,13 +296,13 @@ public class InterferenceGraph {
 	
 	private void addEdge(GraphNode from, GraphNode to) {
 		adjList.get(from).add(to);
-		bitMatrix.put(new HashSet<GraphNode>(Arrays.asList(from, to)), true);
+		bitMatrix.add(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
 	private void removeEdge(GraphNode from, GraphNode to) {
 		Set<GraphNode> nodeList = adjList.get(from);
 		nodeList.remove(to);
-		bitMatrix.remove(Arrays.asList(from, to));
+		bitMatrix.remove(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
 	private void addEdges(GraphNode node, Bitvector liveMap) {
@@ -312,7 +312,8 @@ public class InterferenceGraph {
 				varNode = varToNodes.get(var).firstElement();
 			} else {
 				System.out.println("MISSING: " + var);
-				throw new RuntimeException("A live variable is not found in the map. What happened??");
+				//throw new RuntimeException("A live variable is not found in the map. What happened??");
+				varNode = new GraphNode("temp");
 			}
 			addEdge(node, varNode);
 		}
@@ -349,6 +350,7 @@ public class InterferenceGraph {
 						Assignment assignment = (Assignment) st;
 						GraphNode node = new GraphNode(assignment);
 						String varName = assignment.getDestVar().getName();
+						System.out.println(varName);
 						if (varToNodes.containsKey(varName)) {
 							varToNodes.get(varName).push(node);
 						} else {
@@ -358,6 +360,9 @@ public class InterferenceGraph {
 						}
 						nodes.add(node);
 						addEdges(node, liveMap);
+					} else if (st instanceof MethodCallStatement) {
+						MethodCallStatement mcs = (MethodCallStatement) st;
+						// TODO: Deal with method calls
 					}
 				}
 			}
@@ -370,6 +375,14 @@ public class InterferenceGraph {
 	
 	public int getNumEdges(GraphNode node) {
 		return adjList.get(node).size();
+	}
+	
+	public HashMap<GraphNode, Set<GraphNode>> getAdjList() {
+		return adjList;
+	}
+	
+	public HashSet<HashSet<GraphNode>> getBitMatrix() {
+		return bitMatrix;
 	}
 	
 	

@@ -261,8 +261,9 @@ class Main {
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
 							  ig.generateLivenessMap();
 							  ig.buildGraph();
-							  //Coloring coloring = new Coloring(ig, 16);
-							  //HashMap<GraphNode, Integer> assignments = coloring.run();
+							  Coloring coloring = new Coloring(ig, 8);
+							  List<GraphNode> assignments = coloring.run();
+							  List<GraphNode> spillNodes = coloring.getSpilledNodes();
 						  }
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
