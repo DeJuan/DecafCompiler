@@ -6,6 +6,8 @@ import edu.mit.compilers.controlflow.Statement;
 public class GraphNode {
 	
 	String varName;
+	Boolean isGlobal = false;
+	Boolean isParam = false;
 	
 	public GraphNode(Statement st) {
 		this.varName = "";
@@ -17,6 +19,12 @@ public class GraphNode {
 	
 	public GraphNode(String varName) {
 		this.varName = varName;
+	}
+	
+	public GraphNode(String varName, Boolean isGlobal, Boolean isParam) {
+		this.varName = varName;
+		this.isGlobal = isGlobal;
+		this.isParam = isParam;
 	}
 
 }

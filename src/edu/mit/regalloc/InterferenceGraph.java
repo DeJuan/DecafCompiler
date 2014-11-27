@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.Bitvector;
@@ -31,10 +33,11 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 public class InterferenceGraph {
 	
 	private Optimizer optimizer;
-	private List<GraphNode> nodes;
+	private List<GraphNode> nodes = new ArrayList<GraphNode>();
+	private HashMap<String, Stack<GraphNode>> varToNodes = new HashMap<String, Stack<GraphNode>>();
 	
-	private HashMap<GraphNode, List<GraphNode>> adjList;
-	private HashMap<List<GraphNode>, Boolean> bitMatrix;
+	private HashMap<GraphNode, Set<GraphNode>> adjList;
+	private HashMap<Set<GraphNode>, Boolean> bitMatrix;
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;
@@ -50,21 +53,19 @@ public class InterferenceGraph {
 		this.optimizer = new Optimizer(context, callouts, globals, flowNodes);
 	}
 	
-	private void addEdge(GraphNode from, GraphNode to) {
-		adjList.get(from).add(to);
-		bitMatrix.put(Arrays.asList(from, to), true);
+	private void setupGlobals() {
+		for(IR_FieldDecl global : globalList) {
+			Stack<GraphNode> graphNodes = new Stack<GraphNode>();
+			graphNodes.push(new GraphNode(global.getName(), true, false));
+			varToNodes.put(global.getName(), graphNodes);
+		}
 	}
 	
-	private void removeEdge(GraphNode from, GraphNode to) {
-		List<GraphNode> nodeList = adjList.get(from);
-		nodeList.remove(to);
-		bitMatrix.remove(Arrays.asList(from, to));
-	}
-	
-	private void addEdges(GraphNode node, Bitvector liveMap) {
-		for (String var : liveMap.getVectorMap().keySet()) {
-			GraphNode varNode = new GraphNode(var);
-			addEdge(node, varNode);
+	private void setupParams(START node) {
+		for(IR_FieldDecl parameter : node.getArguments()){
+			Stack<GraphNode> graphNodes = new Stack<GraphNode>();
+			graphNodes.push(new GraphNode(parameter.getName(), false, true));
+			varToNodes.put(parameter.getName(), graphNodes);
 		}
 	}
 	
@@ -77,14 +78,14 @@ public class InterferenceGraph {
 	 * Currently does NOT handle dead declarations (there's a justification for that, actually)
 	 * and has not yet been tested. 
 	 * 
-	 * @param startsForMethods : List of START nodes for the given methods in the program. 
+	 * @param 
 	 * @return 
 	 */
-	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
+	public Map<FlowNode, Bitvector> generateLivenessMap(){
 		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
-		for(START methodStart : startsForMethods){
+		for(START methodStart : flowNodes.values()){
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.resetVisit();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
@@ -223,7 +224,7 @@ public class InterferenceGraph {
 									System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
 								}
 							}
-							currentState.setLiveMap(liveVector);
+							currentState.setLiveMap(liveVector.copyBitvector());
 						}
 						Collections.reverse(statementList); //We reversed the list to iterate through it backwards, so fix it before we move on!
 					}
@@ -234,6 +235,7 @@ public class InterferenceGraph {
 							liveVector.setVectorVal(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
 							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
 						}
+						cBranch.setLiveMap(liveVector.copyBitvector());
 					}
 
 					else if(currentNode instanceof NoOp){ //split point. No expr here, so don't have to scan it.
@@ -246,7 +248,8 @@ public class InterferenceGraph {
 						for (IR_FieldDecl arg : args){
 							liveVector.setVectorVal(arg.getName(), 1); 
 							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
-						}	
+						}
+						cStart.setLiveMap(liveVector.copyBitvector());
 					}
 
 					else if(currentNode instanceof END){
@@ -257,6 +260,7 @@ public class InterferenceGraph {
 								System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
 							}
 						}
+						cEnd.setLiveMap(liveVector.copyBitvector());
 					}
 					
 					boolean changed;
@@ -290,8 +294,34 @@ public class InterferenceGraph {
 		return vectorStorageIN;
 	}
 	
+	private void addEdge(GraphNode from, GraphNode to) {
+		adjList.get(from).add(to);
+		bitMatrix.put(new HashSet<GraphNode>(Arrays.asList(from, to)), true);
+	}
+	
+	private void removeEdge(GraphNode from, GraphNode to) {
+		Set<GraphNode> nodeList = adjList.get(from);
+		nodeList.remove(to);
+		bitMatrix.remove(Arrays.asList(from, to));
+	}
+	
+	private void addEdges(GraphNode node, Bitvector liveMap) {
+		for (String var : liveMap.getVectorMap().keySet()) {
+			GraphNode varNode = null;
+			if (varToNodes.containsKey(var)) {
+				varNode = varToNodes.get(var).firstElement();
+			} else {
+				System.out.println("MISSING: " + var);
+				throw new RuntimeException("A live variable is not found in the map. What happened??");
+			}
+			addEdge(node, varNode);
+		}
+	}
+	
 	public void buildGraph() {
+		setupGlobals();
 		for (START initialNode : flowNodes.values()) {
+			setupParams(initialNode);
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
@@ -316,7 +346,16 @@ public class InterferenceGraph {
 					Statement st = statementIter.next();
 					Bitvector liveMap = st.getLiveMap();
 					if (st instanceof Assignment){
-						GraphNode node = new GraphNode((Assignment) st);
+						Assignment assignment = (Assignment) st;
+						GraphNode node = new GraphNode(assignment);
+						String varName = assignment.getDestVar().getName();
+						if (varToNodes.containsKey(varName)) {
+							varToNodes.get(varName).push(node);
+						} else {
+							Stack<GraphNode> varNodes = new Stack<GraphNode>();
+							varNodes.push(node);
+							varToNodes.put(varName, varNodes);
+						}
 						nodes.add(node);
 						addEdges(node, liveMap);
 					}

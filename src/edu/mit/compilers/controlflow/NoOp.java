@@ -12,8 +12,6 @@ import java.util.List;
 public class NoOp extends FlowNode {
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
-	private boolean visited = false;
-	private String label;
 	
 	public NoOp(){}
 
@@ -72,14 +70,6 @@ public class NoOp extends FlowNode {
 	}
 	
 	/**
-	 * Traverse this FlowNode and mark visited as true.
-	 */
-	@Override
-	public void visit() {
-		visited = true;
-	}
-	
-	/**
 	 * Reset the visited flag of this FlowNode and its children.
 	 * 
 	 * Note: It will only reset the child if the child has been visited,
@@ -96,27 +86,5 @@ public class NoOp extends FlowNode {
 			}
 		}
 	}
-	
-	/**
-	 * Returns whether or not this FlowNode has been traversed already.
-	 */
-	@Override
-	public boolean visited() {
-		return visited;
-	}
-	
-	@Override
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * SHOULD ONLY BE CALLED ONCE
-     */
-    @Override
-    public void setLabel(String label) {
-        // Enforce called once?
-        this.label = label;
-    }
 
 }

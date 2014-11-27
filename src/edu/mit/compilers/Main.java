@@ -259,7 +259,8 @@ class Main {
 				    	  if (CLI.opts[2]) {
 							  // Register allocation
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
-							  //ig.buildGraph();
+							  ig.generateLivenessMap();
+							  ig.buildGraph();
 							  //Coloring coloring = new Coloring(ig, 16);
 							  //HashMap<GraphNode, Integer> assignments = coloring.run();
 						  }

@@ -16,8 +16,6 @@ public class START extends FlowNode {
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private List<IR_FieldDecl> arguments = new ArrayList<IR_FieldDecl>();
 	private Type retType;
-	private boolean visited = false;
-	private String label;
 	
 	/**
 	 * This constructor assumes you want a blank start that will be updated later. 
@@ -92,13 +90,6 @@ public class START extends FlowNode {
 		return retType;
 	}
 	
-	/**
-	 * Traverse this FlowNode and mark visited as true.
-	 */
-	@Override
-	public void visit() {
-		visited = true;
-	}
 	
 	/**
 	 * Reset the visited flag of this FlowNode and its immediate children.
@@ -139,27 +130,5 @@ public class START extends FlowNode {
 			}
 		}
 	}
-	
-	/**
-	 * Returns whether or not this FlowNode has been traversed already.
-	 */
-	@Override
-	public boolean visited() {
-		return visited;
-	}
-	
-	@Override
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * SHOULD ONLY BE CALLED ONCE
-     */
-    @Override
-    public void setLabel(String label) {
-        // Enforce called once?
-        this.label = label;
-    }
 	
 }

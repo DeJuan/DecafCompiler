@@ -15,8 +15,6 @@ public class Branch extends FlowNode {
 	private FlowNode falseBranch;
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private BranchType type;
-	private boolean visited = false;
-	private String label;
 	private boolean isLimitedWhile;
 	
 	public enum BranchType {
@@ -169,14 +167,6 @@ public class Branch extends FlowNode {
 	}
 	
 	/**
-	 * Traverse this FlowNode and mark visited as true.
-	 */
-	@Override
-	public void visit() {
-		visited = true;
-	}
-	
-	/**
 	 * Reset the visited flag of this FlowNode and its children.
 	 * 
 	 * Note: It will only reset the child if the child has been visited,
@@ -193,27 +183,4 @@ public class Branch extends FlowNode {
 		    falseBranch.resetVisit();
 		}
 	}
-	
-	/**
-	 * Returns whether or not this FlowNode has been traversed already.
-	 */
-	@Override
-	public boolean visited() {
-		return visited;
-	}
-
-    @Override
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * SHOULD ONLY BE CALLED ONCE
-     */
-    @Override
-    public void setLabel(String label) {
-        // TODO Enforce called once
-        this.label = label;
-    }
-	
 }
