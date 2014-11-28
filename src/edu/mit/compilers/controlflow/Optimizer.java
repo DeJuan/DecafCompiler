@@ -1136,6 +1136,7 @@ public class Optimizer {
                         System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
                         System.err.println("processing of this node will be delayed until its parents are processed.");
                         currentNode.resetVisit();
+                        thisNodeContainer = MapContainer.makeEmptyContainer();
                         reset = true;
                     } else {
                         if (thisNodeContainer == null) {
