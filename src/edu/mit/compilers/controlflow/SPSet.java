@@ -641,6 +641,8 @@ public class SPSet {
             return new DivExpr(lhs, operator, rhs);
         } else if (operator == Ops.MOD) {
             return new ModExpr(lhs, operator, rhs);
+        } else if (operator == Ops.EQUALS || operator == Ops.NOT_EQUALS) {
+            return new EqExpr(lhs, operator, rhs);
         } else {
             throw new RuntimeException("maddie missed a case somewhere - shouldn't join " + operator);
         }
