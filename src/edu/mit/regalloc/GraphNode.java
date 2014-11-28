@@ -12,9 +12,8 @@ public class GraphNode {
 	
 	Regs register = null;
 	
-	public GraphNode(Statement st) {
-		this.varName = "";
-	}
+	Boolean removed = false; // used to represent that a node has been removed in coloring
+	Boolean spill = false;
 	
 	public GraphNode(Assignment assign) {
 		this.varName = assign.getDestVar().getName();
@@ -30,6 +29,15 @@ public class GraphNode {
 		this.isParam = isParam;
 	}
 	
+	public GraphNode(Statement st) {
+		if (st instanceof Assignment) {
+			this.varName = ((Assignment) st).getDestVar().getName();
+		} else {
+			// might not need a GraphNode for non-Assignment statements
+			this.varName = "";
+		}
+	}
+	
 	public boolean hasAssignedRegister() {
 		return (register != null);
 	}
@@ -40,6 +48,30 @@ public class GraphNode {
 	
 	public void setRegister(Regs register) {
 		this.register = register;
+	}
+	
+	public void markAsRemoved() {
+		this.removed = true;
+	}
+	
+	public void unmarkAsRemoved() {
+		this.removed = false;
+	}
+	
+	public Boolean isRemoved() {
+		return removed;
+	}
+	
+	public void spill() {
+		this.spill = true;
+	}
+	
+	public void unspill() {
+		this.spill = false;
+	}
+	
+	public Boolean isSpill() {
+		return this.spill;
 	}
 	
 

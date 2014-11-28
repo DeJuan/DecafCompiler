@@ -4,12 +4,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.mit.regalloc.GraphNode;
+
 /**
  * This class is our representation of branches in control flow. 
  * @author DeJuan
  *
  */
 public class Branch extends FlowNode {
+	protected Bitvector liveMap;
+	protected GraphNode node;
+	
 	private Expression expr;
 	private FlowNode trueBranch;
 	private FlowNode falseBranch;
@@ -182,5 +187,21 @@ public class Branch extends FlowNode {
 		if (falseBranch != null) {
 		    falseBranch.resetVisit();
 		}
+	}
+	
+	public Bitvector getLiveMap() {
+		return liveMap;
+	}
+	
+	public void setLiveMap(Bitvector bv) {
+		this.liveMap = bv;
+	}
+	
+	public void setNode(GraphNode node) {
+		this.node = node;
+	}
+	
+	public GraphNode getNode() {
+		return node;
 	}
 }

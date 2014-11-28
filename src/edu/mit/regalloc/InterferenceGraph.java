@@ -295,7 +295,11 @@ public class InterferenceGraph {
 	}
 	
 	private void addEdge(GraphNode from, GraphNode to) {
-		adjList.get(from).add(to);
+		if (!adjList.containsKey(from)) {
+			adjList.put(from, new HashSet<GraphNode>(Arrays.asList(to)));
+		} else {
+			adjList.get(from).add(to);
+		}
 		bitMatrix.add(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
@@ -305,17 +309,31 @@ public class InterferenceGraph {
 		bitMatrix.remove(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
-	private void addEdges(GraphNode node, Bitvector liveMap) {
+	private List<String> getLiveVars(Bitvector liveMap) {
+		List<String> liveVars = new ArrayList<String>(); 
 		for (String var : liveMap.getVectorMap().keySet()) {
+			if (liveMap.get(var) == 1) {
+				liveVars.add(var);
+			}
+		}
+		return liveVars;
+	}
+	
+	private void addEdges(GraphNode node, Bitvector liveMap) {
+		List<String> liveVars = getLiveVars(liveMap);
+		for (String var : liveVars) {
 			GraphNode varNode = null;
 			if (varToNodes.containsKey(var)) {
 				varNode = varToNodes.get(var).firstElement();
 			} else {
 				System.out.println("MISSING: " + var);
-				//throw new RuntimeException("A live variable is not found in the map. What happened??");
-				varNode = new GraphNode("temp");
+				throw new RuntimeException("A live variable is not found in the map. What happened??");
+				//varNode = new GraphNode("temp");
 			}
 			addEdge(node, varNode);
+		}
+		if (!adjList.containsKey(node)) {
+			adjList.put(node, null);
 		}
 	}
 	
@@ -349,8 +367,9 @@ public class InterferenceGraph {
 					if (st instanceof Assignment){
 						Assignment assignment = (Assignment) st;
 						GraphNode node = new GraphNode(assignment);
+						assignment.setNode(node);
 						String varName = assignment.getDestVar().getName();
-						System.out.println(varName);
+						System.out.println("Variable being assigned: " + varName);
 						if (varToNodes.containsKey(varName)) {
 							varToNodes.get(varName).push(node);
 						} else {
@@ -374,7 +393,14 @@ public class InterferenceGraph {
 	}
 	
 	public int getNumEdges(GraphNode node) {
-		return adjList.get(node).size();
+		if (adjList.get(node) == null)
+			return 0;
+		int count = 0;
+		for (GraphNode curNode : adjList.get(node)) {
+			if (!curNode.isRemoved())
+				count++;
+		}
+		return count;
 	}
 	
 	public HashMap<GraphNode, Set<GraphNode>> getAdjList() {
@@ -384,7 +410,5 @@ public class InterferenceGraph {
 	public HashSet<HashSet<GraphNode>> getBitMatrix() {
 		return bitMatrix;
 	}
-	
-	
 
 }

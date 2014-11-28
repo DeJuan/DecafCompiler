@@ -12,13 +12,11 @@ import edu.mit.compilers.codegen.Regs;
 public class Coloring {
 	
 	InterferenceGraph graph;
-	List<GraphNode> spillList;
-	List<GraphNode> workList;
 	
-	Stack<GraphNode> removedNodes;
-	Stack<GraphNode> spillNodes;
+	Stack<GraphNode> removedNodes = new Stack<GraphNode>();
+	Stack<GraphNode> spillNodes = new Stack<GraphNode>();
 	
-	HashMap<GraphNode, Double> nodeToSpillCost;
+	HashMap<GraphNode, Double> nodeToSpillCost = new HashMap<GraphNode, Double>();
 	
 	int k; // maximum number of colors
 	
@@ -29,8 +27,10 @@ public class Coloring {
 	
 	private Set<Regs> getAssignedRegisters(Set<GraphNode> neighbors) {
 		HashSet<Regs> regs = new HashSet<Regs>();
+		if (neighbors == null)
+			return regs;
 		for (GraphNode node : neighbors) {
-			if (node.hasAssignedRegister()) {
+			if (!node.isRemoved() && node.hasAssignedRegister()) {
 				regs.add(node.getRegister());
 			}
 		}
@@ -38,7 +38,7 @@ public class Coloring {
 	}
 	
 	private Boolean isGenPurposeReg(Regs reg) {
-		return reg.toString().substring(1).matches("\\d+");
+		return reg.toString().substring(2).matches("\\d+");
 	}
 	
 	private Regs assignRegister(GraphNode node, Set<Regs> assignedRegisters) {
@@ -58,9 +58,13 @@ public class Coloring {
 			Regs assignedRegister = assignRegister(node, asssignedRegisters);
 			if (assignedRegister == null) {
 				// cannot assign an empty register; must spill instead.
+				System.out.println("Spilling during assigning colors");
 				spillNodes.push(node);
+				node.spill();
 			} else {
+				System.out.println("Node assigned to register: " + assignedRegister.toString());
 				node.setRegister(assignedRegister);
+				node.unmarkAsRemoved();
 			}
 		}
 	}
@@ -73,6 +77,7 @@ public class Coloring {
 			GraphNode node = iterator.next();
 			if (graph.getNumEdges(node) < k) {
 				removedNodes.push(node);
+				node.markAsRemoved();
 				iterator.remove();
 				changed = true;
 			}
@@ -104,8 +109,11 @@ public class Coloring {
 			}
 			if (nodesToProcess.size() > 0) {
 				// must spill one node, then try again.
+				System.out.println("Spilling");
 				GraphNode nodeToSpill = getMinSpillCost(nodesToProcess);
 				spillNodes.push(nodeToSpill);
+				nodeToSpill.markAsRemoved();
+				nodeToSpill.spill();
 				nodesToProcess.remove(nodeToSpill);
 				changed = true;
 			}
@@ -115,7 +123,7 @@ public class Coloring {
 	}
 	
 	public List<GraphNode> getSpilledNodes() {
-		return spillList;
+		return spillNodes;
 	}
 	
 	public double calcSpillCost(GraphNode node) {
