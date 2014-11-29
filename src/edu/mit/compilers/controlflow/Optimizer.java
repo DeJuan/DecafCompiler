@@ -999,6 +999,9 @@ public class Optimizer {
 			initialNode.resetVisit(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
+				if (liveCheck == null){
+					System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
+				}
 				List<Statement> statementList = cblock.getStatements();
 				Collections.reverse(statementList);
 				Iterator<Statement> statementIter = statementList.iterator();
