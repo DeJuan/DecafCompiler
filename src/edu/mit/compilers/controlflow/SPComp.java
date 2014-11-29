@@ -11,6 +11,7 @@ public class SPComp {
     private Ops operator;
     private SPSet lhs;
     private SPSet rhs;
+    Boolean containsMethodCalls;
     
     public SPComp(CompExpr expr) {
         this.operator = expr.getOperator();
@@ -22,6 +23,13 @@ public class SPComp {
         this.operator = operator;
         this.lhs = lhs;
         this.rhs = rhs;
+    }
+    
+    public boolean containsMethodCalls(){
+        if (containsMethodCalls == null) {
+            containsMethodCalls = lhs.containsMethodCalls() || rhs.containsMethodCalls();
+        }
+        return containsMethodCalls;
     }
     
     public Ops getOperator(){

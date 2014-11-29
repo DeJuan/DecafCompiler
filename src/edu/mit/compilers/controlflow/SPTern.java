@@ -12,6 +12,7 @@ public class SPTern {
     SPSet cond;
     SPSet trueBranch;
     SPSet falseBranch;
+    Boolean containsMethodCalls;
     
     public SPTern(SPSet cond, SPSet trueBranch, SPSet falseBranch) {
         this.cond = cond;
@@ -68,6 +69,13 @@ public class SPTern {
     
     public SPSet getFalseBranch(){
         return falseBranch;
+    }
+    
+    public boolean containsMethodCalls(){
+        if (containsMethodCalls == null) {
+          containsMethodCalls = cond.containsMethodCalls() || trueBranch.containsMethodCalls() || falseBranch.containsMethodCalls();
+        }
+        return containsMethodCalls;
     }
     
     @Override

@@ -1050,6 +1050,40 @@ public class Optimizer {
             throw new RuntimeException("What the actual hell are you doing - don't use this method");
         }
     }
+    
+    private void resetGlobals(Map<ValueID, List<Var>> valToVar, Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents) {
+        for (IR_FieldDecl glob : globalList) {
+            Descriptor globDesc = new Descriptor(glob);
+            globDesc.setLocation(new LocLabel(glob.getName()));
+            ValueID newGlobID = new ValueID();
+            List<Var> varList = new ArrayList<Var>();
+            varList.add(new Var(globDesc, null));
+            ValueID oldID = varToVal.get(glob);
+            if (glob.getLength() != null) {
+                varToVal.put(glob, newGlobID);
+                if (oldID != null) {
+                    valToVar.get(oldID).remove(glob);
+                }
+                valToVar.put(newGlobID, varList);
+            } else {
+                varToValForArrayComponents.put(glob, new HashMap<SPSet, ValueID>());
+            }
+        }
+    }
+
+    private void killGlobals(Map<ValueID, List<Var>> valToVar, Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents) {
+        for (IR_FieldDecl glob : globalList) {
+            ValueID oldID = varToVal.get(glob);
+            if (glob.getLength() != null) {
+                varToVal.remove(glob);
+                if (oldID != null) {
+                    valToVar.get(oldID).remove(glob);
+                }
+            } else {
+                varToValForArrayComponents.put(glob, new HashMap<SPSet, ValueID>());
+            }
+        }
+    }
 
     /**
      * This is the method you call to do actual CSE. It takes in a List of
@@ -1097,6 +1131,7 @@ public class Optimizer {
             Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
             Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
             Map<FlowNode, MapContainer> containerForNode = new HashMap<FlowNode, MapContainer>();
+            resetGlobals(valToVar, varToVal, varToValForArrayComponents);
             for(int i = 0; i < initialNode.getArguments().size(); i++){
                 IR_FieldDecl arg = initialNode.getArguments().get(i);
                 Descriptor argd = new Descriptor(arg);
@@ -1184,6 +1219,9 @@ public class Optimizer {
                             for (Map.Entry<IR_FieldDecl, ValueID> entry: varToVal.entrySet()) {
                                 System.err.println(entry.getKey().getName() + " MAPS TO " + entry.getValue());
                             }
+                            if ((new SPSet(assignExprValue)).containsMethodCalls()) {
+                                killGlobals(valToVar, varToVal, varToValForArrayComponents);
+                            }
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
@@ -1257,6 +1295,9 @@ public class Optimizer {
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
                                 globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
                             }
+                            if (rhs.containsMethodCalls()) {
+                                resetGlobals(valToVar, varToVal, varToValForArrayComponents);
+                            }
                             System.err.println("============Current Assignment processing complete. Moving to next Statement.=================");
                         }
 
@@ -1287,6 +1328,7 @@ public class Optimizer {
                                 }
                             }
                             newCodeblock.addStatement(mcs);
+                            resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                             
                         } else{
                             System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
