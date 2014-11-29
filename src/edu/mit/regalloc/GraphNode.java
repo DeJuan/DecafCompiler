@@ -38,6 +38,10 @@ public class GraphNode {
 		}
 	}
 	
+	public String getVarName() {
+		return this.varName;
+	}
+	
 	public boolean hasAssignedRegister() {
 		return (register != null);
 	}

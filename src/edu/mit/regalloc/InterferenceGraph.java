@@ -34,7 +34,7 @@ public class InterferenceGraph {
 	
 	private Optimizer optimizer;
 	private List<GraphNode> nodes = new ArrayList<GraphNode>();
-	private HashMap<String, Stack<GraphNode>> varToNodes = new HashMap<String, Stack<GraphNode>>();
+	private HashMap<String, Stack<GraphNode>> varToNodes;
 	
 	private HashMap<GraphNode, Set<GraphNode>> adjList = new HashMap<GraphNode, Set<GraphNode>>();
 	private HashSet<HashSet<GraphNode>> bitMatrix = new HashSet<HashSet<GraphNode>>();
@@ -54,6 +54,7 @@ public class InterferenceGraph {
 	}
 	
 	private void setupGlobals() {
+		varToNodes = new HashMap<String, Stack<GraphNode>>();
 		for(IR_FieldDecl global : globalList) {
 			Stack<GraphNode> graphNodes = new Stack<GraphNode>();
 			graphNodes.push(new GraphNode(global.getName(), true, false));
@@ -62,6 +63,7 @@ public class InterferenceGraph {
 	}
 	
 	private void setupParams(START node) {
+		setupGlobals();
 		for(IR_FieldDecl parameter : node.getArguments()){
 			Stack<GraphNode> graphNodes = new Stack<GraphNode>();
 			graphNodes.push(new GraphNode(parameter.getName(), false, true));
@@ -300,6 +302,12 @@ public class InterferenceGraph {
 		} else {
 			adjList.get(from).add(to);
 		}
+		// Add reverse
+		if (!adjList.containsKey(to)) {
+			adjList.put(to, new HashSet<GraphNode>(Arrays.asList(from)));
+		} else {
+			adjList.get(to).add(from);
+		}
 		bitMatrix.add(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
@@ -321,24 +329,30 @@ public class InterferenceGraph {
 	
 	private void addEdges(GraphNode node, Bitvector liveMap) {
 		List<String> liveVars = getLiveVars(liveMap);
+		String curVar = node.getVarName();
+		System.out.println("live vars: " + liveVars);
 		for (String var : liveVars) {
 			GraphNode varNode = null;
 			if (varToNodes.containsKey(var)) {
-				varNode = varToNodes.get(var).firstElement();
+				if (var.equals(curVar)) {
+					// get second to last element (since last element is the current node)
+					// TODO: Rewriting to same var can be assigned the same register
+					System.out.println("Same variable! VarToNodes has size: " + varToNodes.get(var).size());
+					varNode = varToNodes.get(var).get(varToNodes.get(var).size()-2); 
+				} else {
+					varNode = varToNodes.get(var).lastElement();
+				}
 			} else {
-				System.out.println("MISSING: " + var);
-				throw new RuntimeException("A live variable is not found in the map. What happened??");
-				//varNode = new GraphNode("temp");
+				throw new RuntimeException("The live variable " + var + " is not found in the map. What happened??");
 			}
 			addEdge(node, varNode);
 		}
 		if (!adjList.containsKey(node)) {
-			adjList.put(node, null);
+			adjList.put(node, new HashSet<GraphNode>());
 		}
 	}
 	
 	public void buildGraph() {
-		setupGlobals();
 		for (START initialNode : flowNodes.values()) {
 			setupParams(initialNode);
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
@@ -379,9 +393,6 @@ public class InterferenceGraph {
 						}
 						nodes.add(node);
 						addEdges(node, liveMap);
-					} else if (st instanceof MethodCallStatement) {
-						MethodCallStatement mcs = (MethodCallStatement) st;
-						// TODO: Deal with method calls
 					}
 				}
 			}
@@ -393,7 +404,7 @@ public class InterferenceGraph {
 	}
 	
 	public int getNumEdges(GraphNode node) {
-		if (adjList.get(node) == null)
+		if (adjList.get(node).size() == 0)
 			return 0;
 		int count = 0;
 		for (GraphNode curNode : adjList.get(node)) {

@@ -27,9 +27,10 @@ public class Coloring {
 	
 	private Set<Regs> getAssignedRegisters(Set<GraphNode> neighbors) {
 		HashSet<Regs> regs = new HashSet<Regs>();
-		if (neighbors == null)
+		if (neighbors.size() == 0)
 			return regs;
 		for (GraphNode node : neighbors) {
+			System.out.println("Register: " + node.getRegister());
 			if (!node.isRemoved() && node.hasAssignedRegister()) {
 				regs.add(node.getRegister());
 			}
@@ -53,8 +54,11 @@ public class Coloring {
 	public void assignColors() {
 		while (!removedNodes.empty()) {
 			GraphNode node = removedNodes.pop();
+			System.out.println("Variable: " + node.getVarName());
 			Set<GraphNode> neighbors = graph.getAdjList().get(node);
+			System.out.println("Neighbors size: " + neighbors.size());
 			Set<Regs> asssignedRegisters = getAssignedRegisters(neighbors);
+			System.out.println("Assigned registers: " + asssignedRegisters);
 			Regs assignedRegister = assignRegister(node, asssignedRegisters);
 			if (assignedRegister == null) {
 				// cannot assign an empty register; must spill instead.
