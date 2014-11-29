@@ -59,9 +59,4 @@ public class Assignment extends Statement {
 		return StatementType.ASSIGNMENT;
 	}
 
-	@Override
-	public Bitvector getLiveMap() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

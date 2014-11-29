@@ -31,11 +31,5 @@ public class MethodCallStatement extends Statement {
 	public MethodCall getMethodCall(){
 		return this.method;
 	}
-
-	@Override
-	public Bitvector getLiveMap() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
 }

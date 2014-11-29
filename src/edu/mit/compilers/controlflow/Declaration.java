@@ -40,11 +40,4 @@ public class Declaration extends Statement {
 		return fieldDecl.getName();
 	}
 
-
-	@Override
-	public Bitvector getLiveMap() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

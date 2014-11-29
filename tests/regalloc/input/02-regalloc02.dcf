@@ -1,0 +1,17 @@
+callout printf;
+int get_int ( int x ) {
+  return x;
+}
+void main ( ) {
+  int a;
+  a = 1;
+  printf("%d ", a);
+  a = a + 1;
+  printf("%d ", a);
+  a = a + 1;
+  printf("%d ", a);
+  a = a + 2;
+  printf("%d ", a);
+  a = a + 3;
+  printf("%d ", a);
+}
