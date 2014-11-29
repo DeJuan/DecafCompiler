@@ -959,6 +959,12 @@ public class Optimizer {
 						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
 					}
 				}
+				for (IR_FieldDecl global : globalList){
+					liveVector.setVectorVal(global.getName(), 1);
+				}
+				for(IR_FieldDecl argument : methodStart.getArguments()){
+					liveVector.setVectorVal(argument.getName(), 1);
+				}
 				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
 				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
 				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
