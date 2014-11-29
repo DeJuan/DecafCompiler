@@ -96,8 +96,6 @@ public class SPSet {
         	if(((Var) expr).getValueID() == null){
         		throw new RuntimeException("valueID must be set in advance");
         	    }
-        	//System.err.printf("SPSet currently being constructed for a Var. The var is %s." + System.getProperty("line.separator"), ((Var)expr).getName()); throws Exception
-        	System.err.println("SPSet currently being constructed for a Var.");
             varSet.add(((Var) expr).getValueID());
         } else if (expr instanceof Ternary) {
             SPTern tern = new SPTern((Ternary) expr);
@@ -172,10 +170,8 @@ public class SPSet {
                 containsMethodCalls = innerSet.containsMethodCalls();
             }
         } else if (expr instanceof BinExpr) {
-        	System.err.println("SPSet currently being constructed for a binary expression.");
             BinExpr binEx = (BinExpr) expr;
             operator = binEx.getOperator();
-            System.err.printf("The operator for this SPSet is %s." + System.getProperty("line.separator"), operator.toString());
             Expression lhs = binEx.getLeftSide();
             Expression rhs = binEx.getRightSide();
             if (operator == Ops.MINUS) {
@@ -265,7 +261,7 @@ public class SPSet {
         Expression l = expr.getLeftSide();
         Expression r = expr.getRightSide();
         if (l instanceof CompExpr || r instanceof CompExpr) {
-            System.err.println("soemthing has gone very, very wrong");
+            throw new RuntimeException("something has gone very, very wrong");
         }
         if (l instanceof Var) {
             outer.varSet.add(((Var) l).getValueID());
@@ -650,13 +646,6 @@ public class SPSet {
                 throw new RuntimeException("missing a case");
             }
         } else {
-            for (Map.Entry<ValueID, List<Var>> entry : valToVar.entrySet()) {
-                System.err.println("KEY: " + entry.getKey());
-                System.err.println("HAS " + entry.getValue().size() + " VARS");
-                for (Var v : entry.getValue()) {
-                    System.err.println(v.getName());
-                }
-            }
             Expression lhs = null;
             for (SPSet set : SPSets) {
                 if (lhs == null) {

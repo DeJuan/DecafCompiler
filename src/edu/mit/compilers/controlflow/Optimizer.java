@@ -424,15 +424,7 @@ public class Optimizer {
                     newBlock.addParent(oldParent);
                 }
                 else if(oldP instanceof START){
-                    for (FlowNode c: oldP.getChildren()) {
-                        System.err.println("HAS CHILD: " + c);
-                    }
-                    System.err.println("REMOVING CHILD: " + old);
                     START oldParent = (START)oldP;
-                    for (FlowNode c: oldParent.getChildren()) {
-                        System.err.println("HAS CHILD: " + c);
-                    }
-                    System.err.println("REMOVING CHILD: " + old);
                     oldParent.removeChild(old);
                     oldParent.addChild(newBlock);
                     newBlock.addParent(oldParent);
@@ -1121,7 +1113,6 @@ public class Optimizer {
     public ControlflowContext applyCSE (List<START> startsForMethods){
         for(START initialNode : startsForMethods){
             //Set up tables and lists we'll need. 
-            System.err.println("----------------------Now beginning new method.----------------------------");
             //First thing we should do is reset visits, in case we're called after another optimization.
             initialNode.totalVisitReset(); 
             Set<String> allVarNames = getAllVarNamesInMethod(initialNode);
@@ -1168,8 +1159,6 @@ public class Optimizer {
                 MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
                 for(FlowNode parent: currentNode.getParents()){
                     if(containerForNode.get(parent) == null){
-                        System.err.println("A parent of this node doesn't have an entry in the container map because it has not yet been processed.");
-                        System.err.println("processing of this node will be delayed until its parents are processed.");
                         currentNode.resetVisit();
                         thisNodeContainer = MapContainer.makeEmptyContainer();
                         reset = true;
@@ -1215,17 +1204,12 @@ public class Optimizer {
                             Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
                             Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
                             Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
-                            System.err.println("We are currently in an Assignment. The currentDestVar is " + currentDestVar.getName() + "." + System.getProperty("line.separator"));
-                            for (Map.Entry<IR_FieldDecl, ValueID> entry: varToVal.entrySet()) {
-                                System.err.println(entry.getKey().getName() + " MAPS TO " + entry.getValue());
-                            }
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
                             }
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
-                            System.err.printf("The right hand side of the current assignment is an Expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
                             if (rhs.containsMethodCalls()) {
                                 killGlobals(valToVar, varToVal, varToValForArrayComponents);
@@ -1247,12 +1231,8 @@ public class Optimizer {
                                 changed = false; //say we haven't
                                 for (SPSet key : keySet){ //Look at all keys in expToVal
                                     while (rhs.contains(key)){ //if we have any of those keys in our current expression
-                                        System.err.printf("CSE-eligible expression detected being assigned to variable %s" + System.getProperty("line.separator"), currentDestVar.getName());
-                                        //System.err.printf("Now proceeding to apply CSE on the SPSet for the expression %s" + System.getProperty("line.separator"), key.toString()); throws exception
-                                        System.err.println("Now proceeding to apply CSE on the SPSet for the expression.");
                                         rhs.replace(key, expToVal.get(key));
                                         changed = true; //Need to repass over, one substitution could lead to another
-                                        System.err.println("Now testing the output of the CSE to see if the replacement just executed enables another replacement.");
                                         changedAtAll = true;
                                     }
                                 }
@@ -1303,7 +1283,6 @@ public class Optimizer {
                             if (rhs.containsMethodCalls()) {
                                 resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                             }
-                            System.err.println("============Current Assignment processing complete. Moving to next Statement.=================");
                         }
 
                         else if(currentStatement instanceof MethodCallStatement){ //if method call or declaration, just put it in the new block
@@ -1458,20 +1437,9 @@ public class Optimizer {
                     }
                     containerForNode.put(currentNode, thisNodeContainer);
                 }
-
-                System.err.println("~~~~~~~~~~~~~Finished processing the current FlowNode for the current method.~~~~~~~~~~~~~");
-                System.err.println("The current map sizes which were put into the container are as follows:");
-                System.err.printf("Size of varToVal: %d" + System.getProperty("line.separator"), varToVal.size());
-                System.err.printf("Size of expToVal: %d" + System.getProperty("line.separator"),  expToVal.size());
-                System.err.printf("Size of expToTemp: %d" + System.getProperty("line.separator"), expToTemp.size());
-                System.err.printf("Size of varToValForArrayComponents: %d" + System.getProperty("line.separator"), varToValForArrayComponents.size());
-                System.err.printf("Size of valToVar: %d" + System.getProperty("line.separator"), valToVar.size()); 
-                System.err.println("~~~~~~~~~~~~~Now beginning processing for next FlowNode.~~~~~~~~~~~~~~~");
             }
-            System.err.println("***************Finished one method entirely. Now moving to next method.********************");
             initialNode.resetVisit();
         }
-        System.err.println("!!!!!!!!!! ALL METHODS HAVE BEEN PROCESSED. NOW BEGINNING CODE GENERATION PROCESS. !!!!!!!!!!");
         return Assembler.generateProgram(calloutList, globalList, flowNodes);
     }
 }
