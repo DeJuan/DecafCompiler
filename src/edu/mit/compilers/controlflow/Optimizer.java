@@ -979,6 +979,9 @@ public class Optimizer {
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
 			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
+			if(liveness == null){
+				System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
+			}
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
