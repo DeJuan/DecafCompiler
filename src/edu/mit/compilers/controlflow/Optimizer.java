@@ -1004,7 +1004,26 @@ public class Optimizer {
 					if(currentState instanceof Assignment){
 						Assignment assign = (Assignment)currentState;
 						String lhs = assign.getDestVar().getName();
-						if(liveCheck.get(lhs) == 0){
+						if(liveCheck.get(lhs) == null){
+							System.err.println("NULL POINTER ATTAINED: ASSUME STATEMENT IS ALIVE. DEBUG THIS. WILL NOW ADD THIS LHS TO BITVECTOR.");
+							liveCheck.setVectorVal(lhs, 1);
+							List<String> rhsNames = new ArrayList<String>();
+							String nameofVar = assign.getDestVar().getName();
+							for(Var varia : getVarsFromExpression(assign.getValue())){
+								String varName = varia.getName();
+								liveCheck.setVectorVal(varName, 1);
+								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in NULLPOINTER assignment." + System.getProperty("line.separator"), varName);
+								rhsNames.add(varName);
+							}
+							if(!rhsNames.contains(lhs)){
+								liveCheck.setVectorVal(lhs, 0);
+								System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an NULLPOINTER assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
+							}
+							else{
+								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS in NULLPOINTER assignment.", lhs);
+							}
+						}
+						else if(liveCheck.get(lhs) == 0){
 							statementIter.remove();
 							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}

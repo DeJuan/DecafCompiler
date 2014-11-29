@@ -30,7 +30,7 @@ public class Bitvector {
 		return this.vector;
 	}
 	
-	public int get(String variableName){
+	public Integer get(String variableName){
 		return this.vector.get(variableName);
 	}
 	
