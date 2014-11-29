@@ -1219,9 +1219,6 @@ public class Optimizer {
                             for (Map.Entry<IR_FieldDecl, ValueID> entry: varToVal.entrySet()) {
                                 System.err.println(entry.getKey().getName() + " MAPS TO " + entry.getValue());
                             }
-                            if ((new SPSet(assignExprValue)).containsMethodCalls()) {
-                                killGlobals(valToVar, varToVal, varToValForArrayComponents);
-                            }
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
@@ -1230,6 +1227,14 @@ public class Optimizer {
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
                             System.err.printf("The right hand side of the current assignment is an Expression of type %s" + System.getProperty("line.separator"), assignExprValue.getExprType().name());
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
+                            if (rhs.containsMethodCalls()) {
+                                killGlobals(valToVar, varToVal, varToValForArrayComponents);
+                                if (!setVarIDs(varToVal, varToValForArrayComponents, assignExprValue)) {
+                                    // Skipping statement because contains reference to globals AND at least one method call
+                                    newCodeblock.addStatement(currentStatement);
+                                    continue;
+                                }
+                            }
                             Set<SPSet> keySet = expToVal.keySet(); //Get the keys for the expToVal set.
                             List<Var> varList = valToVar.get(currentValID);
                             if (varList == null) {
