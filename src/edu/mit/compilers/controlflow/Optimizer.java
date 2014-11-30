@@ -1059,6 +1059,10 @@ public class Optimizer {
                 valToVar.put(newGlobID, varList);
             } else {
                 varToValForArrayComponents.put(glob, new HashMap<SPSet, ValueID>());
+                if (oldID == null) {
+                    varToVal.put(glob, newGlobID);
+                    valToVar.put(newGlobID, varList);
+                }
             }
         }
     }
