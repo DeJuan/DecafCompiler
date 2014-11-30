@@ -1287,8 +1287,9 @@ public class Optimizer {
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
                                 globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
                             }
-                            if (rhs.containsMethodCalls() || !setVarIDs(varToVal, varToValForArrayComponents, currentDestVar.getIndex()) 
-                                    || (new SPSet(currentDestVar.getIndex())).containsMethodCalls()) {
+                            if (rhs.containsMethodCalls() 
+                                || (currentDestVar.getIndex() != null && (!setVarIDs(varToVal, varToValForArrayComponents, currentDestVar.getIndex()) 
+                                                                          || (new SPSet(currentDestVar.getIndex())).containsMethodCalls()))) {
                                 resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                             }
                         }
