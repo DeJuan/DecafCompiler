@@ -1073,7 +1073,7 @@ public class Optimizer {
     private void killGlobals(Map<ValueID, List<Var>> valToVar, Map<IR_FieldDecl, ValueID> varToVal, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents) {
         for (IR_FieldDecl glob : globalList) {
             ValueID oldID = varToVal.get(glob);
-            if (glob.getLength() != null) {
+            if (glob.getLength() == null) {
                 varToVal.remove(glob);
                 if (oldID != null) {
                     valToVar.get(oldID).remove(glob);
@@ -1161,8 +1161,6 @@ public class Optimizer {
                 currentNode.visit(); //set its visited attribute so we don't loop back to it
                 //Set up the maps for this particular node, regardless of type.
                 boolean reset = false;
-                System.err.printf("We are about to get the parent Containers from the map to update available expressions. The current node has %d parent(s)." + System.getProperty("line.separator"), currentNode.getParents().size());
-                System.err.printf("The map from nodes to containers currently has size %d" + System.getProperty("line.separator"), containerForNode.size());
                 MapContainer thisNodeContainer = containerForNode.get(currentNode.getParents().get(0)); //want something we can intersect with, so take first parent's set.
                 for(FlowNode parent: currentNode.getParents()){
                     if(containerForNode.get(parent) == null){
@@ -1223,6 +1221,7 @@ public class Optimizer {
                                 if (!setVarIDs(varToVal, varToValForArrayComponents, assignExprValue)) {
                                     // Skipping statement because contains reference to globals AND at least one method call
                                     newCodeblock.addStatement(currentStatement);
+                                    resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                                     continue;
                                 }
                             }
@@ -1287,7 +1286,8 @@ public class Optimizer {
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
                                 globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
                             }
-                            if (rhs.containsMethodCalls()) {
+                            if (rhs.containsMethodCalls() || !setVarIDs(varToVal, varToValForArrayComponents, currentDestVar.getIndex()) 
+                                    || (new SPSet(currentDestVar.getIndex())).containsMethodCalls()) {
                                 resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                             }
                         }
@@ -1322,7 +1322,6 @@ public class Optimizer {
                             resetGlobals(valToVar, varToVal, varToValForArrayComponents);
                             
                         } else{
-                            System.err.printf("We have reached a declaration. The declaration is for: %s" + System.getProperty("line.separator"), ((Declaration) currentStatement).getName());
                             newCodeblock.addStatement(currentStatement);
                         }
                     }
