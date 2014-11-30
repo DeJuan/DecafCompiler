@@ -499,21 +499,22 @@ public class Optimizer {
      */
     public void killMappings(Var assignLhs, Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents, 
             Map<IR_FieldDecl, ValueID> varToVal, Map<ValueID, List<Var>> valToVar){
-        //TODO: Fix this.  
         IR_FieldDecl killVar = (IR_FieldDecl) assignLhs.getVarDescriptor().getIR();
-        ValueID killValID = varToVal.get(killVar);
+        if (assignLhs.getIndex() != null) {
+            varToValForArrayComponents.put(killVar, new HashMap<SPSet, ValueID>());
+        } else {
 
-        varToVal.remove(killVar);
-        if(valToVar.get(killValID)!= null){
-            for (Var v : valToVar.get(killValID)) {
-                if (v.getDecl() == killVar) {
-                    valToVar.get(killValID).remove(v);
-                    break;
+            ValueID killValID = varToVal.get(killVar);
+            varToVal.remove(killVar);
+            if(valToVar.get(killValID)!= null){
+                for (Var v : valToVar.get(killValID)) {
+                    if (v.getDecl() == killVar) {
+                        valToVar.get(killValID).remove(v);
+                        break;
+                    }
                 }
             }
         }
-        varToValForArrayComponents.remove(killVar);
-        //Look up oldValID in varToVal or varToValForArrayComponents, then do valToVar.get(oldID).remove(assignLhs);
 
     }
 
