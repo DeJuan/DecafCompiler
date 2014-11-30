@@ -717,6 +717,7 @@ public class Optimizer {
 			Set<END> endNodes = new LinkedHashSet<END>();
 			Set<String> allVars = getAllVarNamesInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
+			
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
@@ -735,6 +736,7 @@ public class Optimizer {
 					}
 				}
 			}
+			
 			for(END initialNode : endNodes){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
@@ -771,9 +773,9 @@ public class Optimizer {
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
-					boolean needToReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
+					boolean canSkipReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
 					boolean skipNode = false;
-					if(!needToReprocessFlag){
+					if(canSkipReprocessFlag){
 						if(ticksForRevisit.get(currentNode).equals(0)){
 							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
 							ticksForRevisit.put(currentNode, 1);
@@ -949,7 +951,6 @@ public class Optimizer {
 							processing.add(parent);
 						}
 					}
-				
 				previousNode = currentNode;
 				}
 			}
