@@ -409,6 +409,9 @@ public class Optimizer {
      * @param newBlock : new Codeblock after modifications/optimizations that should replace old
      */
     public void swapCodeblocks(Codeblock old, Codeblock newBlock){
+        if (old.getIsBreak()) {
+            newBlock.setIsBreak(true);
+        }
         for (FlowNode oldP : old.getParents()){
             if(!(oldP instanceof Branch)){
                 if(oldP instanceof Codeblock){
@@ -1051,7 +1054,7 @@ public class Optimizer {
             List<Var> varList = new ArrayList<Var>();
             varList.add(new Var(globDesc, null));
             ValueID oldID = varToVal.get(glob);
-            if (glob.getLength() != null) {
+            if (glob.getLength() == null) {
                 varToVal.put(glob, newGlobID);
                 if (oldID != null) {
                     valToVar.get(oldID).remove(glob);
