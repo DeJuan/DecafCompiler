@@ -83,9 +83,9 @@ public class InterferenceGraph {
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
 	 */
-	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
+	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
-		for(START methodStart : startsForMethods){
+		for(START methodStart : flowNodes.values()){
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();

@@ -3,6 +3,7 @@ int get_int ( int x ) {
   return x;
 }
 void main ( ) {
+  // reassigning to same variable
   int a;
   a = 1;
   printf("%d ", a);
