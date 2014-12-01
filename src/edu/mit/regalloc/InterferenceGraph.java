@@ -80,21 +80,23 @@ public class InterferenceGraph {
 	 * Currently does NOT handle dead declarations (there's a justification for that, actually)
 	 * and has not yet been tested. 
 	 * 
-	 * @param 
+	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
 	 */
-	public Map<FlowNode, Bitvector> generateLivenessMap(){
-		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
-		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
-		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
-		for(START methodStart : flowNodes.values()){
+	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
+		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
+		for(START methodStart : startsForMethods){
+			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
+			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
+			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.resetVisit();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
-			Set<String> allVars = optimizer.getAllVarNamesInMethod(methodStart); //Get all the var names from within the method
+			Set<String> allVars = optimizer.getAllVarNamesInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
+			
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
@@ -113,16 +115,24 @@ public class InterferenceGraph {
 					}
 				}
 			}
+			
 			for(END initialNode : endNodes){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
-					ticksForRevisit.put(node, 0); //set up a ticker so we can see if we want to do revisits
+					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
 				}
 				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : optimizer.getVarsFromExpression(initialNode.getReturnExpression())){
 						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
+						System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
 					}
+				}
+				for (IR_FieldDecl global : globalList){
+					liveVector.setVectorVal(global.getName(), 1);
+				}
+				for(IR_FieldDecl argument : methodStart.getArguments()){
+					liveVector.setVectorVal(argument.getName(), 1);
 				}
 				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
 				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
@@ -142,26 +152,39 @@ public class InterferenceGraph {
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
-					boolean needToReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
+					boolean canSkipReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
 					boolean skipNode = false;
-					if(!needToReprocessFlag){
+					if(canSkipReprocessFlag){
 						if(ticksForRevisit.get(currentNode).equals(0)){
-							System.err.println("The current node's IN has not changed since last processing. We will compute at most twice to be safe.");
+							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
 							ticksForRevisit.put(currentNode, 1);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(1)){
-							System.err.println("The current node's IN has not changed since last processing, and has been processed once. One more computation to be safe.");
+							System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
 							ticksForRevisit.put(currentNode, 2);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(2)){
-							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. No need to reprocess.");
+							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
+							ticksForRevisit.put(currentNode, 3);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
+							System.err.println("We have processed this node at least three times, and no changes have occurred to its IN. No further reprocessing is required.");
 							skipNode = true;
 						}
 					}
 					if (previousNode == currentNode){
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
+						if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
+							System.err.println("We have processed this node at least three times, and have detected self-looping. No further reprocessing is required.");
+							skipNode = true;
+						}
 					}
 					if(skipNode){
+						for(FlowNode parent : currentNode.getParents()){
+							if(!parent.visited()){
+								processing.add(parent);
+							}
+						}
 						continue;
 					}
 					if(currentNode instanceof Codeblock){
@@ -174,9 +197,9 @@ public class InterferenceGraph {
 							if(currentState instanceof Assignment){ 
 								Assignment assign = (Assignment)currentState;
 								String lhs = assign.getDestVar().getName();
-								List<String> changedVectorEntry = new ArrayList<String>();
+								//List<String> changedVectorEntry = new ArrayList<String>();
 								List<Var> varsInRHS = optimizer.getVarsFromExpression(assign.getValue());
-								List<String> rhsNames = new ArrayList<String>();
+								Set<String> rhsNames = new LinkedHashSet<String>();
 								//LEFT HAND FIRST LOGIC
 								if(liveVector.get(lhs) == 1){ //If this is alive, MAY need to flip the bit
 									for(Var varia : varsInRHS){
@@ -193,6 +216,30 @@ public class InterferenceGraph {
 										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
 									}
 								}
+								
+								/* RIGHT HAND FIRST LOGIC
+								//Look at rhs first.
+								for(Var varia : varsInRHS){
+									String varName = varia.getName();
+									if(liveVector.get(varName) == 0){
+										liveVector.setVectorVal(varName, 1); //It's potentially alive, was just used.
+										System.err.printf("Bitvector entry for variable %s has been flipped from 0 to 1 in building phase by use in assignment rhs." + System.getProperty("line.separator"), varia.getName());
+										changedVectorEntry.add(varName);
+									}
+								}
+								if(liveVector.get(lhs) == 1){ //If this is valid, flip the bit 
+									liveVector.setVectorVal(lhs, 0);
+									System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment." + System.getProperty("line.separator"), lhs);
+								} 
+								else{ //the lhs is actually dead, so we need to revert any changes we made on rhs.
+									for(Var varia : varsInRHS){
+										if(changedVectorEntry.contains(varia.getName())){
+											liveVector.setVectorVal(varia.getName(), 0); //rhs if we changed it is not alive, because the assignment as a whole is dead.
+											System.err.printf("Bitvector entry for variable %s has been reset to 0 in building phase because the assignment is dead." + System.getProperty("line.separator"), varia.getName());
+										}
+									}
+								}
+								*/
 							}
 
 							/**
@@ -215,7 +262,7 @@ public class InterferenceGraph {
 							}
 
 							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
-								MethodCallStatement mcall = (MethodCallStatement) currentState;
+								MethodCallStatement mcall = (MethodCallStatement)currentState;
 								List<Expression> args = mcall.getMethodCall().getArguments();
 								Set<Var> varsInArgs = new LinkedHashSet<Var>();
 								for(Expression expr : args){
@@ -250,7 +297,7 @@ public class InterferenceGraph {
 						for (IR_FieldDecl arg : args){
 							liveVector.setVectorVal(arg.getName(), 1); 
 							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
-						}
+						}	
 						cStart.setLiveMap(liveVector.copyBitvector());
 					}
 
@@ -287,13 +334,13 @@ public class InterferenceGraph {
 							processing.add(parent);
 						}
 					}
-				
 				previousNode = currentNode;
 				}
 			}
+			liveStorage.put(methodStart, vectorStorageIN);
 			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
 		}
-		return vectorStorageIN;
+		return liveStorage;
 	}
 	
 	private void addEdge(GraphNode from, GraphNode to) {
