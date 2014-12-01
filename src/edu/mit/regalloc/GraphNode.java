@@ -7,6 +7,7 @@ import edu.mit.compilers.controlflow.Statement;
 public class GraphNode {
 	
 	String varName;
+	int level;
 	Boolean isGlobal = false;
 	Boolean isParam = false;
 	
@@ -15,16 +16,19 @@ public class GraphNode {
 	Boolean removed = false; // used to represent that a node has been removed in coloring
 	Boolean spill = false;
 	
-	public GraphNode(Assignment assign) {
+	public GraphNode(Assignment assign, int level) {
 		this.varName = assign.getDestVar().getName();
+		this.level = level;
 	}
 	
-	public GraphNode(String varName) {
+	public GraphNode(String varName, int level) {
 		this.varName = varName;
+		this.level = level;
 	}
 	
-	public GraphNode(String varName, Boolean isGlobal, Boolean isParam) {
+	public GraphNode(String varName, int level, Boolean isGlobal, Boolean isParam) {
 		this.varName = varName;
+		this.level = level;
 		this.isGlobal = isGlobal;
 		this.isParam = isParam;
 	}
@@ -76,6 +80,10 @@ public class GraphNode {
 	
 	public Boolean isSpill() {
 		return this.spill;
+	}
+	
+	public int getLevel() {
+		return this.level;
 	}
 	
 
