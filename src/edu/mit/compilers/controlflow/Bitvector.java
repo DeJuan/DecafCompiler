@@ -5,16 +5,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.mit.compilers.ir.IR_FieldDecl;
+
 public class Bitvector {
-	private Map<String, Integer> vector = new HashMap<String, Integer>();
+	private Map<IR_FieldDecl, Integer> vector = new HashMap<IR_FieldDecl, Integer>();
 	
-	public Bitvector(Set<String> allVarNames){
-		for (String var : allVarNames){
+	public Bitvector(Set<IR_FieldDecl> allFieldDecls){
+		for (IR_FieldDecl var : allFieldDecls){
 			this.vector.put(var, 0); //initialize everything to 0s  
 		}
 	}
 	
-	public Bitvector(Map<String, Integer> startingVector){
+	
+	public Bitvector(Map<IR_FieldDecl, Integer> startingVector){
 		this.vector = startingVector;
 	}
 	
@@ -22,40 +25,40 @@ public class Bitvector {
 		this.vector = vectorToCopy.copyVectorMap();
 	}
 	
-	public void setVectorVal(String variable, int value){
+	public void setVectorVal(IR_FieldDecl variable, int value){
 		this.vector.put(variable, value);
 	}
 	
-	public Map<String, Integer> getVectorMap(){
+	public Map<IR_FieldDecl, Integer> getVectorMap(){
 		return this.vector;
 	}
 	
-	public Integer get(String variableName){
+	public Integer get(IR_FieldDecl variableName){
 		return this.vector.get(variableName);
 	}
 	
 	/**
 	 * Makes absolutely certain to
-	 * deep copy the String, Integer map that I use to track bit vectors.
+	 * deep copy the IR_FieldDecl, Integer map that I use to track bit vectors.
 	 * These are immutables so this is overkill, but whatever.
 	 * @param liveVector : The bitvector map we want to copy.
 	 */
-	public Map<String, Integer> copyVectorMap(){
-		Map<String, Integer> vectorCopy = new HashMap<String, Integer>();
-		for (String key : vector.keySet()){
+	public Map<IR_FieldDecl, Integer> copyVectorMap(){
+		Map<IR_FieldDecl, Integer> vectorCopy = new HashMap<IR_FieldDecl, Integer>();
+		for (IR_FieldDecl key : vector.keySet()){
 			vectorCopy.put(key,vector.get(key));
 		}
 		return vectorCopy;
 	}
 	
 	public Bitvector copyBitvector(){
-		Map<String, Integer> mapCopy = copyVectorMap();
+		Map<IR_FieldDecl, Integer> mapCopy = copyVectorMap();
 		return new Bitvector(mapCopy);
 	}
 	
 	public boolean compareBitvectorEquality(Bitvector other){
-		Map<String, Integer> otherMap = other.getVectorMap();
-		for (String key : otherMap.keySet()){
+		Map<IR_FieldDecl, Integer> otherMap = other.getVectorMap();
+		for (IR_FieldDecl key : otherMap.keySet()){
 			if (!otherMap.get(key).equals(vector.get(key))){
 				return false;
 			}
@@ -70,15 +73,15 @@ public class Bitvector {
 	 * in that position, otherwise, it will have a zero. This is correct behavior.
 	 * 
 	 * @param children : List<FlowNode> of the children for the current FlowNode. Since we walk backwards, need children, not parents.
-	 * @param vectorStorage : The Map<FlowNode, Map<String, Integer>> we use to keep track of the bit vector for a given FlowNode at exit of that node. 
-	 * @param Set<String> allVars : List of all Var names in the program, so we can easily initialize the all-zero bitvector. 
+	 * @param vectorStorage : The Map<FlowNode, Map<IR_FieldDecl, Integer>> we use to keep track of the bit vector for a given FlowNode at exit of that node. 
+	 * @param Set<IR_FieldDecl> allVars : List of all Var names in the program, so we can easily initialize the all-zero bitvector. 
 	 */
 	public static Bitvector childVectorUnison(List<FlowNode> children, Map<FlowNode, Bitvector> vectorStorageOUT, Bitvector currentValues) {
-		Map<String, Integer> nextMap;
+		Map<IR_FieldDecl, Integer> nextMap;
 		Bitvector finalMap = currentValues.copyBitvector(); //make new bit vector copy of what you currently care about
 		for(int i = 0; i < children.size(); i++){ //For all children of this node
 			nextMap = vectorStorageOUT.get(children.get(i)).getVectorMap(); //get their map from storage
-			for(String key : nextMap.keySet()){ //iterate through the keys in the map
+			for(IR_FieldDecl key : nextMap.keySet()){ //iterate through the keys in the map
 				if(nextMap.get(key).equals(1)){ //if we find a key with a value of one
 					finalMap.setVectorVal(key, 1); //put 1 in the finalMap in that location. 
 				}
@@ -89,8 +92,8 @@ public class Bitvector {
 	
 	public Bitvector vectorUnison(Bitvector other){
 		Bitvector currentCopy = new Bitvector(this.copyVectorMap());
-		Map<String, Integer> otherMap = other.getVectorMap();
-		for (String key : otherMap.keySet()){
+		Map<IR_FieldDecl, Integer> otherMap = other.getVectorMap();
+		for (IR_FieldDecl key : otherMap.keySet()){
 			if(otherMap.get(key).equals(1)){
 				currentCopy.setVectorVal(key, 1);
 			}

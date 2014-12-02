@@ -323,6 +323,52 @@ public class Optimizer {
 		return allVarNames;
 	}
 	
+	public Set<IR_FieldDecl> getAllFieldDeclsInMethod(START node){
+		Set<IR_FieldDecl> allVarDecls = new LinkedHashSet<IR_FieldDecl>();
+		List<FlowNode> processing = new ArrayList<FlowNode>();
+		allVarDecls.addAll(globalList);
+		allVarDecls.addAll(node.getArguments());
+		processing.add(node.getChildren().get(0));
+		while (!processing.isEmpty()){
+			FlowNode currentNode = processing.remove(0);
+			currentNode.visit();
+			if(currentNode instanceof Codeblock){
+				Codeblock cblock = (Codeblock)currentNode;
+				for(Statement state : cblock.getStatements()){
+					if(state instanceof Declaration){
+						Declaration decl = (Declaration)state;
+						allVarDecls.add(decl.getFieldDecl());
+					}
+				}
+			}
+			else if(currentNode instanceof Branch){
+				Branch bblock = (Branch)currentNode;
+				for (Var varia : getVarsFromExpression(bblock.getExpr())){
+					allVarDecls.add(varia.getFieldDecl());
+				}
+			}
+			else if(currentNode instanceof START){
+				START sBlock = (START)currentNode;
+				allVarDecls.addAll(sBlock.getArguments());
+			}
+			else if(currentNode instanceof END){
+				END eBlock = (END)currentNode;
+				if(eBlock.getReturnExpression() != null){
+					for(Var varia : getVarsFromExpression(eBlock.getReturnExpression())){
+						allVarDecls.add(varia.getFieldDecl());
+					}
+				}
+			}
+			for(FlowNode child : currentNode.getChildren()){
+				if(!child.visited()){
+					processing.add(child);
+				}
+			}
+		}
+		node.resetVisit();
+		return allVarDecls;
+	}
+	
 	/**
 	 * This is a compiler helper function which, given the set of all variable names already taken by the method,
 	 * returns a new, unique name for a temp variable each time it is called. 
@@ -715,7 +761,7 @@ public class Optimizer {
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
-			Set<String> allVars = getAllVarNamesInMethod(methodStart);
+			Set<IR_FieldDecl> allVars = getAllFieldDeclsInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
 			
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
@@ -745,15 +791,15 @@ public class Optimizer {
 				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
-						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
+						liveVector.setVectorVal(returnVar.getFieldDecl(), 1); //things returned must be alive on exit, so set their vector to 1
 						System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
 					}
 				}
 				for (IR_FieldDecl global : globalList){
-					liveVector.setVectorVal(global.getName(), 1);
+					liveVector.setVectorVal(global, 1);
 				}
 				for(IR_FieldDecl argument : methodStart.getArguments()){
-					liveVector.setVectorVal(argument.getName(), 1);
+					liveVector.setVectorVal(argument, 1);
 				}
 				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
 				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
@@ -817,19 +863,20 @@ public class Optimizer {
 							Statement currentState = statementIter.next();
 							if(currentState instanceof Assignment){ 
 								Assignment assign = (Assignment)currentState;
-								String lhs = assign.getDestVar().getName();
+								IR_FieldDecl lhs = assign.getDestVar().getFieldDecl();
 								//List<String> changedVectorEntry = new ArrayList<String>();
 								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
-								Set<String> rhsNames = new LinkedHashSet<String>();
+								Set<IR_FieldDecl> rhsDecls = new LinkedHashSet<IR_FieldDecl>();
 								//LEFT HAND FIRST LOGIC
 								if(liveVector.get(lhs) == 1){ //If this is alive, MAY need to flip the bit
 									for(Var varia : varsInRHS){
 										String varName = varia.getName();
-										liveVector.setVectorVal(varName, 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
+										IR_FieldDecl varDecl = varia.getFieldDecl();
+										liveVector.setVectorVal(varDecl, 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
 										System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment." + System.getProperty("line.separator"), varName);
-										rhsNames.add(varName);
+										rhsDecls.add(varDecl);
 									}
-									if(!rhsNames.contains(lhs)){
+									if(!rhsDecls.contains(lhs)){
 										liveVector.setVectorVal(lhs, 0);
 										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 									}
@@ -890,7 +937,7 @@ public class Optimizer {
 									varsInArgs.addAll(getVarsFromExpression(expr));
 								}
 								for(Var varia : varsInArgs){
-									liveVector.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
+									liveVector.setVectorVal(varia.getFieldDecl(), 1); //If not already alive, mark an argument as alive. 
 									System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
 								}
 							}
@@ -901,7 +948,7 @@ public class Optimizer {
 					else if (currentNode instanceof Branch){ //join point. Live vector would be handled before we got here by unisonVector, so assume we're golden.
 						Branch cBranch = (Branch)currentNode;
 						for(Var varia : getVarsFromExpression(cBranch.getExpr())){
-							liveVector.setVectorVal(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
+							liveVector.setVectorVal(varia.getFieldDecl(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
 							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
 						}
 					}
@@ -914,7 +961,7 @@ public class Optimizer {
 						START cStart = (START)currentNode;
 						List<IR_FieldDecl> args = cStart.getArguments();
 						for (IR_FieldDecl arg : args){
-							liveVector.setVectorVal(arg.getName(), 1); 
+							liveVector.setVectorVal(arg, 1); 
 							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
 						}	
 					}
@@ -923,7 +970,7 @@ public class Optimizer {
 						END cEnd = (END)currentNode;
 						if(cEnd.getReturnExpression() != null){
 							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
-								liveVector.setVectorVal(varia.getName(), 1);
+								liveVector.setVectorVal(varia.getFieldDecl(), 1);
 								System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
 							}
 						}
@@ -1010,24 +1057,25 @@ public class Optimizer {
 					Statement currentState = statementIter.next();
 					if(currentState instanceof Assignment){
 						Assignment assign = (Assignment)currentState;
-						String lhs = assign.getDestVar().getName();
+						IR_FieldDecl lhs = assign.getDestVar().getFieldDecl();
 						if(liveCheck.get(lhs) == null){
 							System.err.println("NULL POINTER ATTAINED: ASSUME STATEMENT IS ALIVE. DEBUG THIS. WILL NOW ADD THIS LHS TO BITVECTOR.");
 							liveCheck.setVectorVal(lhs, 1);
-							List<String> rhsNames = new ArrayList<String>();
+							List<IR_FieldDecl> rhsDecls = new ArrayList<IR_FieldDecl>();
 							String nameofVar = assign.getDestVar().getName();
 							for(Var varia : getVarsFromExpression(assign.getValue())){
 								String varName = varia.getName();
-								liveCheck.setVectorVal(varName, 1);
+								IR_FieldDecl varDecl = varia.getFieldDecl();
+								liveCheck.setVectorVal(varDecl, 1);
 								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in NULLPOINTER assignment." + System.getProperty("line.separator"), varName);
-								rhsNames.add(varName);
+								rhsDecls.add(varDecl);
 							}
-							if(!rhsNames.contains(lhs)){
+							if(!rhsDecls.contains(lhs)){
 								liveCheck.setVectorVal(lhs, 0);
 								System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an NULLPOINTER assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 							}
 							else{
-								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS in NULLPOINTER assignment.", lhs);
+								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS in NULLPOINTER assignment.", nameofVar);
 							}
 						}
 						else if(liveCheck.get(lhs) == 0){
@@ -1035,20 +1083,21 @@ public class Optimizer {
 							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
-							List<String> rhsNames = new ArrayList<String>();
-							String nameofVar = assign.getDestVar().getName();
+							List<IR_FieldDecl> rhsDecls = new ArrayList<IR_FieldDecl>();
+							String nameOfVar = assign.getDestVar().getName();
 							for(Var varia : getVarsFromExpression(assign.getValue())){
 								String varName = varia.getName();
-								liveCheck.setVectorVal(varName, 1);
+								IR_FieldDecl varDecl = varia.getFieldDecl();
+								liveCheck.setVectorVal(varDecl, 1);
 								System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varName);
-								rhsNames.add(varName);
+								rhsDecls.add(varDecl);
 							}
-							if(!rhsNames.contains(lhs)){
+							if(!rhsDecls.contains(lhs)){
 								liveCheck.setVectorVal(lhs, 0);
 								System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 							}
 							else{
-								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
+								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", nameOfVar);
 							}
 						}
 					}
@@ -1061,7 +1110,7 @@ public class Optimizer {
 							varsInArgs.addAll(getVarsFromExpression(expr));
 						}
 						for(Var varia : varsInArgs){
-							liveCheck.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive.
+							liveCheck.setVectorVal(varia.getFieldDecl(), 1); //If not already alive, mark an argument as alive.
 							System.err.printf("Bitvector entry for variable %s has been set to 1 by a method call." + System.getProperty("line.separator"), varia.getName());
 						}
 					}

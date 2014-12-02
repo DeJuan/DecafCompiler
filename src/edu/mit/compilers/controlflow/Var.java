@@ -59,6 +59,10 @@ public class Var extends Expression {
 	    return val;
 	}
 	
+	public IR_FieldDecl getFieldDecl(){
+		return (IR_FieldDecl) var.getIR();
+	}
+	
 	/**
 	 * Returns the name of the variable
 	 * @return String: the name of the variable
