@@ -782,10 +782,8 @@ public class Optimizer {
 					}
 				}
 			}
-			List<END> endNodeList = new ArrayList<END>();
-			endNodeList.addAll(endNodes);
-			Collections.reverse(endNodeList);
-			for(END initialNode : endNodeList){
+			
+			for(END initialNode : endNodes){
 				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
 					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
@@ -836,15 +834,24 @@ public class Optimizer {
 							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
 							ticksForRevisit.put(currentNode, 3);
 						}
-						else if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
-							System.err.println("We have processed this node at least three times, and no changes have occurred to its IN. No further reprocessing is required.");
+						else if(ticksForRevisit.get(currentNode).equals(3)){
+							System.err.println("We have processed this node at least three times.");
+							ticksForRevisit.put(currentNode, 4);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(4)){
+							System.err.println("We have processed this node at least four times, and no changes have occurred to its IN. No further reprocessing is required.");
+							ticksForRevisit.put(currentNode, 5);
+						}
+						else if(ticksForRevisit.get(currentNode).equals(5) || ticksForRevisit.get(currentNode) > 5){
+							System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
 							skipNode = true;
 						}
+						
 					}
 					if (previousNode == currentNode){
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-						if(ticksForRevisit.get(currentNode).equals(4) || ticksForRevisit.get(currentNode) > 4){
-							System.err.println("We have processed this node at least three times, and have detected self-looping. No further reprocessing is required.");
+						if(ticksForRevisit.get(currentNode).equals(6) || ticksForRevisit.get(currentNode) > 6){
+							System.err.println("We have processed this node at least five times, and have detected self-looping. No further reprocessing is required.");
 							skipNode = true;
 						}
 					}
