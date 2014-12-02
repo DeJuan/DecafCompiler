@@ -412,6 +412,9 @@ public class Optimizer {
         if (old.getIsBreak()) {
             newBlock.setIsBreak(true);
         }
+        if (old.visited()) {
+            newBlock.visit();
+        }
         for (FlowNode oldP : old.getParents()){
             if(!(oldP instanceof Branch)){
                 if(oldP instanceof Codeblock){
@@ -1166,7 +1169,6 @@ public class Optimizer {
                 for(FlowNode parent: currentNode.getParents()){
                     if(containerForNode.get(parent) == null){
                         currentNode.resetVisit();
-                        thisNodeContainer = MapContainer.keepGlobals(thisNodeContainer, globalList);
                         reset = true;
                     } else {
                         if (thisNodeContainer == null) {
@@ -1182,6 +1184,7 @@ public class Optimizer {
                     if (thisNodeContainer == null) {
                         throw new RuntimeException("HOW DID YOU GET IN PROCESSING IF NONE OF YOUR PARENTS HAVE BEEN PROCESSED");
                     }
+                    thisNodeContainer = MapContainer.keepGlobals(thisNodeContainer, globalList);
                     containerForNode.put(currentNode, thisNodeContainer);
                     continue;
                 }
