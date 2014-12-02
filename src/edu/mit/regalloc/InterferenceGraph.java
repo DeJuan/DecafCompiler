@@ -1,4 +1,4 @@
-package edu.mit.regalloc;
+/*package edu.mit.regalloc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,7 +84,7 @@ public class InterferenceGraph {
 	 * 
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
-	 */
+	 
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
 		for(START methodStart : flowNodes.values()){
@@ -221,7 +221,7 @@ public class InterferenceGraph {
 								}
 							}
 
-							/**
+							*//**
 							 * TODO : Reason this is commented out: Consider the following scenario being read from bottom to top:
 							 * 
 							 * int x;
@@ -235,7 +235,7 @@ public class InterferenceGraph {
 							 * Probably not worth the complexity increase to deal with them, actually...Would need to seperately track an 
 							 * "if ever used" quality and use that instead; if we ever set the vector to 1, then ifEverUsed becomes true.
 							 * If we see the declaration, check ifEverUsed ; if true, leave decl alone, else, remove it. Would get iffy around branches. 
-							 */
+							 *//*
 							else if(currentState instanceof Declaration){ 
 								//if var declared isn't ever alive, could remove the decl; but have to make sure... 
 							}
@@ -413,12 +413,12 @@ public class InterferenceGraph {
 		}
 	}
 	
-	/**
+	*//**
 	 * Process codeBlocks sequentially.
 	 * @param listOfCodeblocks
 	 * @param currentNode
 	 * @param currentLevel
-	 */
+	 *//*
 	public void addCodeBlocks(Set<Codeblock> listOfCodeblocks, FlowNode currentNode, int currentLevel) {
 		currentNode.visit();
 		if(currentNode instanceof Codeblock){
@@ -445,10 +445,10 @@ public class InterferenceGraph {
 		
 	}
 	
-	/**
+	*//**
 	 * Remove all entries that have a higher level than the current level.
 	 * @param level
-	 */
+	 *//*
 	public void removePrevLevels(int level) {
 		for (HashMap<Integer, GraphNode> v : varToNodes.values()) {
 			Iterator<Map.Entry<Integer, GraphNode>> iter = v.entrySet().iterator();
@@ -470,7 +470,7 @@ public class InterferenceGraph {
 			scanning.add(initialNode);
 			nodeToLevel.put((FlowNode) initialNode, 1);
 			addCodeBlocks(listOfCodeblocks, initialNode, 1);
-			/*
+			
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 				FlowNode currentNode = scanning.remove(0);
 				System.out.println("Current node: " + currentNode.toString());
@@ -494,7 +494,7 @@ public class InterferenceGraph {
 					}
 				}
 			}
-			*/
+			
 				
 			initialNode.resetVisit(); //fix the visited parameters.
 			
@@ -554,3 +554,4 @@ public class InterferenceGraph {
 	}
 
 }
+*/

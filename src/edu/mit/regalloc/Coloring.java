@@ -1,4 +1,4 @@
-package edu.mit.regalloc;
+/*package edu.mit.regalloc;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,3 +135,4 @@ public class Coloring {
 		return 1;
 	}
 }
+*/

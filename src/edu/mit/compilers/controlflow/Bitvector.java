@@ -16,7 +16,6 @@ public class Bitvector {
 		}
 	}
 	
-	
 	public Bitvector(Map<IR_FieldDecl, Integer> startingVector){
 		this.vector = startingVector;
 	}
@@ -36,7 +35,7 @@ public class Bitvector {
 	public Integer get(IR_FieldDecl variableName){
 		return this.vector.get(variableName);
 	}
-	
+		
 	/**
 	 * Makes absolutely certain to
 	 * deep copy the IR_FieldDecl, Integer map that I use to track bit vectors.
