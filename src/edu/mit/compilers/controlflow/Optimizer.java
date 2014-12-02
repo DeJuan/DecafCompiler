@@ -750,12 +750,13 @@ public class Optimizer {
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
 	 */
-	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
-		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
+	public Map<FlowNode, Bitvector> generateLivenessMap(List<START> startsForMethods){
+		//Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
+		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
+		Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
+		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 		for(START methodStart : startsForMethods){
-			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
-			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
-			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
+			//Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
@@ -1011,10 +1012,11 @@ public class Optimizer {
 				previousNode = currentNode;
 				}
 			}
-			liveStorage.put(methodStart, vectorStorageIN);
+			//liveStorage.put(methodStart, vectorStorageIN);
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
-		return liveStorage;
+		//return liveStorage;
+		return vectorStorageIN;
 	}
 	
 	/**
@@ -1032,14 +1034,15 @@ public class Optimizer {
 	public ControlflowContext applyDCE(List<START> startsForMethods){
 		System.err.println("Now applying DCE.");
 		System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
-		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
+		//Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
+		Map<FlowNode, Bitvector> livenessMap = generateLivenessMap(startsForMethods);
 		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
 		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
-			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
-			if(liveness == null){
-				System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
-			}
+			//Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
+			//if(liveness == null){
+			//	System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
+			//}
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
@@ -1056,7 +1059,7 @@ public class Optimizer {
 			}
 			initialNode.resetVisit(); //fix the visited parameters.
 			for (Codeblock cblock : listOfCodeblocks){
-				Bitvector liveCheck = liveness.get(cblock);
+				Bitvector liveCheck = livenessMap.get(cblock);
 				if (liveCheck == null){
 					System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
 					System.err.println("The codeblock we are missing is the one containing the following statements:");
