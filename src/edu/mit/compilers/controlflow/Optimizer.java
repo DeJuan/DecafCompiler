@@ -1044,6 +1044,18 @@ public class Optimizer {
 				Bitvector liveCheck = liveness.get(cblock);
 				if (liveCheck == null){
 					System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
+					System.err.println("The codeblock we are missing is the one containing the following statements:");
+					for(Statement s : cblock.getStatements()){
+						if(s instanceof Assignment){
+							System.err.println(((Assignment) s).toString());
+						}
+						else if(s instanceof MethodCallStatement){
+							System.err.println("Callout method " +((MethodCallStatement) s).getMethodCall().getMethodName());
+						}
+						else if(s instanceof Declaration){
+							System.err.println("Declaration for variable " + ((Declaration) s).getName());
+						}
+					}
 				}
 				List<Statement> statementList = cblock.getStatements();
 				Collections.reverse(statementList);
