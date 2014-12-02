@@ -70,6 +70,9 @@ public class MapContainer {
     
     public static MapContainer keepGlobals(MapContainer startingContainer, List<IR_FieldDecl> globals){
         MapContainer newContainer = makeEmptyContainer();
+        if (startingContainer == null) {
+            return newContainer;
+        }
         for (IR_FieldDecl glob : globals) {
             ValueID id = startingContainer.varToVal.get(glob);
             if (glob.getLength() != null || id != null) {
