@@ -1166,7 +1166,7 @@ public class Optimizer {
                 for(FlowNode parent: currentNode.getParents()){
                     if(containerForNode.get(parent) == null){
                         currentNode.resetVisit();
-                        thisNodeContainer = MapContainer.makeEmptyContainer();
+                        thisNodeContainer = MapContainer.keepGlobals(thisNodeContainer, globalList);
                         reset = true;
                     } else {
                         if (thisNodeContainer == null) {
@@ -1304,6 +1304,14 @@ public class Optimizer {
                                     if (worked) {
                                         boolean changed = true; //we want to run repeated checks over the expression.
                                         SPSet arg = new SPSet(expr);
+                                        if (arg.containsMethodCalls()) {
+                                            killGlobals(valToVar, varToVal, varToValForArrayComponents);
+                                            if (!setVarIDs(varToVal, varToValForArrayComponents, expr)) {
+                                                // Skipping argument because contains reference to globals AND at least one method call
+                                                resetGlobals(valToVar, varToVal, varToValForArrayComponents);
+                                                continue;
+                                            }
+                                        }
                                         while(changed){ //Until we reach a fixed point
                                             changed = false; //say we haven't
                                             for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal

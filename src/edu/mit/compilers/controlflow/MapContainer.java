@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class MapContainer {
@@ -64,6 +66,29 @@ public class MapContainer {
         Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponentsN = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
         Map<ValueID, List<Var>> valToVarN = new HashMap<ValueID, List<Var>>();
         return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN, false);
+    }
+    
+    public static MapContainer keepGlobals(MapContainer startingContainer, List<IR_FieldDecl> globals){
+        MapContainer newContainer = makeEmptyContainer();
+        for (IR_FieldDecl glob : globals) {
+            ValueID id = startingContainer.varToVal.get(glob);
+            if (glob.getLength() != null || id != null) {
+                if (glob.getLength() != null && id == null) {
+                    throw new RuntimeException("ArrayID should have been set in original MapContainer");
+                }
+                newContainer.varToVal.put(glob, id);
+                if (!newContainer.valToVar.containsKey(id)) {
+                    newContainer.valToVar.put(id, new ArrayList<Var>());
+                }
+                Descriptor globDesc = new Descriptor(glob);
+                globDesc.setLocation(new LocLabel(glob.getName()));
+                newContainer.valToVar.get(id).add(new Var(globDesc, null));
+            }
+            if (glob.getLength() != null) {
+                newContainer.varToValForArrayComponents.put(glob, startingContainer.varToValForArrayComponents.get(glob));
+            }
+        }
+        return newContainer;
     }
     
     public MapContainer calculateIntersection(MapContainer otherContainer){
