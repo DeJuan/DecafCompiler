@@ -1,7 +1,9 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.Type;
@@ -116,6 +118,7 @@ public class START extends FlowNode {
 	 */
 	public void totalVisitReset(){
 		visited = false;
+		Set<FlowNode> visitedNodes = new HashSet<FlowNode>();
 		if (children.size() > 0){
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			for (FlowNode child : children){
@@ -123,9 +126,12 @@ public class START extends FlowNode {
 			}
 			while(!processing.isEmpty()){
 				FlowNode cNode = processing.remove(0);
-				if(cNode.visited()){
-					cNode.resetVisit();
-					processing.addAll(cNode.getChildren());
+				cNode.makeVisitFalse();
+				visitedNodes.add(cNode);
+				for(FlowNode child : cNode.getChildren()){
+					if(!visitedNodes.contains(child)){
+						processing.add(child);
+					}
 				}
 			}
 		}

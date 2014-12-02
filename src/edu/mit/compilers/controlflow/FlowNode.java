@@ -21,6 +21,10 @@ public abstract class FlowNode {
 		visited = true;
 	}
 	
+	public void makeVisitFalse(){
+		visited = false;
+	}
+	
 	/**
 	 * Returns whether or not this FlowNode has been traversed already.
 	 */

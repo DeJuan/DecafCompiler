@@ -757,7 +757,7 @@ public class Optimizer {
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
-			methodStart.resetVisit();
+			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
@@ -786,7 +786,7 @@ public class Optimizer {
 			endNodeList.addAll(endNodes);
 			Collections.reverse(endNodeList);
 			for(END initialNode : endNodeList){
-				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
+				methodStart.totalVisitReset(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
 					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
 				}
@@ -999,7 +999,7 @@ public class Optimizer {
 				}
 			}
 			liveStorage.put(methodStart, vectorStorageIN);
-			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
+			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
 		return liveStorage;
 	}
