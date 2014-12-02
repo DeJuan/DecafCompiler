@@ -782,8 +782,10 @@ public class Optimizer {
 					}
 				}
 			}
-			
-			for(END initialNode : endNodes){
+			List<END> endNodeList = new ArrayList<END>();
+			endNodeList.addAll(endNodes);
+			Collections.reverse(endNodeList);
+			for(END initialNode : endNodeList){
 				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
 				for(FlowNode node : vectorStorageIN.keySet()){
 					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
@@ -841,14 +843,16 @@ public class Optimizer {
 					}
 					if (previousNode == currentNode){
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-						if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
+						if(ticksForRevisit.get(currentNode).equals(4) || ticksForRevisit.get(currentNode) > 4){
 							System.err.println("We have processed this node at least three times, and have detected self-looping. No further reprocessing is required.");
 							skipNode = true;
 						}
 					}
 					if(skipNode){
 						for(FlowNode parent : currentNode.getParents()){
-							processing.add(parent);
+							if(!parent.visited()){
+								processing.add(parent);
+							}
 						}
 						continue;
 					}
