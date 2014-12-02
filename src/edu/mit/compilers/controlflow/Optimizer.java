@@ -848,9 +848,7 @@ public class Optimizer {
 					}
 					if(skipNode){
 						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited()){
-								processing.add(parent);
-							}
+							processing.add(parent);
 						}
 						continue;
 					}
