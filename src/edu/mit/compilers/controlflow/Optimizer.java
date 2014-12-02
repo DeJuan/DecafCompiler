@@ -984,9 +984,7 @@ public class Optimizer {
 					if(!changed){
 						System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited()){
-								processing.add(parent);
-							}
+								processing.add(parent);					
 						}
 					}
 					else{
