@@ -987,11 +987,8 @@ public class Optimizer {
 								processing.add(parent);					
 						}
 					}
-					else{
-						if(currentNode instanceof START || currentNode instanceof NoOp){
-							ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-						}
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
+					else{						
+						System.err.println("Finished processing a FlowNode whose bitvector OUT did change.");
 						for(FlowNode parent : currentNode.getParents()){
 							processing.add(parent);
 						}
