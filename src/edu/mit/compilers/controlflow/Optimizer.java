@@ -851,7 +851,9 @@ public class Optimizer {
 					if(skipNode){
 						for(FlowNode parent : currentNode.getParents()){
 							if(!parent.visited()){
-								processing.add(parent);
+								if(!processing.contains(parent)){
+									processing.add(parent);
+								}
 							}
 						}
 						continue;
@@ -986,13 +988,17 @@ public class Optimizer {
 					if(!changed){
 						System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
-								processing.add(parent);					
+							if(!processing.contains(parent)){
+								processing.add(parent);
+							}
 						}
 					}
 					else{						
 						System.err.println("Finished processing a FlowNode whose bitvector OUT did change.");
 						for(FlowNode parent : currentNode.getParents()){
-							processing.add(parent);
+							if(!processing.contains(parent)){
+								processing.add(parent);
+							}
 						}
 					}
 				previousNode = currentNode;
