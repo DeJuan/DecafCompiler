@@ -1214,6 +1214,23 @@ public class Optimizer {
                             Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
                             Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
+                            if (currentDestVar.getIndex() != null) {
+                                // make sure array is set up
+                                IR_FieldDecl arrayDecl = currentDestVar.getDecl();
+                                if(!varToVal.containsKey(arrayDecl)){
+                                    ValueID newID = new ValueID();
+                                    varToVal.put(arrayDecl, newID);
+                                    if (!valToVar.containsKey(newID)) {
+                                        valToVar.put(newID, new ArrayList<Var>());
+                                    }
+                                    valToVar.get(newID).add(new Var(new Descriptor(arrayDecl), null));
+                                }
+                                Map<SPSet, ValueID> innerMap;
+                                if(!varToValForArrayComponents.containsKey(arrayDecl)){
+                                    innerMap = new HashMap<SPSet, ValueID>();
+                                    varToValForArrayComponents.put(lhs, innerMap);
+                                }
+                            }
                             if (!canApply) {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
@@ -1273,7 +1290,12 @@ public class Optimizer {
                                 }
                                 else{
                                     if(!varToVal.containsKey(lhs)){
-                                        varToVal.put(lhs, new ValueID());
+                                        ValueID newID = new ValueID();
+                                        varToVal.put(lhs, newID);
+                                        if (!valToVar.containsKey(newID)) {
+                                            valToVar.put(newID, new ArrayList<Var>());
+                                        }
+                                        valToVar.get(newID).add(new Var(new Descriptor(lhs), null));
                                     }
                                     Map<SPSet, ValueID> innerMap;
                                     if(varToValForArrayComponents.containsKey(lhs)){
