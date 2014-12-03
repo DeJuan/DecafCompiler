@@ -1016,7 +1016,10 @@ public class Optimizer {
 							}
 						}
 					}
-				previousNode = currentNode;
+					if (vectorStorageIN.get(currentNode) == null ) {
+						System.err.println("THE ACTUAL FUCK IS GOING ON");
+					}
+					previousNode = currentNode;
 				}
 			}
 			liveStorage.put(methodStart, vectorStorageIN);
