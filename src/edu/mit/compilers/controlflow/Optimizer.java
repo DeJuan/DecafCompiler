@@ -1055,8 +1055,8 @@ public class Optimizer {
 		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
 		//Map<FlowNode, Bitvector> livenessMap = generateLivenessMap(startsForMethods);
 		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
-		Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 		for (START initialNode : startsForMethods){
+			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
 			if(liveness == null){
 				System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
