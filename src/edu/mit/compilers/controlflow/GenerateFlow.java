@@ -92,7 +92,7 @@ public class GenerateFlow {
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(decl.name, d);
 		context.enterFun();
-		context.incScope();
+		context.incScope(null);
 		
 		for (int i = 0; i < args.size(); i++) {
 			IR_FieldDecl a = args.get(i);
@@ -113,7 +113,7 @@ public class GenerateFlow {
 		    start.addChild(end);
 		    end.addParent(start);
 		}
-		context.decScope();
+		context.decScopeWithSideEffects();
 		return start;	
 	}
 	
@@ -127,7 +127,7 @@ public class GenerateFlow {
 	public static FlowNode generateFlow(FlowNode prevNode, IR_Seq seq, ControlflowContext context) {
 		if (seq == null)
 			return null;
-		context.incScope();
+		context.incScope(null);
 		List<IR_Node> statements = seq.getStatements();
 		FlowNode curNode = prevNode;
 		for (int i = 0; i < statements.size(); i++) {
@@ -205,7 +205,7 @@ public class GenerateFlow {
 				((Codeblock) curNode).addStatement(newStatement);
 			}
 		}
-		context.decScope();
+		context.decScopeWithSideEffects();
 		return curNode;
 	}
 	

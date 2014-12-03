@@ -118,8 +118,8 @@ public class MapContainer {
         Map<SPSet, Var> newExprToTemp = new HashMap<SPSet, Var>();
         for(SPSet sp : expToTemp.keySet()){
             Var myVar = expToTemp.get(sp);
-            Var otherVar = expToTemp.get(sp);
-            if(myVar.getVarDescriptor().getIR() == otherVar.getVarDescriptor().getIR()){
+            Var otherVar = otherContainer.expToTemp.get(sp);
+            if(otherVar != null && myVar.getVarDescriptor().getIR() == otherVar.getVarDescriptor().getIR()){
                 newExprToTemp.put(SPSet.copy(sp), myVar);
             }
         }
@@ -159,7 +159,7 @@ public class MapContainer {
                     }
                 } else {
                     if (Optimizer.setVarIDs(newVarToVal, newComponents, v.getIndex())) {
-                        if (newComponents.get(v.getDecl()).get(new SPSet(v.getIndex()))  == valID) {
+                        if (newComponents.containsKey(v.getDecl()) && newComponents.get(v.getDecl()).get(new SPSet(v.getIndex()))  == valID) {
                             newList.add(v);
                         }
                     }

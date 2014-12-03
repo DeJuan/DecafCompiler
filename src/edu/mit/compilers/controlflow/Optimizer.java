@@ -358,6 +358,9 @@ public class Optimizer {
                     return false;
                 }
                 SPSet varArraySP = new SPSet(varia.getIndex());
+                if (!varToValForArrayComponents.containsKey(varDecl)) {
+                    return false;
+                }
                 valID = varToValForArrayComponents.get(varDecl).get(varArraySP);
             }
             if (valID == null){
@@ -1228,7 +1231,7 @@ public class Optimizer {
                                 Map<SPSet, ValueID> innerMap;
                                 if(!varToValForArrayComponents.containsKey(arrayDecl)){
                                     innerMap = new HashMap<SPSet, ValueID>();
-                                    varToValForArrayComponents.put(lhs, innerMap);
+                                    varToValForArrayComponents.put(arrayDecl, innerMap);
                                 }
                             }
                             if (!canApply) {

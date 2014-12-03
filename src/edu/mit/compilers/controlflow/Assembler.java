@@ -94,7 +94,7 @@ public class Assembler {
     public static void generateMethodDecl(Map.Entry<String, START> decl, ControlflowContext context){
         String name = decl.getKey();
         context.enterFun();
-        context.incScope();
+        context.incScope(false);
 
         Instruction tmpIns;
         context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
@@ -165,7 +165,7 @@ public class Assembler {
         // check in generateReturn that non-void functions don't return 
         // without a return value
 
-        context.decScope();
+        context.decScopeWithSideEffects();
         //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
 
@@ -187,6 +187,9 @@ public class Assembler {
             ins.addAll(generateStatement(stat, context));
         }
         FlowNode child = begin.getChildren().get(0);
+        if (begin.getIsBreak()) {
+            ins.addAll(context.decScopeToLoop());
+        }
         ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
         return ins;
     }
@@ -202,7 +205,7 @@ public class Assembler {
 
         if (begin.getType() == BranchType.IF) {
             // make True branch - either ends at end or when hitting a if with two ends or an unpaired NOp
-            context.incScope();
+            context.incScope(false);
             boolean done = false;
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
@@ -270,9 +273,10 @@ public class Assembler {
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
-                ins.add(context.decScope());
+                ins.add(context.decScopeIdempotent());
                 ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
+            context.decScopeWithSideEffects();
 
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
@@ -281,7 +285,7 @@ public class Assembler {
             if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
                 throw new RuntimeException("Maddie assumed something untrue");
             }
-            context.incScope();
+            context.incScope(true);
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -311,7 +315,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            ins.add(context.decScope());
+            context.decScopeWithSideEffects();
         } else if (begin.getType() == BranchType.WHILE) {
             FlowNode next;
             if (begin.getIsLimitedWhile()) {
@@ -328,7 +332,7 @@ public class Assembler {
                 next = begin.getTrueBranch().getChildren().get(0);
             }
             boolean done = false;
-            context.incScope();
+            context.incScope(true);
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -358,7 +362,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            ins.add(context.decScope());
+            context.decScopeWithSideEffects();
         }
         return ins;
     }
