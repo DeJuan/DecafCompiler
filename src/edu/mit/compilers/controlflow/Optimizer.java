@@ -1076,6 +1076,8 @@ public class Optimizer {
 				}
 			}
 			initialNode.resetVisit(); //fix the visited parameters.
+			System.err.println("BEFORE ITERATION");
+			System.err.println(liveness.get(initialNode.getChildren().get(0)));
 			for (Codeblock cblock : listOfCodeblocks){
 				Bitvector liveCheck = liveness.get(cblock);
 				if (liveCheck == null){
