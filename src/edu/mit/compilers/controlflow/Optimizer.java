@@ -369,6 +369,41 @@ public class Optimizer {
 		return allVarDecls;
 	}
 	
+	public boolean containsMethodCall(Expression expr){
+		if(expr instanceof BinExpr){
+			BinExpr bin = (BinExpr)expr;
+			Expression lhs = bin.getLeftSide();
+			Expression rhs = bin.getRightSide();
+			boolean b1 = containsMethodCall(lhs);
+			boolean b2 = containsMethodCall(rhs);
+			return b1 || b2;
+		}
+		else if(expr instanceof NotExpr){
+			NotExpr nope = (NotExpr)expr;
+			return containsMethodCall(nope.getUnresolvedExpression());
+		}
+		else if(expr instanceof NegateExpr){
+			NegateExpr negate = (NegateExpr)expr;
+			return containsMethodCall(negate.getExpression());
+		}
+		else if(expr instanceof Ternary){
+			Ternary tern = (Ternary)expr;
+			boolean b1 = containsMethodCall(tern.getTernaryCondition());
+			boolean b2 = containsMethodCall(tern.trueBranch);
+			boolean b3 =  containsMethodCall(tern.falseBranch);
+			return b1 || b2 || b3;
+		}
+		else if(expr instanceof MethodCall){
+			return true;
+		}
+		else if(expr instanceof Var || expr instanceof IntLit || expr instanceof BoolLit || expr instanceof StringLit ){
+			return false;
+		}
+		else{
+			throw new UnsupportedOperationException("I missed a case in containsMethodCall.");
+		}
+	}
+	
 	/**
 	 * This is a compiler helper function which, given the set of all variable names already taken by the method,
 	 * returns a new, unique name for a temp variable each time it is called. 
@@ -1028,9 +1063,6 @@ public class Optimizer {
 				}
 			}
 			liveStorage.put(methodStart, vectorStorageIN);
-			if(vectorStorageIN.containsKey(childOfStart)){
-				System.err.println("vectorStorageIN contains childOfStart. WTF -headdesk-");
-			}
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
 		return liveStorage;
@@ -1059,7 +1091,7 @@ public class Optimizer {
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 			Map<FlowNode, Bitvector> liveness = livenessMap.get(initialNode);
 			if(liveness == null){
-				System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
+				//System.err.println("BUG DETECTED BUG DETECTED!!! liveness for this particular initialNode is NULL.");
 			}
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
@@ -1069,25 +1101,25 @@ public class Optimizer {
 				System.err.println("Now visiting " + currentNode);
 				if(currentNode instanceof Codeblock){
 					listOfCodeblocks.add((Codeblock)currentNode);
-					System.err.println("Just added " + currentNode);
+					//System.err.println("Just added " + currentNode);
 				}
 				for (FlowNode child : currentNode.getChildren()){
 					if(!child.visited()){
 						scanning.add(child);
-						System.err.println("Added " + child + " to scanning.");
+						//System.err.println("Added " + child + " to scanning.");
 					}
 				}
 			}
 			initialNode.resetVisit(); //fix the visited parameters.
-			System.err.println("BEFORE ITERATION");
-			System.err.println(liveness.get(initialNode.getChildren().get(0)));
-			System.err.println(initialNode.getChildren().get(0));
+			///System.err.println("BEFORE ITERATION");
+			//System.err.println(liveness.get(initialNode.getChildren().get(0)));
+			//System.err.println(initialNode.getChildren().get(0));
 			for (Codeblock cblock : listOfCodeblocks){
 				System.err.println("NOW CHECKING " + cblock);
 				Bitvector liveCheck = liveness.get(cblock);
 				if (liveCheck == null){
-					System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
-					System.err.println("The codeblock we are missing is the one containing the following statements:");
+					//System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
+					//System.err.println("The codeblock we are missing is the one containing the following statements:");
 					for(Statement s : cblock.getStatements()){
 						if(s instanceof Assignment){
 							System.err.println(((Assignment) s).toString());
@@ -1128,7 +1160,7 @@ public class Optimizer {
 								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS in NULLPOINTER assignment.", nameofVar);
 							}
 						}
-						else if(liveCheck.get(lhs) == 0){
+						else if(liveCheck.get(lhs) == 0 && !(containsMethodCall(assign.getValue()))){
 							statementIter.remove();
 							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
