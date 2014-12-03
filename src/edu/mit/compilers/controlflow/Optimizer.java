@@ -1078,7 +1078,9 @@ public class Optimizer {
 			initialNode.resetVisit(); //fix the visited parameters.
 			System.err.println("BEFORE ITERATION");
 			System.err.println(liveness.get(initialNode.getChildren().get(0)));
+			System.err.println(initialNode.getChildren().get(0));
 			for (Codeblock cblock : listOfCodeblocks){
+				System.err.println("NOW CHECKING " + cblock);
 				Bitvector liveCheck = liveness.get(cblock);
 				if (liveCheck == null){
 					System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
