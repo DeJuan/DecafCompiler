@@ -819,7 +819,6 @@ public class Optimizer {
 				List<FlowNode> processing = new ArrayList<FlowNode>();
 				for(FlowNode parent : initialNode.getParents()){
 					processing.add(parent);
-					System.err.println("Just added parent " + parent + " to processing in initial phase.");
 				}
 				FlowNode previousNode = initialNode;
 				while(!processing.isEmpty()){
@@ -834,7 +833,6 @@ public class Optimizer {
 					}
 					else{
 						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
-						System.err.println("We are processing a node with more than one child.");
 					}
 					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
 					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
@@ -879,7 +877,6 @@ public class Optimizer {
 							if(!parent.visited()){
 								if(!processing.contains(parent)){
 									processing.add(parent);
-									System.err.println("Adding parent " + parent);
 								}
 							}
 						}
@@ -1017,7 +1014,6 @@ public class Optimizer {
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
-								System.err.println("Adding parent " + parent);
 							}
 						}
 					}
@@ -1026,7 +1022,6 @@ public class Optimizer {
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
-								System.err.println("Adding parent " + parent);
 							}
 						}
 					}
