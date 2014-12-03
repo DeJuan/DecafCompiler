@@ -752,10 +752,10 @@ public class Optimizer {
 	 */
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
-		Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 		//Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 		for(START methodStart : startsForMethods){
+			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.dren
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset();
