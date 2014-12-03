@@ -1068,6 +1068,7 @@ public class Optimizer {
 				currentNode.visit();
 				if(currentNode instanceof Codeblock){
 					listOfCodeblocks.add((Codeblock)currentNode);
+                                        System.err.println("Just added " + currentNode);
 				}
 				for (FlowNode child : currentNode.getChildren()){
 					if(!child.visited()){
