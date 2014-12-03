@@ -823,7 +823,6 @@ public class Optimizer {
 				FlowNode previousNode = initialNode;
 				while(!processing.isEmpty()){
 					FlowNode currentNode = processing.remove(0);
-					System.err.println("About to visit " + currentNode);
 					currentNode.visit();
 					if(currentNode == childOfStart){
 						System.err.println("WE VISITED THE FREAKING START WHY ARE YOU NOT WORKING");
