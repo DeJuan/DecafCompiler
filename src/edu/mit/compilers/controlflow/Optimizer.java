@@ -738,6 +738,15 @@ public class Optimizer {
 		return IN;
 	}
 	
+	
+	public Map<FlowNode, Bitvector> vectorMapCopy(Map<FlowNode, Bitvector> mapToCopy){
+		Map<FlowNode, Bitvector> copy = new HashMap<FlowNode, Bitvector>();
+		for( FlowNode node : mapToCopy.keySet()){
+			copy.put(node, mapToCopy.get(node).copyBitvector());
+		}
+		return copy;
+	}
+	
 	/**
 	 * This is the method we'll be actually using to generate liveness vectors to do DCE. 
 	 * It works backwards in reverse from each END in the program. 
@@ -756,7 +765,7 @@ public class Optimizer {
 		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 		for(START methodStart : startsForMethods){
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
-			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.dren
+			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from blocks
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
@@ -1016,13 +1025,10 @@ public class Optimizer {
 							}
 						}
 					}
-					if (vectorStorageIN.get(currentNode) == null ) {
-						System.err.println("THE ACTUAL FUCK IS GOING ON");
-					}
 					previousNode = currentNode;
 				}
 			}
-			liveStorage.put(methodStart, vectorStorageIN);
+			liveStorage.put(methodStart, vectorMapCopy(vectorStorageIN));
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
 		return liveStorage;
