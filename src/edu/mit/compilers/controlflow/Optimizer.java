@@ -793,7 +793,7 @@ public class Optimizer {
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
 						liveVector.setVectorVal(returnVar.getFieldDecl(), 1); //things returned must be alive on exit, so set their vector to 1
-						System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
+						//System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
 					}
 				}
 				for (IR_FieldDecl global : globalList){
@@ -806,10 +806,14 @@ public class Optimizer {
 				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
 				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
 				List<FlowNode> processing = new ArrayList<FlowNode>();
-				processing.addAll(initialNode.getParents());
+				for(FlowNode parent : initialNode.getParents()){
+					processing.add(parent);
+					System.err.println("Just added parent " + parent + " to processing in initial phase.");
+				}
 				FlowNode previousNode = initialNode;
 				while(!processing.isEmpty()){
 					FlowNode currentNode = processing.remove(0);
+					System.err.println("About to visit " + currentNode);
 					currentNode.visit();
 					if(currentNode.getChildren().size() == 1){
 						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
@@ -824,27 +828,27 @@ public class Optimizer {
 					boolean skipNode = false;
 					if(canSkipReprocessFlag){
 						if(ticksForRevisit.get(currentNode).equals(0)){
-							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
+							//System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
 							ticksForRevisit.put(currentNode, 1);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(1)){
-							System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
+							//System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
 							ticksForRevisit.put(currentNode, 2);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(2)){
-							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
+							//System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
 							ticksForRevisit.put(currentNode, 3);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(3)){
-							System.err.println("We have processed this node at least three times.");
+							//System.err.println("We have processed this node at least three times.");
 							ticksForRevisit.put(currentNode, 4);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(4)){
-							System.err.println("We have processed this node at least four times, and no changes have occurred to its IN. No further reprocessing is required.");
+							//System.err.println("We have processed this node at least four times, and no changes have occurred to its IN. No further reprocessing is required.");
 							ticksForRevisit.put(currentNode, 5);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(5) || ticksForRevisit.get(currentNode) > 5){
-							System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
+							//System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
 							skipNode = true;
 						}
 						
@@ -950,7 +954,7 @@ public class Optimizer {
 								}
 								for(Var varia : varsInArgs){
 									liveVector.setVectorVal(varia.getFieldDecl(), 1); //If not already alive, mark an argument as alive. 
-									System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
+									//System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
 								}
 							}
 						}
@@ -961,7 +965,7 @@ public class Optimizer {
 						Branch cBranch = (Branch)currentNode;
 						for(Var varia : getVarsFromExpression(cBranch.getExpr())){
 							liveVector.setVectorVal(varia.getFieldDecl(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
-							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
+							//System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
 						}
 					}
 
@@ -974,7 +978,7 @@ public class Optimizer {
 						List<IR_FieldDecl> args = cStart.getArguments();
 						for (IR_FieldDecl arg : args){
 							liveVector.setVectorVal(arg, 1); 
-							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
+							//System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
 						}	
 					}
 
@@ -983,7 +987,7 @@ public class Optimizer {
 						if(cEnd.getReturnExpression() != null){
 							for(Var varia : getVarsFromExpression(cEnd.getReturnExpression())){
 								liveVector.setVectorVal(varia.getFieldDecl(), 1);
-								System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
+								//System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
 							}
 						}
 					}
@@ -994,7 +998,7 @@ public class Optimizer {
 					changed = previousOut.compareBitvectorEquality(newOut);
 					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
+						//System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
@@ -1002,7 +1006,7 @@ public class Optimizer {
 						}
 					}
 					else{						
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did change.");
+						//System.err.println("Finished processing a FlowNode whose bitvector OUT did change.");
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
