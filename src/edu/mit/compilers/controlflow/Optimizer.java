@@ -762,14 +762,16 @@ public class Optimizer {
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
 		//Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
-		Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 		for(START methodStart : startsForMethods){
+			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from blocks
 			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
 			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
+			FlowNode childOfStart = methodStart.getChildren().get(0);
+			System.err.println("Child of the start is: " + childOfStart);
 			Set<END> endNodes = new LinkedHashSet<END>();
 			Set<IR_FieldDecl> allVars = getAllFieldDeclsInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
@@ -824,6 +826,9 @@ public class Optimizer {
 					FlowNode currentNode = processing.remove(0);
 					System.err.println("About to visit " + currentNode);
 					currentNode.visit();
+					if(currentNode == childOfStart){
+						System.err.println("WE VISITED THE FREAKING START WHY ARE YOU NOT WORKING");
+					}
 					if(currentNode.getChildren().size() == 1){
 						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
 					}
@@ -1028,7 +1033,10 @@ public class Optimizer {
 					previousNode = currentNode;
 				}
 			}
-			liveStorage.put(methodStart, vectorMapCopy(vectorStorageIN));
+			liveStorage.put(methodStart, vectorStorageIN);
+			if(vectorStorageIN.containsKey(childOfStart)){
+				System.err.println("vectorStorageIN contains childOfStart. WTF -headdesk-");
+			}
 			methodStart.totalVisitReset(); //fix all the visited nodes before we go to next START.
 		}
 		return liveStorage;
