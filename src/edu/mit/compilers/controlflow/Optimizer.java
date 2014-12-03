@@ -1066,12 +1066,15 @@ public class Optimizer {
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
+				System.err.println("Now visiting " + currentNode);
 				if(currentNode instanceof Codeblock){
 					listOfCodeblocks.add((Codeblock)currentNode);
+					System.err.println("Just added " + currentNode);
 				}
 				for (FlowNode child : currentNode.getChildren()){
 					if(!child.visited()){
 						scanning.add(child);
+						System.err.println("Added " + child + " to scanning.");
 					}
 				}
 			}
