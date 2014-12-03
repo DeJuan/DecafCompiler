@@ -865,6 +865,7 @@ public class Optimizer {
 							if(!parent.visited()){
 								if(!processing.contains(parent)){
 									processing.add(parent);
+									System.err.println("Adding parent " + parent);
 								}
 							}
 						}
@@ -1002,6 +1003,7 @@ public class Optimizer {
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
+								System.err.println("Adding parent " + parent);
 							}
 						}
 					}
@@ -1010,6 +1012,7 @@ public class Optimizer {
 						for(FlowNode parent : currentNode.getParents()){
 							if(!processing.contains(parent)){
 								processing.add(parent);
+								System.err.println("Adding parent " + parent);
 							}
 						}
 					}
