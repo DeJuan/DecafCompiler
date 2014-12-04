@@ -1152,7 +1152,7 @@ public class Optimizer {
 								//System.err.printf("Bitvector entry for variable %s has been set to 1 by use in NULLPOINTER assignment." + System.getProperty("line.separator"), varName);
 								rhsDecls.add(varDecl);
 							}
-							if(!rhsDecls.contains(lhs)){
+							if(!rhsDecls.contains(lhs) && assign.getDestVar().getIndex() == null){
 								liveCheck.setVectorVal(lhs, 0);
 								//System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an NULLPOINTER assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 							}
