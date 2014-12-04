@@ -937,12 +937,12 @@ public class Optimizer {
 										//System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment OR one with method call." + System.getProperty("line.separator"), varName);
 										rhsDecls.add(varDecl);
 									}
-									if(!rhsDecls.contains(lhs)){
+									if(!rhsDecls.contains(lhs) && assign.getDestVar().getIndex() == null){
 										liveVector.setVectorVal(lhs, 0);
-										//System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
+										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use and is not an array." + System.getProperty("line.separator"), lhs);
 									}
 									else{
-										//System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
+										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS, or being an array." + System.getProperty("line.separator"), lhs);
 									}
 								}									
 								
