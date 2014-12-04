@@ -107,6 +107,7 @@ public class ControlflowContext {
         localVarSize = new ArrayList<Long>();
         localVarSize.add(0L);
         isLoop = new ArrayList<Boolean>();
+        isLoop.add(false);
     }
 
     public LocStack getRsp(){
