@@ -206,6 +206,9 @@ public class Optimizer {
 		else if (expr instanceof Var){
 			Var varia = (Var)expr;
 			allVars.add(varia);
+			if(varia.getIndex() != null){
+				allVars.addAll(getVarsFromExpression(varia.getIndex()));
+			}
 		}	
 		else if(expr instanceof NotExpr){
 			NotExpr nope = (NotExpr)expr;
