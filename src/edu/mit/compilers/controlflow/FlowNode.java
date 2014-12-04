@@ -2,9 +2,12 @@ package edu.mit.compilers.controlflow;
 
 import java.util.List;
 
+import edu.mit.compilers.regalloc.ReachingDefinition;
+
 public abstract class FlowNode {
 	
 	protected Bitvector liveMap;
+	protected ReachingDefinition rd;
 	protected boolean visited = false;
 	protected String label;
 	
@@ -50,6 +53,14 @@ public abstract class FlowNode {
 	
 	public void setLiveMap(Bitvector bv) {
 		this.liveMap = bv;
+	}
+	
+	public ReachingDefinition getReachingDefinition() {
+		return this.rd;
+	}
+	
+	public void setReachingDefinition(ReachingDefinition rd) {
+		this.rd = rd;
 	}
 	
 }

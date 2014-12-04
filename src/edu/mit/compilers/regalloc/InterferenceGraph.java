@@ -1,4 +1,4 @@
-/*package edu.mit.compilers.regalloc;
+package edu.mit.compilers.regalloc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +32,6 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class InterferenceGraph {
 	
-	private Optimizer optimizer;
 	private List<GraphNode> nodes = new ArrayList<GraphNode>();
 	private HashMap<String, HashMap<Integer, GraphNode>> varToNodes;
 	
@@ -45,6 +44,7 @@ public class InterferenceGraph {
 	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
+	private Optimizer optimizer;
 	
 	public InterferenceGraph(ControlflowContext context, 
 		List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
@@ -72,266 +72,7 @@ public class InterferenceGraph {
 			varToNodes.put(parameter.getName(), graphNodes);
 		}
 	}
-	
-	/**
-	 * This is the method we'll be actually using to generate liveness vectors to do DCE. 
-	 * It works backwards in reverse from each END in the program. 
-	 * It uses a bit vector representation of liveness and traces through the code,
-	 * calculating liveness until there is convergence.
-	 * 
-	 * Currently does NOT handle dead declarations (there's a justification for that, actually)
-	 * and has not yet been tested. 
-	 * 
-	 * @param startsForMethods : List of START nodes for the given methods in the program. 
-	 * @return 
-	 
-	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(){
-		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
-		for(START methodStart : flowNodes.values()){
-			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
-			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
-			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
-			//First things first: We will be called from DCE or another optimization, so reset visits before we do anything else.
-			methodStart.resetVisit();
-			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
-			scanning.add(methodStart);
-			Set<END> endNodes = new LinkedHashSet<END>();
-			Set<String> allVars = optimizer.getAllVarNamesInMethod(methodStart);
-			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
-			
-			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
-				FlowNode currentNode = scanning.remove(0);
-				currentNode.visit();
-				if(!vectorStorageIN.containsKey(currentNode)){
-					vectorStorageIN.put(currentNode, zeroVector.copyBitvector()); //Set bitvectors to all zeros
-				}
-				if(!vectorStorageOUT.containsKey(currentNode)){
-					vectorStorageOUT.put(currentNode, zeroVector.copyBitvector());
-				}
-				if(currentNode instanceof END){ 
-					endNodes.add((END)currentNode);
-				}
-				for (FlowNode child : currentNode.getChildren()){
-					if(!child.visited()){
-						scanning.add(child);
-					}
-				}
-			}
-			
-			for(END initialNode : endNodes){
-				methodStart.resetVisit(); //Need to fix the visits since we just tampered with them.
-				for(FlowNode node : vectorStorageIN.keySet()){
-					ticksForRevisit.put(node, 0); //set up/ reset the ticker so we can see if we want to do revisits
-				}
-				Bitvector liveVector = vectorStorageIN.get(initialNode); //set up the bitvector. Initialized to any current values.
-				if(initialNode.getReturnExpression() != null){
-					for(Var returnVar : optimizer.getVarsFromExpression(initialNode.getReturnExpression())){
-						liveVector.setVectorVal(returnVar.getName(), 1); //things returned must be alive on exit, so set their vector to 1
-						System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
-					}
-				}
-				for (IR_FieldDecl global : globalList){
-					liveVector.setVectorVal(global.getName(), 1);
-				}
-				for(IR_FieldDecl argument : methodStart.getArguments()){
-					liveVector.setVectorVal(argument.getName(), 1);
-				}
-				//Since we move from top to bottom, OUT is what propagates upward, where it is part of the IN of the next block.
-				vectorStorageOUT.put(initialNode, liveVector.copyBitvector().vectorUnison(vectorStorageOUT.get(initialNode)));
-				//Now we've set up everything from the end of the program, assuming working on only one END at a time. Now we walk backwards. 
-				List<FlowNode> processing = new ArrayList<FlowNode>();
-				processing.addAll(initialNode.getParents());
-				FlowNode previousNode = initialNode;
-				while(!processing.isEmpty()){
-					FlowNode currentNode = processing.remove(0);
-					currentNode.visit();
-					if(currentNode.getChildren().size() == 1){
-						liveVector = vectorStorageOUT.get(currentNode.getChildren().get(0)).copyBitvector();
-					}
-					else{
-						liveVector = Bitvector.childVectorUnison(currentNode.getChildren(), vectorStorageOUT, vectorStorageIN.get(currentNode));
-						System.err.println("We are processing a node with more than one child.");
-					}
-					Bitvector previousIN = vectorStorageIN.get(currentNode).copyBitvector();
-					vectorStorageIN.put(currentNode, liveVector.copyBitvector().vectorUnison(vectorStorageIN.get(currentNode)));
-					boolean canSkipReprocessFlag = previousIN.compareBitvectorEquality(vectorStorageIN.get(currentNode));
-					boolean skipNode = false;
-					if(canSkipReprocessFlag){
-						if(ticksForRevisit.get(currentNode).equals(0)){
-							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
-							ticksForRevisit.put(currentNode, 1);
-						}
-						else if(ticksForRevisit.get(currentNode).equals(1)){
-							System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
-							ticksForRevisit.put(currentNode, 2);
-						}
-						else if(ticksForRevisit.get(currentNode).equals(2)){
-							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
-							ticksForRevisit.put(currentNode, 3);
-						}
-						else if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
-							System.err.println("We have processed this node at least three times, and no changes have occurred to its IN. No further reprocessing is required.");
-							skipNode = true;
-						}
-					}
-					if (previousNode == currentNode){
-						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-						if(ticksForRevisit.get(currentNode).equals(3) || ticksForRevisit.get(currentNode) > 3){
-							System.err.println("We have processed this node at least three times, and have detected self-looping. No further reprocessing is required.");
-							skipNode = true;
-						}
-					}
-					if(skipNode){
-						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited()){
-								processing.add(parent);
-							}
-						}
-						continue;
-					}
-					if(currentNode instanceof Codeblock){
-						Codeblock cblock = (Codeblock)currentNode;
-						List<Statement> statementList = cblock.getStatements();
-						Collections.reverse(statementList); //reverse the list so we can go backwards through it
-						Iterator<Statement> statementIter = statementList.iterator();
-						while(statementIter.hasNext()){
-							Statement currentState = statementIter.next();
-							
-							if(currentState instanceof Assignment){ 
-								Assignment assign = (Assignment)currentState;
-								String lhs = assign.getDestVar().getName();
-								//List<String> changedVectorEntry = new ArrayList<String>();
-								List<Var> varsInRHS = optimizer.getVarsFromExpression(assign.getValue());
-								Set<String> rhsNames = new LinkedHashSet<String>();
-								//LEFT HAND FIRST LOGIC
-								if(liveVector.get(lhs) == 1){ //If this is alive, MAY need to flip the bit
-									for(Var varia : varsInRHS){
-										String varName = varia.getName();
-										liveVector.setVectorVal(varName, 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
-										System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment." + System.getProperty("line.separator"), varName);
-										rhsNames.add(varName);
-									}
-									if(!rhsNames.contains(lhs)){
-										liveVector.setVectorVal(lhs, 0);
-										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
-									}
-									else{
-										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
-									}
-								}
-							}
 
-							*//**
-							 * TODO : Reason this is commented out: Consider the following scenario being read from bottom to top:
-							 * 
-							 * int x;
-							 * x = 5;
-							 * z = x + 9;
-							 * 
-							 * When we see x on the rhs of the definition for Z, X would be alive. 
-							 * When we then see the definition for X, we'd set x to 0 in the bitvector.
-							 * Then we'd hit the declaration for x. The bit vector is 0 for x, so with this type of mentality, 
-							 * we'd delete the declaration! This is bad, so don't do it! Maybe just leave declarations alone?
-							 * Probably not worth the complexity increase to deal with them, actually...Would need to seperately track an 
-							 * "if ever used" quality and use that instead; if we ever set the vector to 1, then ifEverUsed becomes true.
-							 * If we see the declaration, check ifEverUsed ; if true, leave decl alone, else, remove it. Would get iffy around branches. 
-							 *//*
-							else if(currentState instanceof Declaration){ 
-								//if var declared isn't ever alive, could remove the decl; but have to make sure... 
-							}
-
-							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
-								MethodCallStatement mcall = (MethodCallStatement)currentState;
-								List<Expression> args = mcall.getMethodCall().getArguments();
-								Set<Var> varsInArgs = new LinkedHashSet<Var>();
-								for(Expression expr : args){
-									varsInArgs.addAll(optimizer.getVarsFromExpression(expr));
-								}
-								for(Var varia : varsInArgs){
-									liveVector.setVectorVal(varia.getName(), 1); //If not already alive, mark an argument as alive. 
-									System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase by a method call." + System.getProperty("line.separator"), varia.getName());
-								}
-							}
-							Bitvector liveMapForStatement = liveVector.copyBitvector();
-							if (currentState instanceof Assignment) {
-								String var = ((Assignment) currentState).getDestVar().getName();
-								if (vectorStorageIN.get(currentNode).get(var) == 1) {
-									// it is actually live
-									liveMapForStatement.setVectorVal(var, 1);
-								}
-							}
-							currentState.setLiveMap(liveMapForStatement);
-							System.out.println("######## " + liveVector.getVectorMap().get("a") + " " + vectorStorageIN.get(currentNode).copyBitvector().get("a"));
-						}
-						Collections.reverse(statementList); //We reversed the list to iterate through it backwards, so fix it before we move on!
-					}
-
-					else if (currentNode instanceof Branch){ //join point. Live vector would be handled before we got here by unisonVector, so assume we're golden.
-						Branch cBranch = (Branch)currentNode;
-						for(Var varia : optimizer.getVarsFromExpression(cBranch.getExpr())){
-							liveVector.setVectorVal(varia.getName(), 1); //anything showing up in a branch expression is used by definition, otherwise prog is invalid.
-							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to usage in a branch condition." + System.getProperty("line.separator"), varia.getName());
-						}
-						cBranch.setLiveMap(liveVector.copyBitvector());
-					}
-
-					else if(currentNode instanceof NoOp){ //split point. No expr here, so don't have to scan it.
-						//Do nothing, just move onward to post-block processing.
-					}
-
-					else if(currentNode instanceof START){
-						START cStart = (START)currentNode;
-						List<IR_FieldDecl> args = cStart.getArguments();
-						for (IR_FieldDecl arg : args){
-							liveVector.setVectorVal(arg.getName(), 1); 
-							System.err.printf("Just set variable %s 's bitvector to 1 in building phase due to a START." + System.getProperty("line.separator"), arg.getName());
-						}	
-						cStart.setLiveMap(liveVector.copyBitvector());
-					}
-
-					else if(currentNode instanceof END){
-						END cEnd = (END)currentNode;
-						if(cEnd.getReturnExpression() != null){
-							for(Var varia : optimizer.getVarsFromExpression(cEnd.getReturnExpression())){
-								liveVector.setVectorVal(varia.getName(), 1);
-								System.err.printf("Just set variable %s 's bitvector to 1 in building phase. due to an END." + System.getProperty("line.separator"), varia.getName());
-							}
-						}
-						cEnd.setLiveMap(liveVector.copyBitvector());
-					}
-					
-					boolean changed;
-					Bitvector previousOut = vectorStorageOUT.get(currentNode).copyBitvector();
-					Bitvector newOut = liveVector.vectorUnison(previousOut);
-					changed = previousOut.compareBitvectorEquality(newOut);
-					vectorStorageOUT.put(currentNode, newOut);
-					if(!changed){
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
-						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited()){
-								processing.add(parent);
-							}
-						}
-					}
-					else{
-						if(currentNode instanceof START || currentNode instanceof NoOp){
-							ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
-						}
-						System.err.println("Finished processing a FlowNode whose bitvector OUT did change; Will now visit all parents.");
-						for(FlowNode parent : currentNode.getParents()){
-							processing.add(parent);
-						}
-					}
-					previousNode = currentNode;
-					System.out.println("%%%%%% " + vectorStorageIN.get(currentNode).getVectorMap().get("a"));
-				}
-			}
-			liveStorage.put(methodStart, vectorStorageIN);
-			methodStart.resetVisit(); //fix all the visited nodes before we go to next START.
-		}
-		return liveStorage;
-	}
-	
 	private void addEdge(GraphNode from, GraphNode to) {
 		if (!adjList.containsKey(from)) {
 			adjList.put(from, new HashSet<GraphNode>(Arrays.asList(to)));
@@ -374,18 +115,8 @@ public class InterferenceGraph {
 		throw new RuntimeException("Not found in the map. Uh oh??");
 	}
 	
-	private List<String> getLiveVars(Bitvector liveMap) {
-		List<String> liveVars = new ArrayList<String>(); 
-		for (String var : liveMap.getVectorMap().keySet()) {
-			if (liveMap.get(var) == 1) {
-				liveVars.add(var);
-			}
-		}
-		return liveVars;
-	}
-	
 	private void addEdges(GraphNode node, Bitvector liveMap) {
-		List<String> liveVars = getLiveVars(liveMap);
+		List<String> liveVars = new ArrayList<String>();
 		String curVar = node.getVarName();
 		int currentLevel = node.getLevel();
 		System.out.println("Current level: " + currentLevel);
@@ -413,12 +144,12 @@ public class InterferenceGraph {
 		}
 	}
 	
-	*//**
+	/**
 	 * Process codeBlocks sequentially.
 	 * @param listOfCodeblocks
 	 * @param currentNode
 	 * @param currentLevel
-	 *//*
+	 */
 	public void addCodeBlocks(Set<Codeblock> listOfCodeblocks, FlowNode currentNode, int currentLevel) {
 		currentNode.visit();
 		if(currentNode instanceof Codeblock){
@@ -445,10 +176,10 @@ public class InterferenceGraph {
 		
 	}
 	
-	*//**
+	/**
 	 * Remove all entries that have a higher level than the current level.
 	 * @param level
-	 *//*
+	 */
 	public void removePrevLevels(int level) {
 		for (HashMap<Integer, GraphNode> v : varToNodes.values()) {
 			Iterator<Map.Entry<Integer, GraphNode>> iter = v.entrySet().iterator();
@@ -552,6 +283,4 @@ public class InterferenceGraph {
 	public HashSet<HashSet<GraphNode>> getBitMatrix() {
 		return bitMatrix;
 	}
-
 }
-*/

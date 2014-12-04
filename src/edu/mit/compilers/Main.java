@@ -258,6 +258,8 @@ class Main {
 				    	  }
 				    	  if (CLI.opts[2]) {
 							  // Register allocation
+				    		  GenReachingDefs genRDs = new GenReachingDefs(context, callouts, globals, flowNodes);
+				    		  genRDs.run();
 							  //InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
 							  //ig.generateLivenessMap();
 							  //ig.buildGraph();
