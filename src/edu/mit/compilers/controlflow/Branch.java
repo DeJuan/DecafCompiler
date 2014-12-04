@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import edu.mit.regalloc.GraphNode;
+import edu.mit.compilers.regalloc.GraphNode;
 
 /**
  * This class is our representation of branches in control flow. 

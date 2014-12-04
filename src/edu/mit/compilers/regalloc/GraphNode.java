@@ -1,4 +1,4 @@
-package edu.mit.regalloc;
+package edu.mit.compilers.regalloc;
 
 import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.controlflow.Assignment;
@@ -85,6 +85,4 @@ public class GraphNode {
 	public int getLevel() {
 		return this.level;
 	}
-	
-
 }

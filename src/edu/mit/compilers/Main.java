@@ -32,7 +32,7 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
-import edu.mit.regalloc.*;
+import edu.mit.compilers.regalloc.*;
 
 class Main {
 	

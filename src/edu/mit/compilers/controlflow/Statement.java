@@ -1,6 +1,6 @@
 package edu.mit.compilers.controlflow;
 
-import edu.mit.regalloc.GraphNode;
+import edu.mit.compilers.regalloc.GraphNode;
 
 public abstract class Statement {
 	

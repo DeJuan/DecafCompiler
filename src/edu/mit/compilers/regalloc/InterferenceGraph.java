@@ -1,4 +1,4 @@
-/*package edu.mit.regalloc;
+/*package edu.mit.compilers.regalloc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
