@@ -211,11 +211,13 @@ public class Assembler {
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
             NoOp endBranch = null;
             boolean firstNode = true;
+            boolean needCleanup = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
                     ins.addAll(generateBlock(blk, context, isVoid));
                     done = blk.getIsBreak();
+                    needCleanup = !done;
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
@@ -223,6 +225,7 @@ public class Assembler {
                     NoOp innerEndBranch = findNop(br);
                     if (innerEndBranch == null) {
                         done = true;
+                        needCleanup = false;
                     } else {
                         next = innerEndBranch.getChildren().get(0);
                     }
@@ -230,24 +233,36 @@ public class Assembler {
                     done = true;
                     endBranch = (NoOp) next;
                     if (firstNode) {
+                        needCleanup = false;
                         ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
+                        break;
                     }
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
+                    needCleanup = false;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
                 firstNode = false;
             }
+            if (needCleanup) {
+                Instruction deAlloc = context.decScopeIdempotent();
+                context.ins.add(context.ins.size() - 2, deAlloc);
+            }
+            context.decScopeWithSideEffects();
             done = false;
+            needCleanup = true;
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
+            context.incScope(false);
             next = begin.getFalseBranch().getChildren().get(0);
+            firstNode = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
                     ins.addAll(generateBlock(blk, context, isVoid));
                     done = blk.getIsBreak();
+                    needCleanup = !done;
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
@@ -255,6 +270,7 @@ public class Assembler {
                     NoOp tempEndBranch = findNop(br);
                     if (tempEndBranch == null) {
                         done = true;
+                        needCleanup = false;
                     } else {
                         next = tempEndBranch.getChildren().get(0);
                     }
@@ -263,17 +279,24 @@ public class Assembler {
                     if (next != endBranch && endBranch != null) {
                         throw new RuntimeException("Something has gone HORRIBLY wrong");
                     }
+                    if (firstNode) {
+                        needCleanup = false;
+                    }
                     endBranch = (NoOp) next;
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
+                    needCleanup = false;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
+                firstNode = false;
+            }
+            if (needCleanup) {
+                context.addIns(context.decScopeIdempotent());
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
-                ins.add(context.decScopeIdempotent());
                 ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
             context.decScopeWithSideEffects();

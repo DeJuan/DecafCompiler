@@ -96,7 +96,8 @@ public class MapContainer {
     
     public MapContainer calculateIntersection(MapContainer otherContainer){
     	if (otherContainer.equals(this)){
-    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, complete);
+    		return new MapContainer(new HashMap<IR_FieldDecl, ValueID>(varToVal), new HashMap<SPSet, ValueID>(expToVal), new HashMap<SPSet, Var>(expToTemp), 
+    		        new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>(varToValForArrayComponents), new HashMap<ValueID, List<Var>>(valToVar), complete);
     	}
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
