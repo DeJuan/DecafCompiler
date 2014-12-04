@@ -248,7 +248,7 @@ public class Assembler {
             }
             if (needCleanup) {
                 Instruction deAlloc = context.decScopeIdempotent();
-                context.ins.add(context.ins.size() - 2, deAlloc);
+                ins.add(ins.size() - 2, deAlloc);
             }
             context.decScopeWithSideEffects();
             done = false;
@@ -293,7 +293,7 @@ public class Assembler {
                 firstNode = false;
             }
             if (needCleanup) {
-                context.addIns(context.decScopeIdempotent());
+                ins.add(context.decScopeIdempotent());
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
