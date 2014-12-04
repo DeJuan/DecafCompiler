@@ -1216,6 +1216,11 @@ public class Optimizer {
                             Assignment currentAssign = (Assignment)currentStatement; //if assignment, downcast
                             Expression assignExprValue = currentAssign.getValue(); // get expression on rhs
                             Var currentDestVar = currentAssign.getDestVar(); //get the lhs for this assignment
+                            if (currentAssign.getOperator() == Ops.ASSIGN_PLUS) {
+                                assignExprValue = new AddExpr(currentDestVar, Ops.PLUS, assignExprValue);
+                            } else if (currentAssign.getOperator() == Ops.ASSIGN_MINUS) {
+                                assignExprValue = new AddExpr(currentDestVar, Ops.MINUS, assignExprValue);
+                            }
                             boolean canApply = setVarIDs(varToVal, varToValForArrayComponents, assignExprValue); //set rhs VarIDS if any Vars exist there
                             if (currentDestVar.getIndex() != null) {
                                 // make sure array is set up
@@ -1267,7 +1272,7 @@ public class Optimizer {
                                     }
                                 }
                             }
-                            newCodeblock.addStatement(new Assignment(currentDestVar, currentAssign.getOperator(), rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
+                            newCodeblock.addStatement(new Assignment(currentDestVar, Ops.ASSIGN, rhs.toExpression(valToVar))); //put the optimized expression in the codeblock
                             // kill old mapping only after doing the assignment (j = j + 1 should use the old value of j on the right side)
                             IR_FieldDecl lhs = (IR_FieldDecl)currentDestVar.getVarDescriptor().getIR();
                             killMappings(currentDestVar, varToValForArrayComponents, varToVal, valToVar); //kill all newly invalid mappings and handle fixing ArrayComponent stuff
