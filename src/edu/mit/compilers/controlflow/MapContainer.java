@@ -79,6 +79,9 @@ public class MapContainer {
                 if (glob.getLength() != null && id == null) {
                     throw new RuntimeException("ArrayID should have been set in original MapContainer");
                 }
+                if (glob.getLength() == null) {
+                    id = new ValueID();
+                }
                 newContainer.varToVal.put(glob, id);
                 if (!newContainer.valToVar.containsKey(id)) {
                     newContainer.valToVar.put(id, new ArrayList<Var>());
@@ -94,11 +97,11 @@ public class MapContainer {
         return newContainer;
     }
     
-    public MapContainer calculateIntersection(MapContainer otherContainer){
-    	if (otherContainer.equals(this)){
-    		return new MapContainer(new HashMap<IR_FieldDecl, ValueID>(varToVal), new HashMap<SPSet, ValueID>(expToVal), new HashMap<SPSet, Var>(expToTemp), 
-    		        new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>(varToValForArrayComponents), new HashMap<ValueID, List<Var>>(valToVar), complete);
-    	}
+    public MapContainer calculateIntersection(MapContainer otherContainer, List<IR_FieldDecl> globals){
+        if (otherContainer == null) {
+            System.err.println("WARNING: PASSED A NULL TO MapContainer.calculateIntersection");
+            return MapContainer.keepGlobals(this, globals);
+        }
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
             if(varToVal.get(localDecl) == otherContainer.varToVal.get(localDecl)){

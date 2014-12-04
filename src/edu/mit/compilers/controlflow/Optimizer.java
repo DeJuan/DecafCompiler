@@ -1175,9 +1175,9 @@ public class Optimizer {
                         reset = true;
                     } else {
                         if (thisNodeContainer == null) {
-                            thisNodeContainer = containerForNode.get(parent);
+                            thisNodeContainer = containerForNode.get(parent).calculateIntersection(containerForNode.get(parent), globalList);
                         } else {
-                            thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent));
+                            thisNodeContainer = thisNodeContainer.calculateIntersection(containerForNode.get(parent), globalList);
                         }
                     }
                 }

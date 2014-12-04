@@ -248,7 +248,7 @@ public class Assembler {
             }
             if (needCleanup) {
                 Instruction deAlloc = context.decScopeIdempotent();
-                ins.add(ins.size() - 2, deAlloc);
+                ins.add(ins.size() - 1, deAlloc);
             }
             context.decScopeWithSideEffects();
             done = false;
