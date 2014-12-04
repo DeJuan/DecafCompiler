@@ -796,7 +796,6 @@ public class Optimizer {
 	 */
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
-		//Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from block.
 		for(START methodStart : startsForMethods){
 			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
@@ -805,7 +804,6 @@ public class Optimizer {
 			methodStart.totalVisitReset();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the ENDs before we can do anything more.
 			scanning.add(methodStart);
-			FlowNode childOfStart = methodStart.getChildren().get(0);
 			Set<END> endNodes = new LinkedHashSet<END>();
 			Set<IR_FieldDecl> allVars = getAllFieldDeclsInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
@@ -838,7 +836,7 @@ public class Optimizer {
 				if(initialNode.getReturnExpression() != null){
 					for(Var returnVar : getVarsFromExpression(initialNode.getReturnExpression())){
 						liveVector.setVectorVal(returnVar.getFieldDecl(), 1); //things returned must be alive on exit, so set their vector to 1
-						//System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
+						System.err.printf("Set variable %s's bitvector entry to 1 due to use in END return statement." + System.getProperty("line.separator"), returnVar.getName());
 					}
 				}
 				for (IR_FieldDecl global : globalList){
@@ -870,30 +868,29 @@ public class Optimizer {
 					boolean skipNode = false;
 					if(canSkipReprocessFlag){
 						if(ticksForRevisit.get(currentNode).equals(0)){
-							//System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
+							System.err.println("The current node's IN has not changed since last processing. We will compute at most three times to be safe.");
 							ticksForRevisit.put(currentNode, 1);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(1)){
-							//System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
+							System.err.println("The current node's IN has not changed since last processing, and has been processed once. Two more computations to be safe.");
 							ticksForRevisit.put(currentNode, 2);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(2)){
-							//System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
+							System.err.println("We have processed this node at least twice, and no changes have occurred to its IN. Last attempt at reprocessing.");
 							ticksForRevisit.put(currentNode, 3);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(3)){
-							//System.err.println("We have processed this node at least three times.");
+							System.err.println("We have processed this node at least three times.");
 							ticksForRevisit.put(currentNode, 4);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(4)){
-							//System.err.println("We have processed this node at least four times, and no changes have occurred to its IN. No further reprocessing is required.");
+							System.err.println("We have processed this node at least four times, and no changes have occurred to its IN.");
 							ticksForRevisit.put(currentNode, 5);
 						}
 						else if(ticksForRevisit.get(currentNode).equals(5) || ticksForRevisit.get(currentNode) > 5){
-							//System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
+							System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
 							skipNode = true;
 						}
-						
 					}
 					if (previousNode == currentNode){
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
@@ -926,22 +923,23 @@ public class Optimizer {
 								List<Var> varsInRHS = getVarsFromExpression(assign.getValue());
 								Set<IR_FieldDecl> rhsDecls = new LinkedHashSet<IR_FieldDecl>();
 								//LEFT HAND FIRST LOGIC
-								if(liveVector.get(lhs) == 1){ //If this is alive, MAY need to flip the bit
+								if(liveVector.get(lhs) == 1 || (liveVector.get(lhs) == 0 && (containsMethodCall(assign.getValue())))){ //If this is alive, MAY need to flip the bit
 									for(Var varia : varsInRHS){
 										String varName = varia.getName();
 										IR_FieldDecl varDecl = varia.getFieldDecl();
 										liveVector.setVectorVal(varDecl, 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
-										//System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment." + System.getProperty("line.separator"), varName);
+										System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment OR one with method call." + System.getProperty("line.separator"), varName);
 										rhsDecls.add(varDecl);
 									}
 									if(!rhsDecls.contains(lhs)){
 										liveVector.setVectorVal(lhs, 0);
-										//System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
+										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 									}
 									else{
-										//System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
+										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", lhs);
 									}
-								}
+								}									
+								
 								
 								/* RIGHT HAND FIRST LOGIC
 								//Look at rhs first.
@@ -1042,8 +1040,10 @@ public class Optimizer {
 					if(!changed){
 						//System.err.println("Finished processing a FlowNode whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
-							if(!processing.contains(parent)){
-								processing.add(parent);
+							if(!parent.visited){
+								if(!processing.contains(parent)){
+									processing.add(parent);
+								}
 							}
 						}
 					}
@@ -1113,7 +1113,7 @@ public class Optimizer {
 			for (Codeblock cblock : listOfCodeblocks){
 				//System.err.println("NOW CHECKING " + cblock);
 				Bitvector liveCheck = liveness.get(cblock);
-				if (liveCheck == null){
+				/*if (liveCheck == null){
 					//System.err.println("BUG DETECTED!!!! liveCheck for this particular code block is null!");
 					//System.err.println("The codeblock we are missing is the one containing the following statements:");
 					for(Statement s : cblock.getStatements()){
@@ -1127,7 +1127,7 @@ public class Optimizer {
 							//System.err.println("Declaration for variable " + ((Declaration) s).getName());
 						}
 					}
-				}
+				}*/
 				List<Statement> statementList = cblock.getStatements();
 				Collections.reverse(statementList);
 				Iterator<Statement> statementIter = statementList.iterator();
