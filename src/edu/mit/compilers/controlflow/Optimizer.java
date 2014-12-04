@@ -939,10 +939,10 @@ public class Optimizer {
 									}
 									if(!rhsDecls.contains(lhs) && assign.getDestVar().getIndex() == null){
 										liveVector.setVectorVal(lhs, 0);
-										System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use and is not an array." + System.getProperty("line.separator"), lhs);
+										//System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in building phase by an assignment that does not expose an upwards use and is not an array." + System.getProperty("line.separator"), lhs);
 									}
 									else{
-										System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS, or being an array." + System.getProperty("line.separator"), lhs);
+										//System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS, or being an array." + System.getProperty("line.separator"), lhs);
 									}
 								}									
 								
@@ -1085,9 +1085,8 @@ public class Optimizer {
 	 */
 	public ControlflowContext applyDCE(List<START> startsForMethods){
 		System.err.println("Now applying DCE.");
-		System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
+		//System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
 		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
-		//Map<FlowNode, Bitvector> livenessMap = generateLivenessMap(startsForMethods);
 		System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
 		for (START initialNode : startsForMethods){
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
@@ -1176,10 +1175,10 @@ public class Optimizer {
 							}
 							if(!rhsDecls.contains(lhs) && assign.getDestVar().getIndex() == null){
 								liveCheck.setVectorVal(lhs, 0);
-								//System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
+								System.err.printf("Bitvector entry for variable %s has been flipped from 1 to 0 in execution phase phase by an assignment that does not expose an upwards use." + System.getProperty("line.separator"), lhs);
 							}
 							else{
-								//System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", nameOfVar);
+								System.err.printf("Bitvector entry for variable %s has not been flipped and remains 1 due to exposed upward use in RHS.", nameOfVar);
 							}
 						}
 					}
