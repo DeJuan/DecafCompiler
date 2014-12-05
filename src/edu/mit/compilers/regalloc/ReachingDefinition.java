@@ -20,7 +20,14 @@ public class ReachingDefinition {
 	public boolean changed(ReachingDefinition other) {
 		HashSet<Web> thisAllWebs = this.getAllWebs();
 		HashSet<Web> otherAllWebs = other.getAllWebs();
-		return thisAllWebs.equals(otherAllWebs);
+		if (thisAllWebs.size() != otherAllWebs.size()) {
+			System.out.println(thisAllWebs.size());
+			System.out.println(otherAllWebs.size());
+			return true;
+		}
+		return false;
+		//return !thisAllWebs.containsAll(otherAllWebs);
+		 
 	}
 	
 	public Web mergeWebs(String varName) {

@@ -39,6 +39,7 @@ public class InterferenceGraph {
 	private HashSet<HashSet<GraphNode>> bitMatrix = new HashSet<HashSet<GraphNode>>();
 	
 	private HashMap<FlowNode, Integer> nodeToLevel = new HashMap<FlowNode, Integer>();
+	private HashMap<Web, GraphNode> webToNode = new HashMap<Web, GraphNode>();
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;
@@ -115,7 +116,21 @@ public class InterferenceGraph {
 		throw new RuntimeException("Not found in the map. Uh oh??");
 	}
 	
-	private void addEdges(GraphNode node, Bitvector liveMap) {
+	private void addEdges(Web curWeb, GraphNode node) {
+		ReachingDefinition rd = node.getReachingDefinition();
+		for (Web web : rd.getAllWebs()) {
+			if (!curWeb.equals(web)) {
+				if (!webToNode.containsKey(web)) {
+					throw new RuntimeException("webToNode should always contain the key for web: " + web.getVarName());
+				}
+				addEdge(node, webToNode.get(web));
+			}
+		}
+		// if no edges are added, we must still put an empty HashSet to adjList
+		if (!adjList.containsKey(node)) {
+			adjList.put(node, new HashSet<GraphNode>());
+		}
+		/*
 		List<String> liveVars = new ArrayList<String>();
 		String curVar = node.getVarName();
 		int currentLevel = node.getLevel();
@@ -142,6 +157,7 @@ public class InterferenceGraph {
 		if (!adjList.containsKey(node)) {
 			adjList.put(node, new HashSet<GraphNode>());
 		}
+		*/
 	}
 	
 	/**
@@ -238,23 +254,22 @@ public class InterferenceGraph {
 				Iterator<Statement> statementIter = statementList.iterator();
 				while(statementIter.hasNext()){
 					Statement st = statementIter.next();
-					Bitvector liveMap = st.getLiveMap();
+					ReachingDefinition rd = st.getReachingDefinition();
+					System.out.println("RD size: " + rd.getAllWebs().size());
 					if (st instanceof Assignment){
 						Assignment assignment = (Assignment) st;
 						GraphNode node = new GraphNode(assignment, blockLevel);
 						assignment.setNode(node);
 						String varName = assignment.getDestVar().getName();
-						System.out.println("Variable being assigned: " + varName);
-						if (varToNodes.containsKey(varName)) {
-							varToNodes.get(varName).put(blockLevel, node);
-						} else {
-							HashMap<Integer, GraphNode> varNodes = new HashMap<Integer, GraphNode>();
-							varNodes.put(blockLevel, node);
-							System.out.println("Generating varToNodes for: " + varName + " " + varNodes);
-							varToNodes.put(varName, varNodes);
+						if (rd.getWebsMap().get(varName).size() != 1) {
+							throw new RuntimeException("There should only be one Web for varName: " + varName);
 						}
+						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0);
+						webToNode.put(curWeb, node);
+						System.out.println("Variable being assigned: " + varName);
+
 						nodes.add(node);
-						addEdges(node, liveMap);
+						addEdges(curWeb, node);
 					}
 				}
 			}

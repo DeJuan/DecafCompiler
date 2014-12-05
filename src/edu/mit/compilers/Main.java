@@ -260,13 +260,12 @@ class Main {
 							  // Register allocation
 				    		  GenReachingDefs genRDs = new GenReachingDefs(context, callouts, globals, flowNodes);
 				    		  genRDs.run();
-							  //InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
-							  //ig.generateLivenessMap();
-							  //ig.buildGraph();
-							  //Coloring coloring = new Coloring(ig, 8);
-							  //List<GraphNode> assignments = coloring.run();
-							  //List<GraphNode> spillNodes = coloring.getSpilledNodes();
-							  //System.out.println("Number of spilled nodes: " + spillNodes.size());
+							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
+							  ig.buildGraph();
+							  Coloring coloring = new Coloring(ig, 8);
+							  List<GraphNode> assignments = coloring.run();
+							  List<GraphNode> spillNodes = coloring.getSpilledNodes();
+							  System.out.println("Number of spilled nodes: " + spillNodes.size());
 						  }
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);

@@ -95,6 +95,7 @@ public class GenReachingDefs {
 				rd.addWeb(gen);
 				System.out.println("After adding web: " + rd);
 			}
+			System.out.println("RD: " + rd);
 			st.setReachingDefinition(rd);
 		}
 		return rd;
@@ -103,6 +104,7 @@ public class GenReachingDefs {
 	public void run() {
 		for (START initialNode : flowNodes.values()) {
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
+			System.out.println("Number of FlowNodes: " + listFlowNodes.size());
 			LinkedHashSet<FlowNode> changed = new LinkedHashSet<FlowNode>(); // this will change
 			IN.put(initialNode, new ReachingDefinition());
 			for (FlowNode flowNode : listFlowNodes) {
@@ -111,12 +113,13 @@ public class GenReachingDefs {
 			}
 			changed.remove(initialNode);
 			
-			int loopLimit = 10;
+			int loopLimit = 100;
 			while (!changed.isEmpty() && loopLimit > 0) {
 				System.out.println(loopLimit);
 				Iterator<FlowNode> it = changed.iterator();
 				FlowNode n = it.next();
 				it.remove();
+				System.out.println(n.getClass());
 				
 				IN.put(n, new ReachingDefinition());
 				for (FlowNode p : n.getParents()) {
@@ -135,6 +138,7 @@ public class GenReachingDefs {
 				System.out.println("OLD OUT: " + OUT.get(n));
 				System.out.println("NEW OUT: " + OUTn);
 				if (OUT.get(n).changed(OUTn)) {
+					System.out.println("Changed!");
 					for (FlowNode s : n.getChildren()) {
 						changed.add(s);
 					}

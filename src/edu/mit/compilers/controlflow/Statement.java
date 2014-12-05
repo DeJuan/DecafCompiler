@@ -34,8 +34,12 @@ public abstract class Statement {
 		return node;
 	}
 	
+	public ReachingDefinition getReachingDefinition() {
+		return rd;
+	}
+	
 	public void setReachingDefinition(ReachingDefinition rd) {
-		this.rd = rd;
+		this.rd = new ReachingDefinition(rd);
 	}
 	
 	public void setWeb(Web web) {
