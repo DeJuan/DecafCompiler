@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.ir.Ops;
 
 public class SPSet {
@@ -428,8 +429,10 @@ public class SPSet {
             }
             for (MethodCall mc : methodCalls) {
                 for (Expression arg : mc.getArguments()) {
-                    if ((new SPSet(arg)).contains(expr, valToVar)) {
-                        return true;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        if ((new SPSet(arg)).contains(expr, valToVar)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -501,8 +504,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(expr, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -551,8 +556,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(expr, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -581,8 +588,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(expr, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -611,7 +620,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return SPSets.get(0).toExpression(valToVar);
             } else if (!varSet.isEmpty()) {
-                return findBestVar(valToVar.get(varSet.get(0)));
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return best;
             } else if (!intSet.isEmpty()) {
                 return new IntLit(intSet.get(0));
             } else if (!boolSet.isEmpty()) {
@@ -638,7 +649,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NegateExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NegateExpr(findBestVar(valToVar.get(varSet.get(0))));
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return new NegateExpr(best);
             } else if (!intSet.isEmpty()) {
                 return new NegateExpr(new IntLit(intSet.get(0)));
             } else if (!boolSet.isEmpty()) {
@@ -659,7 +672,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NotExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NotExpr(findBestVar(valToVar.get(varSet.get(0))));
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return new NotExpr(best);
             } else if (!intSet.isEmpty()) {
                 throw new RuntimeException("can't not an int");
             } else if (!boolSet.isEmpty()) {
@@ -684,10 +699,14 @@ public class SPSet {
             }
             for (ValueID var : varSet) {
                 if (lhs == null) {
-                    lhs = findBestVar(valToVar.get(var));
+                    Var best = findBestVar(valToVar.get(var));
+                    best.setValueID(var);
+                    lhs = best;
                     continue;
                 }
-                lhs = joinSides(lhs, findBestVar(valToVar.get(var)));
+                Var best = findBestVar(valToVar.get(var));
+                best.setValueID(var);
+                lhs = joinSides(lhs, best);
             }
             for (Long integer : intSet) {
                 if (lhs == null) {
@@ -775,8 +794,10 @@ public class SPSet {
             }
             for (MethodCall mc : methodCalls) {
                 for (Expression arg : mc.getArguments()) {
-                    if ((new SPSet(arg)).contains(set, valToVar)) {
-                        return true;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        if ((new SPSet(arg)).contains(set, valToVar)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -811,8 +832,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -841,8 +864,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -871,8 +896,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -901,8 +928,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -942,8 +971,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -974,8 +1005,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1006,8 +1039,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1038,8 +1073,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1070,8 +1107,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1104,8 +1143,10 @@ public class SPSet {
                 }
                 for (MethodCall mc : methodCalls) {
                     for (Expression arg : mc.getArguments()) {
-                        if ((new SPSet(arg)).contains(set, valToVar)) {
-                            return true;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1196,7 +1237,7 @@ public class SPSet {
             }
             for (MethodCall mc : methodCalls) {
                 for (Expression arg : mc.getArguments()) {
-                    if ((new SPSet(arg)).contains(set, valToVar)) {
+                    if (arg.getExprType() != ExpressionType.STRING_LIT && (new SPSet(arg)).contains(set, valToVar)) {
                         return true;
                     }
                 }
@@ -1258,11 +1299,13 @@ public class SPSet {
             for (MethodCall mc : methodCalls) {
                 for (int i = 0 ; i < mc.getArguments().size(); i++) {
                     Expression arg = mc.getArguments().get(i);
-                    SPSet argSet = new SPSet(arg);
-                    if (argSet.contains(set, valToVar)) {
-                        argSet.remove(set, valToVar);
-                        mc.setArgument(i, argSet.toExpression(valToVar));
-                        return;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.remove(set, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
                     }
                 }
             }
@@ -1314,11 +1357,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1364,11 +1409,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1414,11 +1461,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1464,11 +1513,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1565,11 +1616,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1617,11 +1670,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1669,11 +1724,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1721,11 +1778,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1773,11 +1832,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.remove(set, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -1901,11 +1962,13 @@ public class SPSet {
             for (MethodCall mc : methodCalls) {
                 for (int i = 0 ; i < mc.getArguments().size(); i++) {
                     Expression arg = mc.getArguments().get(i);
-                    SPSet argSet = new SPSet(arg);
-                    if (argSet.contains(set, valToVar)) {
-                        argSet.remove(set, valToVar);
-                        mc.setArgument(i, argSet.toExpression(valToVar));
-                        return;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.remove(set, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
                     }
                 }
             }
@@ -1967,11 +2030,13 @@ public class SPSet {
             for (MethodCall mc : methodCalls) {
                 for (int i = 0 ; i < mc.getArguments().size(); i++) {
                     Expression arg = mc.getArguments().get(i);
-                    SPSet argSet = new SPSet(arg);
-                    if (argSet.contains(set, valToVar)) {
-                        argSet.replace(set, var, valToVar);
-                        mc.setArgument(i, argSet.toExpression(valToVar));
-                        return;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.replace(set, var, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
                     }
                 }
             }
@@ -2024,11 +2089,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2075,11 +2142,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2126,11 +2195,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2177,11 +2248,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2237,11 +2310,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2290,11 +2365,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2343,11 +2420,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2396,11 +2475,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2449,11 +2530,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2502,11 +2585,13 @@ public class SPSet {
                 for (MethodCall mc : methodCalls) {
                     for (int i = 0 ; i < mc.getArguments().size(); i++) {
                         Expression arg = mc.getArguments().get(i);
-                        SPSet argSet = new SPSet(arg);
-                        if (argSet.contains(set, valToVar)) {
-                            argSet.replace(set, var, valToVar);
-                            mc.setArgument(i, argSet.toExpression(valToVar));
-                            return;
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
                         }
                     }
                 }
@@ -2631,11 +2716,13 @@ public class SPSet {
             for (MethodCall mc : methodCalls) {
                 for (int i = 0 ; i < mc.getArguments().size(); i++) {
                     Expression arg = mc.getArguments().get(i);
-                    SPSet argSet = new SPSet(arg);
-                    if (argSet.contains(set, valToVar)) {
-                        argSet.replace(set, var, valToVar);
-                        mc.setArgument(i, argSet.toExpression(valToVar));
-                        return;
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.replace(set, var, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
                     }
                 }
             }
