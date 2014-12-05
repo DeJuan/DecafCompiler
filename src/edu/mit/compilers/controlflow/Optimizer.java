@@ -389,7 +389,8 @@ public class Optimizer {
         else if(expr instanceof MethodCall){
             MethodCall MCHammer = (MethodCall)expr;
             boolean worked = true;
-            for(Expression arg : MCHammer.getArguments()){
+            for(int i = 0; i < MCHammer.getArguments().size(); i++){
+                Expression arg = MCHammer.getArguments().get(i);
                 worked = worked && setVarIDs(varToVal, varToValForArrayComponents, arg);
             }
             return worked;
