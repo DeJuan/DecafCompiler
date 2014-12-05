@@ -1189,6 +1189,7 @@ public class Optimizer {
                     }
                     thisNodeContainer = MapContainer.keepGlobals(thisNodeContainer, globalList);
                     containerForNode.put(currentNode, thisNodeContainer);
+                    thisNodeContainer.complete = false;
                     continue;
                 }
                 boolean changedAtAll = !thisNodeContainer.complete;
@@ -1265,8 +1266,8 @@ public class Optimizer {
                             while(changed){ //Until we reach a fixed point
                                 changed = false; //say we haven't
                                 for (SPSet key : keySet){ //Look at all keys in expToVal
-                                    while (rhs.contains(key)){ //if we have any of those keys in our current expression
-                                        rhs.replace(key, expToVal.get(key));
+                                    while (rhs.contains(key, valToVar)){ //if we have any of those keys in our current expression
+                                        rhs.replace(key, expToVal.get(key), valToVar);
                                         changed = true; //Need to repass over, one substitution could lead to another
                                         changedAtAll = true;
                                     }
@@ -1297,6 +1298,19 @@ public class Optimizer {
                                     varToVal.put(lhs, currentValID); 
                                 }
                                 else{
+                                    boolean indexChanged = true;
+                                    SPSet indexSet = new SPSet(currentDestVar.getIndex());
+                                    boolean madeChange = false;
+                                    while(indexChanged){ //Until we reach a fixed point
+                                        indexChanged = false; //say we haven't
+                                        for (SPSet key : keySet){ //Look at all keys in expToVal
+                                            while (indexSet.contains(key, valToVar)){ //if we have any of those keys in our current expression
+                                                indexSet.replace(key, expToVal.get(key), valToVar);
+                                                indexChanged = true; //Need to repass over, one substitution could lead to another
+                                                madeChange = true;
+                                            }
+                                        }
+                                    }
                                     if(!varToVal.containsKey(lhs)){
                                         ValueID newID = new ValueID();
                                         varToVal.put(lhs, newID);
@@ -1313,7 +1327,10 @@ public class Optimizer {
                                         innerMap = new HashMap<SPSet, ValueID>();
                                         varToValForArrayComponents.put(lhs, innerMap);
                                     }
-                                    innerMap.put(new SPSet(currentDestVar.getIndex()), currentValID);
+                                    innerMap.put(indexSet, currentValID);
+                                    if (madeChange) {
+                                        currentDestVar.setIndex(indexSet.toExpression(valToVar));
+                                    }
                                 }
                             }
                             if(rhsTempDecl != null){
@@ -1348,8 +1365,8 @@ public class Optimizer {
                                         while(changed){ //Until we reach a fixed point
                                             changed = false; //say we haven't
                                             for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
-                                                while (arg.contains(key)){ //if we have any of those keys in our current expression
-                                                    arg.replace(key, expToVal.get(key));
+                                                while (arg.contains(key, valToVar)){ //if we have any of those keys in our current expression
+                                                    arg.replace(key, expToVal.get(key), valToVar);
                                                     changed = true; //Need to repass over, one substitution could lead to another
                                                     changedAtAll = true;
                                                 }
@@ -1398,8 +1415,8 @@ public class Optimizer {
                         while(changed){ //Until we reach a fixed point
                             changed = false; //say we haven't
                             for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
-                                while (branchExprSP.contains(key)){ //if we have any of those keys in our current expression
-                                    branchExprSP.replace(key, expToVal.get(key));
+                                while (branchExprSP.contains(key, valToVar)){ //if we have any of those keys in our current expression
+                                    branchExprSP.replace(key, expToVal.get(key), valToVar);
                                     changed = true; //Need to repass over, one substitution could lead to another
                                     changedAtAll = true;
                                 }
@@ -1470,8 +1487,8 @@ public class Optimizer {
                             while(changed){ //Until we reach a fixed point
                                 changed = false; //say we haven't
                                 for (SPSet key : expToVal.keySet()){ //Look at all keys in expToVal
-                                    while (retSP.contains(key)){ //if we have any of those keys in our current expression
-                                        retSP.remove(key); //remove it
+                                    while (retSP.contains(key, valToVar)){ //if we have any of those keys in our current expression
+                                        retSP.remove(key, valToVar); //remove it
                                         retSP.addToVarSet(expToVal.get(key)); //replace it with the already-computed value. 
                                         changed = true; //Need to repass over, one substitution could lead to another
                                         changedAtAll = true;

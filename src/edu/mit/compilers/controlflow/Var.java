@@ -73,6 +73,10 @@ public class Var extends Expression {
 	    return index;
 	}
 	
+	void setIndex(Expression newInd) {
+	    index = newInd;
+	}
+	
 	public void setValueID(ValueID val){
 	    this.val = val;
 	}
