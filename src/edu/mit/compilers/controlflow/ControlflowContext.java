@@ -55,6 +55,8 @@ public class ControlflowContext {
     private LocStack rsp;
 
     private String arrayBoundLabel;
+    
+    ArrayList<Boolean> isLoop;
 
     public ControlflowContext() {
         stringLiterals = new HashMap<String,Long>();
@@ -104,6 +106,8 @@ public class ControlflowContext {
         totalLocalSize = 0;
         localVarSize = new ArrayList<Long>();
         localVarSize.add(0L);
+        isLoop = new ArrayList<Boolean>();
+        isLoop.add(false);
     }
 
     public LocStack getRsp(){
@@ -132,12 +136,13 @@ public class ControlflowContext {
     /**@brief convenience functions for symbol table.
      * Push a new symbol table when entering a block.
      */
-    public void incScope(){
+    public void incScope(Boolean isLoop){
         symbol.incScope();
         localVarSize.add(0L);
+        this.isLoop.add(isLoop);
     }
 
-    public Instruction decScope(){
+    public void decScopeWithSideEffects(){
         symbol.decScope();
         int idx = localVarSize.size()-1;
         long locals = localVarSize.get(idx);
@@ -146,8 +151,28 @@ public class ControlflowContext {
             maxLocalSize = totalLocalSize;
         }
         totalLocalSize -= locals;
+        isLoop.remove(isLoop.size() - 1);
+    }
+    
+    public Instruction decScopeIdempotent(){
+        long locals = localVarSize.get(localVarSize.size() - 1);
         Instruction instr = new Instruction("addq", new LocLiteral(locals), new LocReg(Regs.RSP));
         return instr;
+        
+    }
+    
+    public List<Instruction> decScopeToLoop() {
+        List<Instruction> dealloc = new ArrayList<Instruction>();
+        int i = isLoop.size() - 1;
+        boolean done = false;
+        while (!done) {
+            done = isLoop.get(i);
+            long locals = localVarSize.get(i);
+            Instruction instr = new Instruction("addq", new LocLiteral(locals), new LocReg(Regs.RSP));
+            dealloc.add(instr);
+            i--;
+        }
+        return dealloc;
     }
 
     /**@brief generate a unique jump label.
@@ -201,7 +226,6 @@ public class ControlflowContext {
      * @param ps target of print. System.out or an output file stream.
      */
     public void printInstructions(PrintStream ps){
-        // TODO: Implement
         clearJumps();
         //header
         //global variables

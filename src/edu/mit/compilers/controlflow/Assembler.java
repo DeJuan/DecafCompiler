@@ -94,7 +94,7 @@ public class Assembler {
     public static void generateMethodDecl(Map.Entry<String, START> decl, ControlflowContext context){
         String name = decl.getKey();
         context.enterFun();
-        context.incScope();
+        context.incScope(false);
 
         Instruction tmpIns;
         context.addIns(new Instruction(".type",new LocLabel(name),new LocLabel("@function")));
@@ -165,7 +165,7 @@ public class Assembler {
         // check in generateReturn that non-void functions don't return 
         // without a return value
 
-        context.decScope();
+        context.decScopeWithSideEffects();
         //similarly, since all functions bodies end with an end, the generate end will handle restoring the stack pointer
     }
 
@@ -187,6 +187,9 @@ public class Assembler {
             ins.addAll(generateStatement(stat, context));
         }
         FlowNode child = begin.getChildren().get(0);
+        if (begin.getIsBreak()) {
+            ins.addAll(context.decScopeToLoop());
+        }
         ins.add(new Instruction("jmp", new LocLabel(child.getLabel())));
         return ins;
     }
@@ -202,17 +205,19 @@ public class Assembler {
 
         if (begin.getType() == BranchType.IF) {
             // make True branch - either ends at end or when hitting a if with two ends or an unpaired NOp
-            context.incScope();
+            context.incScope(false);
             boolean done = false;
             // will be a START's child
             FlowNode next = begin.getTrueBranch().getChildren().get(0);
             NoOp endBranch = null;
             boolean firstNode = true;
+            boolean needCleanup = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
                     ins.addAll(generateBlock(blk, context, isVoid));
                     done = blk.getIsBreak();
+                    needCleanup = !done;
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
@@ -220,6 +225,7 @@ public class Assembler {
                     NoOp innerEndBranch = findNop(br);
                     if (innerEndBranch == null) {
                         done = true;
+                        needCleanup = false;
                     } else {
                         next = innerEndBranch.getChildren().get(0);
                     }
@@ -227,24 +233,36 @@ public class Assembler {
                     done = true;
                     endBranch = (NoOp) next;
                     if (firstNode) {
+                        needCleanup = false;
                         ins.add(new Instruction("jmp", new LocLabel(endBranch.getLabel())));
+                        break;
                     }
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
+                    needCleanup = false;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
                 firstNode = false;
             }
+            if (needCleanup) {
+                Instruction deAlloc = context.decScopeIdempotent();
+                ins.add(ins.size() - 1, deAlloc);
+            }
+            context.decScopeWithSideEffects();
             done = false;
+            needCleanup = true;
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
+            context.incScope(false);
             next = begin.getFalseBranch().getChildren().get(0);
+            firstNode = true;
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
                     ins.addAll(generateBlock(blk, context, isVoid));
                     done = blk.getIsBreak();
+                    needCleanup = !done;
                     next = next.getChildren().get(0);
                 } else if (next instanceof Branch) {
                     Branch br = (Branch) next;
@@ -252,6 +270,7 @@ public class Assembler {
                     NoOp tempEndBranch = findNop(br);
                     if (tempEndBranch == null) {
                         done = true;
+                        needCleanup = false;
                     } else {
                         next = tempEndBranch.getChildren().get(0);
                     }
@@ -260,19 +279,27 @@ public class Assembler {
                     if (next != endBranch && endBranch != null) {
                         throw new RuntimeException("Something has gone HORRIBLY wrong");
                     }
+                    if (firstNode) {
+                        needCleanup = false;
+                    }
                     endBranch = (NoOp) next;
                 } else if (next instanceof END) {
                     ins.addAll(generateEnd((END) next, context, isVoid));
                     done = true;
+                    needCleanup = false;
                 } else {
                     throw new RuntimeException("This ought not have occurred");
                 }
+                firstNode = false;
+            }
+            if (needCleanup) {
+                ins.add(context.decScopeIdempotent());
             }
             if (endBranch != null) {
                 ins.add(Instruction.labelInstruction(endBranch.getLabel()));
-                ins.add(context.decScope());
                 ins.add(new Instruction("jmp", new LocLabel(endBranch.getChildren().get(0).getLabel())));
             }
+            context.decScopeWithSideEffects();
 
         } else if (begin.getType() == BranchType.FOR) {
             // make True block
@@ -281,7 +308,7 @@ public class Assembler {
             if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof START)) {
                 throw new RuntimeException("Maddie assumed something untrue");
             }
-            context.incScope();
+            context.incScope(true);
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -311,7 +338,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            ins.add(context.decScope());
+            context.decScopeWithSideEffects();
         } else if (begin.getType() == BranchType.WHILE) {
             FlowNode next;
             if (begin.getIsLimitedWhile()) {
@@ -328,7 +355,7 @@ public class Assembler {
                 next = begin.getTrueBranch().getChildren().get(0);
             }
             boolean done = false;
-            context.incScope();
+            context.incScope(true);
             while (!done) {
                 if (next instanceof Codeblock) {
                     Codeblock blk = (Codeblock) next;
@@ -358,7 +385,7 @@ public class Assembler {
                 }
             }
             ins.add(Instruction.labelInstruction(begin.getFalseBranch().getLabel()));
-            ins.add(context.decScope());
+            context.decScopeWithSideEffects();
         }
         return ins;
     }
@@ -894,7 +921,7 @@ public class Assembler {
     private static final Regs regArg[] = {Regs.RDI, Regs.RSI, Regs.RDX,
         Regs.RCX, Regs.R8, Regs.R9};
 
-    private static LocationMem argLoc(int idx){
+    static LocationMem argLoc(int idx){
         if(idx<CodegenConst.N_REG_ARG){
             return new LocReg(regArg[idx]);
         }

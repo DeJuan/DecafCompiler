@@ -11,8 +11,10 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 public class Var extends Expression {
 	private Descriptor var;
 	private String name;
+	private IR_FieldDecl decl;
 	private Expression index;
 	private ValueID val;
+	private boolean isCompilerTemp;
 	
 	/**
 	 * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
@@ -22,9 +24,25 @@ public class Var extends Expression {
 	public Var(Descriptor variable, Expression index) {
 	    this.var = variable;
 	    IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+	    this.decl = ir;
 	    this.name = ir.getName();
 	    this.index = index;
+	    isCompilerTemp = false;
 	}
+	
+	/**
+     * This constructor takes in the Descriptor associated with the variable we want to store and keeps it locally. 
+     * @param variable
+     * @param index : the index into an array, or null if int/bool
+     */
+    public Var(Descriptor variable, Expression index, boolean temp) {
+        this.var = variable;
+        IR_FieldDecl ir = (IR_FieldDecl) variable.getIR();
+        this.decl = ir;
+        this.name = ir.getName();
+        this.index = index;
+        isCompilerTemp = temp;
+    }
 	
 	@Override
 	/**
@@ -43,12 +61,20 @@ public class Var extends Expression {
 		return var;
 	}
 	
+	public IR_FieldDecl getFieldDecl(){
+	    return decl;
+	}
+	
 	/**
 	 * Gets the index into an array
 	 * @return Expression: index into the array, or null if an int/bool
 	 */
 	public Expression getIndex() {
 	    return index;
+	}
+	
+	void setIndex(Expression newInd) {
+	    index = newInd;
 	}
 	
 	public void setValueID(ValueID val){
@@ -59,8 +85,8 @@ public class Var extends Expression {
 	    return val;
 	}
 	
-	public IR_FieldDecl getFieldDecl(){
-		return (IR_FieldDecl) var.getIR();
+	public boolean isCompilerTemp(){
+	    return isCompilerTemp;
 	}
 	
 	/**

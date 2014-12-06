@@ -92,7 +92,7 @@ public class GenerateFlow {
 		Descriptor d = new Descriptor(node);
 		context.putSymbol(decl.name, d);
 		context.enterFun();
-		context.incScope();
+		context.incScope(null);
 		
 		for (int i = 0; i < args.size(); i++) {
 			IR_FieldDecl a = args.get(i);
@@ -113,7 +113,7 @@ public class GenerateFlow {
 		    start.addChild(end);
 		    end.addParent(start);
 		}
-		context.decScope();
+		context.decScopeWithSideEffects();
 		return start;	
 	}
 	
@@ -127,7 +127,7 @@ public class GenerateFlow {
 	public static FlowNode generateFlow(FlowNode prevNode, IR_Seq seq, ControlflowContext context) {
 		if (seq == null)
 			return null;
-		context.incScope();
+		context.incScope(null);
 		List<IR_Node> statements = seq.getStatements();
 		FlowNode curNode = prevNode;
 		for (int i = 0; i < statements.size(); i++) {
@@ -147,7 +147,7 @@ public class GenerateFlow {
 				if (branchEnd == null)
 					// only occurs when 'if' statement returns, so program will never reach 
 					// anything afterwards. We end the processing here.
-					return null;
+					break;
 			} 
 			else if (st instanceof IR_Break) {
 				// This is a break. We set the pointer to the exit node  (FalseBranch) of the 
@@ -163,7 +163,8 @@ public class GenerateFlow {
                 br.getFalseBranch().addParent(curNode);
 				curNode.addChild(br.getFalseBranch());
 				((Codeblock) curNode).setIsBreak(true);
-				return null;
+				curNode = null;
+				break;
 			}
 			else if (st instanceof IR_Continue) {
 				// This is a continue. We set the pointer to the Branch object of the innermost 
@@ -179,7 +180,8 @@ public class GenerateFlow {
 				curNode.addChild(br);
 				br.addParent(curNode);
 				((Codeblock) curNode).setIsBreak(true);
-				return null;
+				curNode = null;
+				continue;
 			}
 			else if (st instanceof IR_Return) {
 				// This is a return. We return a END FlowNode with the return expression.
@@ -189,7 +191,7 @@ public class GenerateFlow {
 				end.addParent(curNode);
 				curNode = end;
 				// we skip all nodes after the "return" statement, as they will never be reached.
-				return end;
+				break;
 			}
 			else {
 				// This is a FieldDecl, Assignment, or MethodCall. They are all statements that 
@@ -205,7 +207,7 @@ public class GenerateFlow {
 				((Codeblock) curNode).addStatement(newStatement);
 			}
 		}
-		context.decScope();
+		context.decScopeWithSideEffects();
 		return curNode;
 	}
 	
@@ -448,6 +450,7 @@ public class GenerateFlow {
             }
 			// Previous flow block did not end in return, continue, or break. We return to branch cond.
 			endWhile.addChild(whileBranch);
+			whileBranch.addParent(endWhile);
             ((Codeblock) endWhile).setIsBreak(true);
 		}
 		context.exitLoop();

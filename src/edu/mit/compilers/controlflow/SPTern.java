@@ -12,6 +12,7 @@ public class SPTern {
     SPSet cond;
     SPSet trueBranch;
     SPSet falseBranch;
+    Boolean containsMethodCalls;
     
     public SPTern(SPSet cond, SPSet trueBranch, SPSet falseBranch) {
         this.cond = cond;
@@ -34,7 +35,7 @@ public class SPTern {
             conds.add(new SPComp((CompExpr) tern.getTernaryCondition()));
             this.cond = new SPSet(Collections.<SPSet> emptyList(), Collections.<ValueID> emptyList(), Collections.<IntLit> emptyList(), 
                     Collections.<BoolLit> emptyList(), Collections.<SPTern> emptyList(),
-                    Collections.<MethodCall> emptyList(), conds, null);
+                    Collections.<MethodCall> emptyList(), conds, ((CompExpr) tern.getTernaryCondition()).getOperator());
             break;
         case VAR:
             Var varCond = (Var)tern.getTernaryCondition();
@@ -70,6 +71,13 @@ public class SPTern {
         return falseBranch;
     }
     
+    public boolean containsMethodCalls(){
+        if (containsMethodCalls == null) {
+          containsMethodCalls = cond.containsMethodCalls() || trueBranch.containsMethodCalls() || falseBranch.containsMethodCalls();
+        }
+        return containsMethodCalls;
+    }
+    
     @Override
     public boolean equals(Object other){
         if (!(other instanceof SPTern)){
@@ -102,7 +110,7 @@ public class SPTern {
         } else if (expr instanceof CompExpr) {
             return new SPSet(Collections.<SPSet> emptyList(), Collections.<ValueID> emptyList(), Collections.<IntLit> emptyList(), 
                     Collections.<BoolLit> emptyList(), Collections.<SPTern> emptyList(),
-                    Collections.<MethodCall> emptyList(), Arrays.asList(new SPComp((CompExpr) expr)), null);
+                    Collections.<MethodCall> emptyList(), Arrays.asList(new SPComp((CompExpr) expr)), ((CompExpr) expr).getOperator());
         } else if (expr instanceof IntLit) {
             return new SPSet(Collections.<SPSet> emptyList(), Collections.<ValueID> emptyList(), Arrays.asList((IntLit) expr), 
                     Collections.<BoolLit> emptyList(), Collections.<SPTern> emptyList(),

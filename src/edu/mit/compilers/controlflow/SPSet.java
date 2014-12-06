@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.ir.Ops;
 
 public class SPSet {
@@ -14,7 +15,8 @@ public class SPSet {
     List<Boolean> boolSet;
     List<SPTern> ternSet;
     List<SPComp> comparisons;
-    List<MethodCall> methodCalls; 
+    List<MethodCall> methodCalls;
+    Boolean containsMethodCalls;
     public Ops operator;
 
     public SPSet(Ops op){
@@ -39,8 +41,12 @@ public class SPSet {
         ternSet = new ArrayList<SPTern>();
         methodCalls = new ArrayList<MethodCall>();
         comparisons = new ArrayList<SPComp>();
+        containsMethodCalls = false;
         for (SPSet curSet : initialSPSet) {
             SPSets.add(curSet);
+            if (!containsMethodCalls) {
+                containsMethodCalls = curSet.containsMethodCalls();
+            }
         }
         for (ValueID var : initialVarSet) {
             varSet.add(var);
@@ -53,12 +59,21 @@ public class SPSet {
         }
         for (SPTern tern: initialTerns) {
             ternSet.add(tern);
+            if (!containsMethodCalls) {
+                containsMethodCalls = tern.containsMethodCalls();
+            }
         }
         for (MethodCall method: initialMethods) {
             methodCalls.add(method);
         }
+        if (methodCalls.size() > 0) {
+            containsMethodCalls = true;
+        }
         for (SPComp comp : initialComps) {
             comparisons.add(comp);
+            if (!containsMethodCalls) {
+                containsMethodCalls = comp.containsMethodCalls();
+            }
         }
     }
 
@@ -73,6 +88,7 @@ public class SPSet {
         ternSet = new ArrayList<SPTern>();
         methodCalls = new ArrayList<MethodCall>();
         comparisons = new ArrayList<SPComp>();
+        containsMethodCalls = false;
         if (expr instanceof BoolLit) {
             boolSet.add(((BoolLit) expr).getTruthValue());
         } else if (expr instanceof IntLit) {
@@ -81,15 +97,18 @@ public class SPSet {
         	if(((Var) expr).getValueID() == null){
         		throw new RuntimeException("valueID must be set in advance");
         	    }
-        	//System.err.printf("SPSet currently being constructed for a Var. The var is %s." + System.getProperty("line.separator"), ((Var)expr).getName()); throws Exception
-        	System.err.println("SPSet currently being constructed for a Var.");
             varSet.add(((Var) expr).getValueID());
         } else if (expr instanceof Ternary) {
-            ternSet.add(new SPTern((Ternary) expr));
+            SPTern tern = new SPTern((Ternary) expr);
+            ternSet.add(tern);
+            containsMethodCalls = tern.containsMethodCalls();
         } else if (expr instanceof CompExpr) {
             operator = ((CompExpr) expr).getOperator();
-            comparisons.add(new SPComp((CompExpr) expr));
+            SPComp comp = new SPComp((CompExpr) expr);
+            comparisons.add(comp);
+            containsMethodCalls = comp.containsMethodCalls();
         } else if (expr instanceof MethodCall) {
+            containsMethodCalls = true;
             methodCalls.add((MethodCall) expr);
         } else if (expr instanceof NotExpr) {
             operator = Ops.NOT;
@@ -106,13 +125,20 @@ public class SPSet {
             } else if (inner instanceof BoolLit) {
                 boolSet.add(((BoolLit) inner).getTruthValue());
             } else if (inner instanceof Ternary) {
-                ternSet.add(new SPTern((Ternary) inner));
+                SPTern tern = new SPTern((Ternary) inner);
+                ternSet.add(tern);
+                containsMethodCalls = tern.containsMethodCalls();
             } else if (inner instanceof MethodCall) {
                 methodCalls.add((MethodCall) inner);
+                containsMethodCalls = true;
             } else if (inner instanceof CompExpr) {
-                comparisons.add(new SPComp((CompExpr) expr));
+                SPComp comp = new SPComp((CompExpr) expr);
+                comparisons.add(comp);
+                containsMethodCalls = comp.containsMethodCalls();
             } else {
-                SPSets.add(new SPSet(inner));
+                SPSet innerSet = new SPSet(inner);
+                SPSets.add(innerSet);
+                containsMethodCalls = innerSet.containsMethodCalls();
             }
         } else if (expr instanceof NegateExpr) {
             operator = Ops.NEGATE;
@@ -129,19 +155,24 @@ public class SPSet {
             } else if (inner instanceof BoolLit) {
                 boolSet.add(((BoolLit) inner).getTruthValue());
             } else if (inner instanceof Ternary) {
-                ternSet.add(new SPTern((Ternary) inner));
+                SPTern tern = new SPTern((Ternary) inner);
+                ternSet.add(tern);
+                containsMethodCalls = tern.containsMethodCalls();
             } else if (inner instanceof MethodCall) {
                 methodCalls.add((MethodCall) inner);
+                containsMethodCalls = true;
             } else if (inner instanceof CompExpr) {
-                comparisons.add(new SPComp((CompExpr) expr));
+                SPComp comp = new SPComp((CompExpr) expr);
+                comparisons.add(comp);
+                containsMethodCalls = comp.containsMethodCalls();
             } else {
-                SPSets.add(new SPSet(inner));
+                SPSet innerSet = new SPSet(inner);
+                SPSets.add(innerSet);
+                containsMethodCalls = innerSet.containsMethodCalls();
             }
         } else if (expr instanceof BinExpr) {
-        	System.err.println("SPSet currently being constructed for a binary expression.");
             BinExpr binEx = (BinExpr) expr;
             operator = binEx.getOperator();
-            System.err.printf("The operator for this SPSet is %s." + System.getProperty("line.separator"), operator.toString());
             Expression lhs = binEx.getLeftSide();
             Expression rhs = binEx.getRightSide();
             if (operator == Ops.MINUS) {
@@ -149,7 +180,9 @@ public class SPSet {
                 rhs = new NegateExpr(rhs);
             }
             if (binEx instanceof CompExpr) {
-                comparisons.add(new SPComp((CompExpr) binEx));
+                SPComp comp = new SPComp((CompExpr) binEx);
+                comparisons.add(comp);
+                containsMethodCalls = comp.containsMethodCalls();
             } else {
                 if (lhs instanceof Var) {
                     varSet.add(((Var) lhs).getValueID());
@@ -158,17 +191,24 @@ public class SPSet {
                 } else if (lhs instanceof BoolLit) {
                     boolSet.add(((BoolLit) lhs).getTruthValue());
                 } else if (lhs instanceof Ternary) {
-                    ternSet.add(new SPTern((Ternary) lhs));
+                    SPTern tern = new SPTern((Ternary) lhs);
+                    ternSet.add(tern);
+                    containsMethodCalls = tern.containsMethodCalls();
                 } else if (lhs instanceof MethodCall) {
                     methodCalls.add((MethodCall) lhs);
+                    containsMethodCalls = true;
                 } else if (lhs instanceof NegateExpr || lhs instanceof NotExpr) {
-                    SPSets.add(new SPSet(lhs));
+                    SPSet leftSet = new SPSet(lhs);
+                    SPSets.add(leftSet);
+                    containsMethodCalls = leftSet.containsMethodCalls();
                 } else {
                     BinExpr innerBinEx = (BinExpr) lhs;
+                    SPSet leftSet = new SPSet(lhs);
+                    containsMethodCalls = leftSet.containsMethodCalls();
                     if (innerBinEx.getOperator() == operator  || (innerBinEx.getOperator() == Ops.MINUS && operator == Ops.PLUS)) {
                         populateSPSet(this, innerBinEx);
                     } else {
-                        SPSets.add(new SPSet(lhs));
+                        SPSets.add(leftSet);
                     }
                 }
                 if (rhs instanceof Var) {
@@ -182,16 +222,28 @@ public class SPSet {
                     Ternary ternRHS = (Ternary) rhs;
                     SPTern tern = new SPTern(ternRHS);
                     ternSet.add(tern);
+                    if (!containsMethodCalls) {
+                        containsMethodCalls = tern.containsMethodCalls();
+                    }
                 } else if (rhs instanceof MethodCall) {
                     methodCalls.add((MethodCall) rhs);
+                    containsMethodCalls = true;
                 } else if (rhs instanceof NegateExpr || rhs instanceof NotExpr) {
-                    SPSets.add(new SPSet(rhs));
+                    SPSet rightSet = new SPSet(rhs);
+                    if (!containsMethodCalls) {
+                        containsMethodCalls = rightSet.containsMethodCalls();
+                    }
+                    SPSets.add(rightSet);
                 } else {
                     BinExpr innerBinEx = (BinExpr) rhs;
+                    SPSet rightSet = new SPSet(rhs);
+                    if (!containsMethodCalls) {
+                        containsMethodCalls = rightSet.containsMethodCalls();
+                    }
                     if (innerBinEx.getOperator() == operator || (innerBinEx.getOperator() == Ops.MINUS && operator == Ops.PLUS)) {
                         populateSPSet(this, innerBinEx);
                     } else {
-                        SPSets.add(new SPSet(rhs));
+                        SPSets.add(rightSet);
                     }
                 }
             }
@@ -210,7 +262,7 @@ public class SPSet {
         Expression l = expr.getLeftSide();
         Expression r = expr.getRightSide();
         if (l instanceof CompExpr || r instanceof CompExpr) {
-            System.err.println("soemthing has gone very, very wrong");
+            throw new RuntimeException("something has gone very, very wrong");
         }
         if (l instanceof Var) {
             outer.varSet.add(((Var) l).getValueID());
@@ -222,6 +274,8 @@ public class SPSet {
             outer.intSet.add(((IntLit) l).getValue());
         } else if (l instanceof BoolLit) {
             outer.boolSet.add(((BoolLit) l).getTruthValue());
+        } else if (l instanceof NegateExpr || l instanceof NotExpr) {
+            outer.SPSets.add(new SPSet(l));
         } else {
             BinExpr innerBinEx = (BinExpr) l;
             if (innerBinEx.getOperator() == outer.operator) {
@@ -236,10 +290,12 @@ public class SPSet {
             outer.ternSet.add(new SPTern((Ternary) r));
         } else if (r instanceof MethodCall) {
             outer.methodCalls.add((MethodCall) r);
-        } else if (l instanceof IntLit) {
-            outer.intSet.add(((IntLit) l).getValue());
-        } else if (l instanceof BoolLit) {
-            outer.boolSet.add(((BoolLit) l).getTruthValue());
+        } else if (r instanceof IntLit) {
+            outer.intSet.add(((IntLit) r).getValue());
+        } else if (r instanceof BoolLit) {
+            outer.boolSet.add(((BoolLit) r).getTruthValue());
+        } else if (r instanceof NegateExpr || r instanceof NotExpr) {
+            outer.SPSets.add(new SPSet(r));
         } else {
             BinExpr innerBinEx = (BinExpr) r;
             if (innerBinEx.getOperator() == outer.operator) {
@@ -276,6 +332,34 @@ public class SPSet {
         }
         return new SPSet(SPCopy, varCopy, intCopy, boolCopy, ternCopy, methodCopy, compCopy, original.operator);
     }
+    
+    boolean containsMethodCalls(){
+        if (containsMethodCalls == null) {
+            if (methodCalls.size() > 0) {
+                return true;
+            }
+            for (SPSet set : SPSets) {
+                if (set.containsMethodCalls()) {
+                    containsMethodCalls = true;
+                    return true;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.containsMethodCalls()) {
+                    containsMethodCalls = true;
+                    return true;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.containsMethodCalls()) {
+                    containsMethodCalls = true;
+                    return true;
+                }
+            }
+            containsMethodCalls = false;
+        }
+        return containsMethodCalls;
+    }
 
     public void addToSPSets(SPSet newSP){
         if(operator == Ops.NOT || operator == Ops.NEGATE){
@@ -284,6 +368,7 @@ public class SPSet {
             }
         } 
         SPSets.add(newSP);
+        containsMethodCalls = containsMethodCalls() || newSP.containsMethodCalls();
     }
 
     public void addToVarSet(ValueID newVar){
@@ -320,7 +405,7 @@ public class SPSet {
     //Looking at Mult(A,B)
     //Check whether any SPSets contain complete expressions within themselves.
     //Check each SPSet for a matching operator, and if one is found, then check the equivalence for the lhs and rhs.
-    public boolean contains(Expression expr){
+    public boolean contains(Expression expr, Map<ValueID, List<Var>> valToVar){
         if (expr instanceof CompExpr) {
             // Handle the case where the expression is not commutative
             SPComp target = new SPComp((CompExpr) expr);
@@ -328,18 +413,27 @@ public class SPSet {
                 return true;
             }
             for (SPSet curSet : SPSets) {
-                if (curSet.contains(expr)) {
+                if (curSet.contains(expr, valToVar)) {
                     return true;
                 }
             }
             for (SPTern tern : ternSet) {
-                if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
+                if (tern.cond.contains(expr, valToVar) || tern.falseBranch.contains(expr, valToVar) || tern.trueBranch.contains(expr, valToVar)){
                     return true;
                 }
             }
             for (SPComp comp : comparisons) {
-                if (comp.getLhs().contains(expr) || comp.getRhs().contains(expr)) {
+                if (comp.getLhs().contains(expr, valToVar) || comp.getRhs().contains(expr, valToVar)) {
                     return true;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (Expression arg : mc.getArguments()) {
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        if ((new SPSet(arg)).contains(expr, valToVar)) {
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
@@ -370,7 +464,7 @@ public class SPSet {
                     }
                     if (hasLeftSide) {
                         SPSet copy = copy(this);
-                        copy.remove(binex.getLeftSide());
+                        copy.remove(binex.getLeftSide(), valToVar);
                         boolean hasRightSide;
                         if (binex.getRightSide() instanceof Var) {
                             hasRightSide = varSet.contains(((Var) binex.getRightSide()).getValueID());
@@ -388,10 +482,10 @@ public class SPSet {
                 }
                 for (SPSet currentSP : SPSets){
                     if (currentSP.operator == searchOp){
-                        if (currentSP.contains(binex.getLeftSide())) {
+                        if (currentSP.contains(binex.getLeftSide(), valToVar)) {
                             SPSet copy = copy(currentSP);
-                            copy.remove(binex.getLeftSide());
-                            if (copy.contains(binex.getRightSide())) {
+                            copy.remove(binex.getLeftSide(), valToVar);
+                            if (copy.contains(binex.getRightSide(), valToVar)) {
                                 return true;
                             }
                         }
@@ -399,13 +493,22 @@ public class SPSet {
                 }
 
                 for (SPTern tern : ternSet) {
-                    if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
+                    if (tern.cond.contains(expr, valToVar) || tern.falseBranch.contains(expr, valToVar) || tern.trueBranch.contains(expr, valToVar)){
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(expr) || comp.getRhs().contains(expr)) {
+                    if (comp.getLhs().contains(expr, valToVar) || comp.getRhs().contains(expr, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -437,18 +540,27 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(expr)) {
+                    if (curSet.contains(expr, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
+                    if (tern.cond.contains(expr, valToVar) || tern.falseBranch.contains(expr, valToVar) || tern.trueBranch.contains(expr, valToVar)){
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(expr) || comp.getRhs().contains(expr)) {
+                    if (comp.getLhs().contains(expr, valToVar) || comp.getRhs().contains(expr, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -460,18 +572,27 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(expr)) {
+                    if (curSet.contains(expr, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.cond.contains(expr) || tern.falseBranch.contains(expr) || tern.trueBranch.contains(expr)){
+                    if (tern.cond.contains(expr, valToVar) || tern.falseBranch.contains(expr, valToVar) || tern.trueBranch.contains(expr, valToVar)){
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(expr) || comp.getRhs().contains(expr)) {
+                    if (comp.getLhs().contains(expr, valToVar) || comp.getRhs().contains(expr, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(expr, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -480,6 +601,15 @@ public class SPSet {
             }
             throw new RuntimeException("Should never reach here");
         }
+    }
+    
+    private Var findBestVar(List<Var> potVars) {
+        for (Var v : potVars) {
+            if (!v.isCompilerTemp()) {
+                return v;
+            }
+        }
+        return potVars.get(0);
     }
 
     public Expression toExpression(Map<ValueID, List<Var>> valToVar){
@@ -490,7 +620,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return SPSets.get(0).toExpression(valToVar);
             } else if (!varSet.isEmpty()) {
-                return valToVar.get(varSet.get(0)).get(0);
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return best;
             } else if (!intSet.isEmpty()) {
                 return new IntLit(intSet.get(0));
             } else if (!boolSet.isEmpty()) {
@@ -517,7 +649,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NegateExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NegateExpr(valToVar.get(varSet.get(0)).get(0));
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return new NegateExpr(best);
             } else if (!intSet.isEmpty()) {
                 return new NegateExpr(new IntLit(intSet.get(0)));
             } else if (!boolSet.isEmpty()) {
@@ -538,7 +672,9 @@ public class SPSet {
             if (!SPSets.isEmpty()) {
                 return new NotExpr(SPSets.get(0).toExpression(valToVar));
             } else if (!varSet.isEmpty()) {
-                return new NotExpr(valToVar.get(varSet.get(0)).get(0));
+                Var best = findBestVar(valToVar.get(varSet.get(0)));
+                best.setValueID(varSet.get(0));
+                return new NotExpr(best);
             } else if (!intSet.isEmpty()) {
                 throw new RuntimeException("can't not an int");
             } else if (!boolSet.isEmpty()) {
@@ -563,10 +699,14 @@ public class SPSet {
             }
             for (ValueID var : varSet) {
                 if (lhs == null) {
-                    lhs = valToVar.get(var).get(0);
+                    Var best = findBestVar(valToVar.get(var));
+                    best.setValueID(var);
+                    lhs = best;
                     continue;
                 }
-                lhs = joinSides(lhs, valToVar.get(var).get(0));
+                Var best = findBestVar(valToVar.get(var));
+                best.setValueID(var);
+                lhs = joinSides(lhs, best);
             }
             for (Long integer : intSet) {
                 if (lhs == null) {
@@ -621,13 +761,15 @@ public class SPSet {
             return new DivExpr(lhs, operator, rhs);
         } else if (operator == Ops.MOD) {
             return new ModExpr(lhs, operator, rhs);
+        } else if (operator == Ops.EQUALS || operator == Ops.NOT_EQUALS) {
+            return new EqExpr(lhs, operator, rhs);
         } else {
             throw new RuntimeException("maddie missed a case somewhere - shouldn't join " + operator);
         }
     }
 
 
-    public boolean contains(SPSet set) {
+    public boolean contains(SPSet set, Map<ValueID, List<Var>> valToVar) {
         if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
             if (!set.SPSets.isEmpty() || !set.varSet.isEmpty() || !set.intSet.isEmpty() 
                     || !set.boolSet.isEmpty() || !set.ternSet.isEmpty() || !set.methodCalls.isEmpty() 
@@ -638,9 +780,25 @@ public class SPSet {
             if (comparisons.contains(target)) {
                 return true;
             }
-            for (SPComp comp : comparisons) {
-                if (comp.getLhs().comparisons.contains(target) || comp.getRhs().comparisons.contains(target)) {
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set, valToVar)) {
                     return true;
+                }
+            }
+            for (SPTern tern: ternSet) {
+                if (tern.getTernaryCondition().contains(set, valToVar) 
+                        || tern.getTrueBranch().contains(set, valToVar) 
+                        || tern.getFalseBranch().contains(set, valToVar)) {
+                    return true;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (Expression arg : mc.getArguments()) {
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        if ((new SPSet(arg)).contains(set, valToVar)) {
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
@@ -656,20 +814,29 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.varSet.contains(target)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().varSet.contains(target) 
-                            || tern.getTrueBranch().varSet.contains(target) 
-                            || tern.getFalseBranch().varSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().varSet.contains(target) || comp.getRhs().varSet.contains(target)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -679,20 +846,29 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.intSet.contains(target)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().intSet.contains(target) 
-                            || tern.getTrueBranch().intSet.contains(target) 
-                            || tern.getFalseBranch().intSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().intSet.contains(target) || comp.getRhs().intSet.contains(target)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -702,20 +878,29 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.boolSet.contains(target)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().boolSet.contains(target) 
-                            || tern.getTrueBranch().boolSet.contains(target) 
-                            || tern.getFalseBranch().boolSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().boolSet.contains(target) || comp.getRhs().boolSet.contains(target)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -725,20 +910,29 @@ public class SPSet {
                     return true;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.ternSet.contains(target)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern: ternSet) {
-                    if (tern.getTernaryCondition().ternSet.contains(target) 
-                            || tern.getTrueBranch().ternSet.contains(target) 
-                            || tern.getFalseBranch().ternSet.contains(target)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp: comparisons) {
-                    if (comp.getLhs().ternSet.contains(target) || comp.getRhs().ternSet.contains(target)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -748,7 +942,7 @@ public class SPSet {
             throw new RuntimeException("shouldn't reach here");
         } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
             if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
-                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
                 throw new RuntimeException("Not/Negate should have only one component");
             }
             if (!set.SPSets.isEmpty()) {
@@ -759,20 +953,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -784,20 +987,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -809,20 +1021,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -834,20 +1055,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -859,20 +1089,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -886,20 +1125,29 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
+                    if (curSet.contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set) 
-                            || tern.getTrueBranch().contains(set) 
-                            || tern.getFalseBranch().contains(set)) {
+                    if (tern.getTernaryCondition().contains(set, valToVar) 
+                            || tern.getTrueBranch().contains(set, valToVar) 
+                            || tern.getFalseBranch().contains(set, valToVar)) {
                         return true;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                    if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                         return true;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (Expression arg : mc.getArguments()) {
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            if ((new SPSet(arg)).contains(set, valToVar)) {
+                                return true;
+                            }
+                        }
                     }
                 }
                 return false;
@@ -918,7 +1166,7 @@ public class SPSet {
                         doneYet = true;
                         break;
                     } else {
-                        copy.remove(innerSet);
+                        copy.SPSets.remove(innerSet);
                     }
                 } if (!doneYet) {
                     for (ValueID id : set.varSet) {
@@ -972,27 +1220,37 @@ public class SPSet {
                 }
             }
             for (SPSet currentSP : SPSets){
-                if (currentSP.contains(set)) {
+                if (currentSP.contains(set, valToVar)) {
                     return true;
                 }
             }
 
             for (SPTern tern : ternSet) {
-                if (tern.cond.contains(set) || tern.falseBranch.contains(set) || tern.trueBranch.contains(set)){
+                if (tern.cond.contains(set, valToVar) || tern.falseBranch.contains(set, valToVar) || tern.trueBranch.contains(set, valToVar)){
                     return true;
                 }
             }
             for (SPComp comp : comparisons) {
-                if (comp.getLhs().contains(set) || comp.getRhs().contains(set)) {
+                if (comp.getLhs().contains(set, valToVar) || comp.getRhs().contains(set, valToVar)) {
                     return true;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (Expression arg : mc.getArguments()) {
+                    if (arg.getExprType() != ExpressionType.STRING_LIT && (new SPSet(arg)).contains(set, valToVar)) {
+                        return true;
+                    }
                 }
             }
             return false;
         }
     }
 
-    void remove(SPSet set) {
-        if (!contains(set)) {
+    void remove(SPSet set, Map<ValueID, List<Var>> valToVar) {
+        if (set.containsMethodCalls()) {
+            containsMethodCalls = null;
+        }
+        if (!contains(set, valToVar)) {
             throw new RuntimeException("Can't remove what isn't there");
         }
         if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
@@ -1007,30 +1265,48 @@ public class SPSet {
                 return;
             }
             for (SPSet curSet : SPSets) {
-                if (curSet.comparisons.contains(target)) {
-                    curSet.comparisons.remove(target);
+                if (curSet.contains(set, valToVar)) {
+                    curSet.remove(set, valToVar);
                     return;
                 }
             }
             for (SPTern tern : ternSet) {
-                if (tern.cond.comparisons.contains(target)) {
-                    tern.cond.comparisons.remove(target);
+                if (tern.cond.contains(set, valToVar)) {
+                    tern.cond.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
-                } else if (tern.falseBranch.comparisons.contains(target) ) {
-                    tern.falseBranch.comparisons.remove(target);
+                } else if (tern.falseBranch.contains(set, valToVar) ) {
+                    tern.falseBranch.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
-                } else if (tern.trueBranch.comparisons.contains(target)){
-                    tern.falseBranch.comparisons.remove(target);
+                } else if (tern.trueBranch.contains(set, valToVar)){
+                    tern.trueBranch.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
                 }
             }
             for (SPComp comp : comparisons) {
-                if (comp.getLhs().comparisons.contains(target)) {
-                    comp.getLhs().comparisons.remove(target);
+                if (comp.getLhs().contains(set, valToVar)) {
+                    comp.getLhs().remove(set, valToVar);
+                    comp.containsMethodCalls = null;
                     return;
-                }   else if (comp.getRhs().comparisons.contains(target)) {
-                    comp.getRhs().comparisons.remove(target);
+                }   else if (comp.getRhs().contains(set, valToVar)) {
+                    comp.getRhs().remove(set, valToVar);
+                    comp.containsMethodCalls = null;
                     return;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                    Expression arg = mc.getArguments().get(i);
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.remove(set, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
+                    }
                 }
             }
             throw new RuntimeException("shouldn't be here");
@@ -1047,30 +1323,48 @@ public class SPSet {
                     return;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.varSet.contains(target)) {
-                        curSet.varSet.remove(target);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().varSet.contains(target)) {
-                        tern.getTernaryCondition().varSet.remove(target);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().varSet.contains(target)) {
-                        tern.getTrueBranch().varSet.remove(target);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().varSet.contains(target)) {
-                        tern.getFalseBranch().varSet.remove(target);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().varSet.contains(target)) {
-                        comp.getLhs().varSet.remove(target);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().varSet.contains(target)) {
-                        comp.getRhs().varSet.remove(target);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1081,30 +1375,48 @@ public class SPSet {
                     return;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.intSet.contains(target)) {
-                        curSet.intSet.remove(target);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().intSet.contains(target)) {
-                        tern.getTernaryCondition().intSet.remove(target);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().intSet.contains(target)) {
-                        tern.getTrueBranch().intSet.remove(target);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getFalseBranch().intSet.contains(target)) {
-                        tern.getFalseBranch().intSet.remove(target);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().intSet.contains(target)) {
-                        comp.getLhs().intSet.remove(target);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().intSet.contains(target)) {
-                        comp.getRhs().intSet.remove(target);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("shouldn't get here");
@@ -1115,30 +1427,48 @@ public class SPSet {
                     return;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.boolSet.contains(target)) {
-                        curSet.boolSet.remove(target);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().boolSet.contains(target)) {
-                        tern.getTernaryCondition().boolSet.remove(target);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().boolSet.contains(target)) {
-                        tern.getTrueBranch().boolSet.remove(target);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getFalseBranch().boolSet.contains(target)) {
-                        tern.getFalseBranch().boolSet.remove(target);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().boolSet.contains(target)) {
-                        comp.getLhs().boolSet.remove(target);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().boolSet.contains(target)) {
-                        comp.getRhs().boolSet.remove(target);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("shouldn't get here");
@@ -1149,30 +1479,48 @@ public class SPSet {
                     return;
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.ternSet.contains(target)) {
-                        curSet.ternSet.remove(target);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().ternSet.contains(target)) {
-                        tern.getTernaryCondition().ternSet.remove(target);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().ternSet.contains(target)) {
-                        tern.getTrueBranch().ternSet.remove(target);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getFalseBranch().ternSet.contains(target)) {
-                        tern.getFalseBranch().ternSet.remove(target);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().ternSet.contains(target)) {
-                        comp.getLhs().ternSet.remove(target);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().ternSet.contains(target)) {
-                        comp.getRhs().ternSet.remove(target);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("shouldn't get here");
@@ -1180,7 +1528,7 @@ public class SPSet {
             throw new RuntimeException("shouldn't reach here");
         } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
             if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
-                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 0) {
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
                 throw new RuntimeException("Not/Negate should have only one component");
             }
             if (!set.SPSets.isEmpty()) {
@@ -1192,29 +1540,35 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.SPSets.remove(target);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
+                        curSet.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.getTernaryCondition().contains(set, valToVar)) {
+                        tern.getTernaryCondition().remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.getTrueBranch().contains(set, valToVar)) {
+                        tern.getTrueBranch().remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.getFalseBranch().contains(set, valToVar)) {
+                        tern.getFalseBranch().remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    } else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
                     }
                 }
@@ -1228,30 +1582,48 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.remove(set);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1264,30 +1636,48 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.remove(set);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1300,30 +1690,48 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.remove(set);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1336,30 +1744,48 @@ public class SPSet {
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.remove(set);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1367,35 +1793,53 @@ public class SPSet {
                 SPComp target = set.comparisons.get(0);
                 if (operator == set.operator) {
                     if (comparisons.contains(target)) {
-                        varSet.remove(target);
+                        comparisons.remove(target);
                         return;
                     }
                 }
                 for (SPSet curSet : SPSets) {
-                    if (curSet.contains(set)) {
-                        curSet.remove(set);
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.remove(set, valToVar);
                         return;
                     }
                 }
                 for (SPTern tern : ternSet) {
-                    if (tern.getTernaryCondition().contains(set)) {
-                        tern.getTernaryCondition().remove(set);
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    } else if (tern.getTrueBranch().contains(set)) {
-                        tern.getTrueBranch().remove(set);
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
-                    }else if (tern.getFalseBranch().contains(set)) {
-                        tern.getFalseBranch().remove(set);
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.remove(set, valToVar);
+                        tern.containsMethodCalls = null;
                         return;
                     }
                 }
                 for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(set)) {
-                        comp.getLhs().remove(set);
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
-                    } else if (comp.getRhs().contains(set)) {
-                        comp.getRhs().remove(set);
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().remove(set, valToVar);
+                        comp.containsMethodCalls = null;
                         return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.remove(set, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
                     }
                 }
                 throw new RuntimeException("Shouldn't get here");
@@ -1412,7 +1856,7 @@ public class SPSet {
                         doneYet = true;
                         break;
                     } else {
-                        copy.remove(innerSet);
+                        copy.SPSets.remove(innerSet);
                     }
                 } if (!doneYet) {
                     for (ValueID id : set.varSet) {
@@ -1483,32 +1927,803 @@ public class SPSet {
                     return;
                 }
             }
-            for (SPSet currentSP : SPSets){
-                if (currentSP.contains(set)) {
-                    currentSP.remove(set);
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set, valToVar)) {
+                    curSet.remove(set, valToVar);
                     return;
                 }
             }
-
             for (SPTern tern : ternSet) {
-                if (tern.cond.contains(set)) {
-                    tern.cond.remove(set);
+                if (tern.cond.contains(set, valToVar)) {
+                    tern.cond.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
-                } else if (tern.falseBranch.contains(set)) {
-                    tern.falseBranch.remove(set);
+                } else if (tern.falseBranch.contains(set, valToVar) ) {
+                    tern.falseBranch.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
-                } else if (tern.trueBranch.contains(set)) {
-                    tern.trueBranch.remove(set);
+                } else if (tern.trueBranch.contains(set, valToVar)){
+                    tern.trueBranch.remove(set, valToVar);
+                    tern.containsMethodCalls = null;
                     return;
                 }
             }
             for (SPComp comp : comparisons) {
-                if (comp.getLhs().contains(set)) {
-                    comp.getLhs().remove(set);
+                if (comp.getLhs().contains(set, valToVar)) {
+                    comp.getLhs().remove(set, valToVar);
+                    comp.containsMethodCalls = null;
                     return;
-                } else if (comp.getRhs().contains(set)) {
-                    comp.getRhs().remove(set);
+                }   else if (comp.getRhs().contains(set, valToVar)) {
+                    comp.getRhs().remove(set, valToVar);
+                    comp.containsMethodCalls = null;
                     return;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                    Expression arg = mc.getArguments().get(i);
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.remove(set, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
+                    }
+                }
+            }
+            throw new RuntimeException("Shouldn't get here");
+        }
+    }
+    
+    void replace(SPSet set, ValueID var, Map<ValueID, List<Var>> valToVar) {
+        if (set.containsMethodCalls()) {
+            containsMethodCalls = null;
+        }
+        if (!contains(set, valToVar)) {
+            throw new RuntimeException("Can't replace what isn't there");
+        }
+        if (Arrays.asList(Ops.GT, Ops.GTE, Ops.LT, Ops.LTE).contains(set.operator)) {
+            if (!set.SPSets.isEmpty() || !set.varSet.isEmpty() || !set.intSet.isEmpty() 
+                    || !set.boolSet.isEmpty() || !set.ternSet.isEmpty() || !set.methodCalls.isEmpty() 
+                    || !(set.comparisons.size() == 1)) {
+                throw new RuntimeException("Unexpected behavior - talk to Maddie");
+            }
+            SPComp target = set.comparisons.get(0);
+            if (comparisons.contains(target)) {
+                comparisons.remove(target);
+                varSet.add(var);
+                return;
+            }
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set, valToVar)) {
+                    curSet.replace(set, var, valToVar);
+                    return;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set, valToVar)) {
+                    tern.cond.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                } else if (tern.falseBranch.contains(set, valToVar) ) {
+                    tern.falseBranch.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                } else if (tern.trueBranch.contains(set, valToVar)){
+                    tern.trueBranch.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set, valToVar)) {
+                    comp.getLhs().replace(set, var, valToVar);
+                    comp.containsMethodCalls = null;
+                    return;
+                }   else if (comp.getRhs().contains(set, valToVar)) {
+                    comp.getRhs().replace(set, var, valToVar);
+                    comp.containsMethodCalls = null;
+                    return;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                    Expression arg = mc.getArguments().get(i);
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.replace(set, var, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
+                    }
+                }
+            }
+            throw new RuntimeException("shouldn't be here");
+        } else if (set.operator == null) {
+            if (!set.SPSets.isEmpty() || !set.comparisons.isEmpty()) {
+                throw new RuntimeException("this means something is wonky with the constructor");
+            } if (set.varSet.size() + set.intSet.size() + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() != 1) {
+                throw new RuntimeException("An SPSet containing more than one thing should have an operator set");
+            }
+            if(!set.varSet.isEmpty()){
+                ValueID target = set.varSet.get(0);
+                if (varSet.contains(target)) {
+                    varSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (intSet.contains(target)) {
+                    intSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (boolSet.contains(target)) {
+                    boolSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (ternSet.contains(target)) {
+                    ternSet.remove(target);
+                    varSet.add(var);
+                    return;
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("shouldn't get here");
+            }
+            throw new RuntimeException("shouldn't reach here");
+        } else if(set.operator == Ops.NOT || set.operator == Ops.NEGATE){
+            if (set.SPSets.size() + set.varSet.size() + set.intSet.size() 
+                    + set.boolSet.size() + set.ternSet.size() + set.methodCalls.size() + set.comparisons.size() != 1) {
+                throw new RuntimeException("Not/Negate should have only one component");
+            }
+            if (!set.SPSets.isEmpty()) {
+                SPSet target = set.SPSets.get(0);
+                if (operator == set.operator) {
+                    if (SPSets.contains(target)) {
+                        SPSets.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.varSet.isEmpty()) {
+                ValueID target = set.varSet.get(0);
+                if (operator == set.operator) {
+                    if (varSet.contains(target)) {
+                        varSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.intSet.isEmpty()) {
+                Long target = set.intSet.get(0);
+                if (operator == set.operator) {
+                    if (intSet.contains(target)) {
+                        intSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.boolSet.isEmpty()) {
+                Boolean target = set.boolSet.get(0);
+                if (operator == set.operator) {
+                    if (boolSet.contains(target)) {
+                        boolSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.ternSet.isEmpty()) {
+                SPTern target = set.ternSet.get(0);
+                if (operator == set.operator) {
+                    if (ternSet.contains(target)) {
+                        ternSet.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            } else if (!set.comparisons.isEmpty()) {
+                SPComp target = set.comparisons.get(0);
+                if (operator == set.operator) {
+                    if (comparisons.contains(target)) {
+                        comparisons.remove(target);
+                        varSet.add(var);
+                        return;
+                    }
+                }
+                for (SPSet curSet : SPSets) {
+                    if (curSet.contains(set, valToVar)) {
+                        curSet.replace(set, var, valToVar);
+                        return;
+                    }
+                }
+                for (SPTern tern : ternSet) {
+                    if (tern.cond.contains(set, valToVar)) {
+                        tern.cond.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.falseBranch.contains(set, valToVar) ) {
+                        tern.falseBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    } else if (tern.trueBranch.contains(set, valToVar)){
+                        tern.trueBranch.replace(set, var, valToVar);
+                        tern.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (SPComp comp : comparisons) {
+                    if (comp.getLhs().contains(set, valToVar)) {
+                        comp.getLhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }   else if (comp.getRhs().contains(set, valToVar)) {
+                        comp.getRhs().replace(set, var, valToVar);
+                        comp.containsMethodCalls = null;
+                        return;
+                    }
+                }
+                for (MethodCall mc : methodCalls) {
+                    for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                        Expression arg = mc.getArguments().get(i);
+                        if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                            SPSet argSet = new SPSet(arg);
+                            if (argSet.contains(set, valToVar)) {
+                                argSet.replace(set, var, valToVar);
+                                mc.setArgument(i, argSet.toExpression(valToVar));
+                                return;
+                            }
+                        }
+                    }
+                }
+                throw new RuntimeException("Shouldn't get here");
+            }
+            throw new RuntimeException("should not be reachable");
+
+        } else {
+            // all binex other than comp
+            if (operator == set.operator) {
+                boolean doneYet = false;
+                SPSet copy = copy(this);
+                for (SPSet innerSet : set.SPSets) {
+                    if (!copy.SPSets.contains(innerSet)) {
+                        doneYet = true;
+                        break;
+                    } else {
+                        copy.SPSets.remove(innerSet);
+                    }
+                } if (!doneYet) {
+                    for (ValueID id : set.varSet) {
+
+                        if (!copy.varSet.contains(id)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.varSet.remove(id);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Long intLit : set.intSet) {
+                        if (!copy.intSet.contains(intLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.intSet.remove(intLit);
+                        }
+                    }
+                } if (!doneYet) { 
+                    for (Boolean boolLit : set.boolSet) {
+                        if (!copy.boolSet.contains(boolLit)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.boolSet.remove(boolLit);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPTern ternary : set.ternSet) {
+                        if (!copy.ternSet.contains(ternary)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.ternSet.remove(ternary);
+                        }
+                    }
+                } if (!doneYet) {
+                    for (SPComp comp : set.comparisons) {
+                        if (!copy.comparisons.contains(comp)) {
+                            doneYet = true;
+                            break;
+                        } else {
+                            copy.comparisons.remove(comp);
+                        }
+                    }
+                }
+                if (!doneYet) {
+                    for (SPSet innerSet : set.SPSets) {
+                        SPSets.remove(innerSet);
+                    }
+                    for (ValueID id : set.varSet) {
+                        varSet.remove(id);
+                    }
+                    for (Long intLit : set.intSet) {
+                        intSet.remove(intLit);
+                    }
+                    for (Boolean boolLit : set.boolSet) {
+                        boolSet.remove(boolLit);
+                    }
+                    for (SPTern tern : set.ternSet) {
+                        ternSet.remove(tern);
+                    }
+                    for (SPComp comp : set.comparisons) {
+                        comparisons.remove(comp);
+                    }
+                    varSet.add(var);
+                    return;
+                }
+            }
+            for (SPSet curSet : SPSets) {
+                if (curSet.contains(set, valToVar)) {
+                    curSet.replace(set, var, valToVar);
+                    return;
+                }
+            }
+            for (SPTern tern : ternSet) {
+                if (tern.cond.contains(set, valToVar)) {
+                    tern.cond.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                } else if (tern.falseBranch.contains(set, valToVar) ) {
+                    tern.falseBranch.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                } else if (tern.trueBranch.contains(set, valToVar)){
+                    tern.trueBranch.replace(set, var, valToVar);
+                    tern.containsMethodCalls = null;
+                    return;
+                }
+            }
+            for (SPComp comp : comparisons) {
+                if (comp.getLhs().contains(set, valToVar)) {
+                    comp.getLhs().replace(set, var, valToVar);
+                    comp.containsMethodCalls = null;
+                    return;
+                }   else if (comp.getRhs().contains(set, valToVar)) {
+                    comp.getRhs().replace(set, var, valToVar);
+                    comp.containsMethodCalls = null;
+                    return;
+                }
+            }
+            for (MethodCall mc : methodCalls) {
+                for (int i = 0 ; i < mc.getArguments().size(); i++) {
+                    Expression arg = mc.getArguments().get(i);
+                    if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                        SPSet argSet = new SPSet(arg);
+                        if (argSet.contains(set, valToVar)) {
+                            argSet.replace(set, var, valToVar);
+                            mc.setArgument(i, argSet.toExpression(valToVar));
+                            return;
+                        }
+                    }
                 }
             }
             throw new RuntimeException("Shouldn't get here");
@@ -1517,260 +2732,12 @@ public class SPSet {
 
 
 
-    void remove(Expression expr) {
-        if (!contains(expr)) {
+    void remove(Expression expr, Map<ValueID, List<Var>> valToVar) {
+        containsMethodCalls = null;
+        if (!contains(expr, valToVar)) {
             throw new RuntimeException("Can't remove what isn't there");
         }
-        if (expr instanceof Var) {
-            varSet.remove(((Var) expr).getValueID());
-        } else if (expr instanceof IntLit) {
-            intSet.remove(((IntLit) expr).getValue());
-        } else if (expr instanceof BoolLit) {
-            boolSet.remove(((BoolLit) expr).getTruthValue());
-        } else if (expr instanceof Ternary) {
-            ternSet.remove(new SPTern((Ternary) expr));
-        } else if (expr instanceof CompExpr) {
-            if (comparisons.contains(new SPComp((CompExpr) expr))) {
-                comparisons.remove(new SPComp((CompExpr) expr));
-            } else {
-                boolean found = false;
-                for (SPSet searching : SPSets) {
-                    if (searching.contains(expr)) {
-                        searching.remove(expr);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    for (SPTern tern : ternSet) {
-                        if (tern.cond.contains(expr)) {
-                            found = true;
-                            tern.cond.remove(expr);
-                            break;
-                        } else if (tern.trueBranch.contains(expr)) {
-                            found = true;
-                            tern.trueBranch.remove(expr);
-                            break;
-                        } else if (tern.falseBranch.contains(expr)) {
-                            found = true;
-                            tern.falseBranch.remove(expr);
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    for (SPComp comp : comparisons) {
-                        if (comp.getLhs().contains(expr)) {
-                            comp.getLhs().remove(expr);
-                            found = true;
-                            break;
-                        } else if (comp.getRhs().contains(expr)) {
-                            comp.getRhs().remove(expr);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        } else if (expr instanceof BinExpr) {
-            BinExpr binex = (BinExpr)expr;
-            Ops searchOp = binex.getOperator();
-            boolean found = false;
-            if (operator == searchOp) {
-                int leftLoc;
-                boolean hasLeftSide = false;
-                if (binex.getLeftSide() instanceof Var) {
-                    hasLeftSide = varSet.contains(((Var) binex.getLeftSide()).getValueID());
-                    leftLoc = 1;
-                } else if (binex.getLeftSide() instanceof Ternary) {
-                    hasLeftSide = ternSet.contains(new SPTern((Ternary) binex.getLeftSide()));
-                    leftLoc = 2;
-                } else if (binex.getLeftSide() instanceof CompExpr) {
-                    hasLeftSide = comparisons.contains(new SPComp((CompExpr) binex.getLeftSide()));
-                    leftLoc = 3;
-                } else {
-                    hasLeftSide = SPSets.contains(new SPSet(binex.getLeftSide()));
-                    leftLoc = 4;
-                }
-                if (hasLeftSide) {
-                    SPSet copy = copy(this);
-                    copy.remove(binex.getLeftSide());
-                    int rightLoc;
-                    boolean hasRightSide;
-                    if (binex.getRightSide() instanceof Var) {
-                        hasRightSide = varSet.contains(((Var) binex.getRightSide()).getValueID());
-                        rightLoc = 1;
-                    } else if (binex.getRightSide() instanceof Ternary) {
-                        hasRightSide = ternSet.contains(new SPTern((Ternary) binex.getRightSide()));
-                        rightLoc = 2;
-                    } else if (binex.getRightSide() instanceof CompExpr) {
-                        hasRightSide = comparisons.contains(new SPComp((CompExpr) binex.getRightSide()));
-                        rightLoc = 3;
-                    } else {
-                        hasRightSide = SPSets.contains(new SPSet(binex.getRightSide()));
-                        rightLoc = 4;
-                    }
-                    if (hasRightSide) {
-                        found = true;
-                        switch(leftLoc) {
-                        case 1:
-                            varSet.remove(((Var) binex.getLeftSide()).getValueID());
-                            break;
-                        case 2:
-                            ternSet.remove(new SPTern((Ternary) binex.getLeftSide()));
-                            break;
-                        case 3:
-                            comparisons.remove(new SPComp((CompExpr) binex.getLeftSide()));
-                            break;
-                        case 4:
-                            SPSets.remove(new SPSet(binex.getLeftSide()));
-                            break;
-                        default:
-                            throw new RuntimeException("this line should be unreachable");
-                        }
-                        switch(rightLoc) {
-                        case 1:
-                            varSet.remove(((Var) binex.getRightSide()).getValueID());
-                            break;
-                        case 2:
-                            ternSet.remove(new SPTern((Ternary) binex.getRightSide()));
-                            break;
-                        case 3:
-                            comparisons.remove(new SPComp((CompExpr) binex.getRightSide()));
-                            break;
-                        case 4:
-                            SPSets.remove(new SPSet(binex.getRightSide()));
-                            break;
-                        default:
-                            throw new RuntimeException("this line should be unreachable");
-                        }
-                    }
-                }
-            }
-            if (!found) {
-                for (SPSet currentSP : SPSets){
-                    if (currentSP.operator == searchOp){
-                        if (currentSP.contains(binex.getLeftSide())) {
-                            SPSet copy = copy(currentSP);
-                            copy.remove(binex.getLeftSide());
-                            if (copy.contains(binex.getRightSide())) {
-                                currentSP.remove(binex.getLeftSide());
-                                currentSP.remove(binex.getLeftSide());
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (!found) {
-                for (SPTern tern : ternSet) {
-                    if (tern.cond.contains(expr)) {
-                        found = true;
-                        tern.cond.remove(expr);
-                        break;
-                    } else if (tern.falseBranch.contains(expr)) {
-                        found = true;
-                        tern.falseBranch.remove(expr);
-                        break;
-                    } else if (tern.trueBranch.contains(expr)){
-                        found = true;
-                        tern.trueBranch.remove(expr);
-                        break;
-                    }
-
-                }
-            }
-
-            if (!found) {
-                for (SPComp comp : comparisons) {
-                    if (comp.getLhs().contains(expr)) {
-                        found = true;
-                        comp.getLhs().remove(expr);
-                        break;
-                    } else if (comp.getRhs().contains(expr)) {
-                        found = true;
-                        comp.getRhs().remove(expr);
-                        break;
-                    }
-                }
-            }
-        } else if(expr instanceof NotExpr || expr instanceof NegateExpr){
-            if ((operator == Ops.NOT && expr instanceof NotExpr) || (operator == Ops.NEGATE && expr instanceof NegateExpr)) {
-                Expression inner;
-                if (expr instanceof NotExpr) {
-                    inner = ((NotExpr) expr).getUnresolvedExpression();
-                } else {
-                    inner = ((NegateExpr) expr).getExpression();
-                }
-                boolean found;
-                int loc;
-                if (inner instanceof Var) {
-                    found = varSet.contains(((Var) inner).getValueID());
-                    loc = 1;
-                } else if (inner instanceof Ternary) {
-                    found = ternSet.contains(new SPTern((Ternary) inner));
-                    loc = 2;
-                } else if (inner instanceof CompExpr) {
-                    found = comparisons.contains(new SPComp((CompExpr) inner));
-                    loc = 3;
-                } else {
-                    found = SPSets.contains(new SPSet(inner));
-                    loc = 4;
-                }
-                if (found) {
-                    switch(loc) {
-                    case 1:
-                        varSet.remove(((Var) inner).getValueID());
-                        break;
-                    case 2:
-                        ternSet.remove(new SPTern((Ternary) inner));
-                        break;
-                    case 3:
-                        comparisons.remove(new SPComp((CompExpr) inner));
-                        break;
-                    case 4:
-                        SPSets.remove(new SPSet(inner));
-                        break;
-                    default:
-                        throw new RuntimeException("this line should be unreachable");
-                    }
-                }
-            }
-            if (SPSets.contains(new SPSet(expr))) {
-                SPSets.remove(new SPSet(expr));
-                return;
-            }
-            for (SPSet curSet : SPSets) {
-                if (curSet.contains(expr)) {
-                    curSet.remove(expr);
-                    return;
-                }
-            }
-            for (SPTern tern : ternSet) {
-                if (tern.cond.contains(expr)) {
-                    tern.cond.remove(expr);
-                    return;
-                } else if (tern.falseBranch.contains(expr)) {
-                    tern.falseBranch.remove(expr);
-                    return;
-                } else if (tern.trueBranch.contains(expr)) {
-                    tern.trueBranch.remove(expr);
-                    return;
-                }
-            }
-            for (SPComp comp : comparisons) {
-                if (comp.getLhs().contains(expr)) {
-                    comp.getLhs().remove(expr);
-                    return;
-                } else if (comp.getRhs().contains(expr)) {
-                    comp.getRhs().remove(expr);
-                    return;
-                }
-            }
-        } else {
-            throw new RuntimeException("Should be impossible to get here");
-        }
+        remove(new SPSet(expr), valToVar);
 
     }
 

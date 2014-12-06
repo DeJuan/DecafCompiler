@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class MapContainer {
@@ -14,17 +16,20 @@ public class MapContainer {
     Map<SPSet, Var> expToTemp = new HashMap<SPSet, Var>();
     Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
     Map<ValueID, List<Var>> valToVar = new HashMap<ValueID, List<Var>>();
+    boolean complete;
 
     public MapContainer(Map<IR_FieldDecl, ValueID> varToVal, 
             Map<SPSet, ValueID> expToVal,
             Map<SPSet, Var> expToTemp,
             Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponents,
-            Map<ValueID, List<Var>> valToVar){
+            Map<ValueID, List<Var>> valToVar, boolean complete){
         this.varToVal = varToVal;
         this.expToVal = expToVal;
         this.expToTemp = expToTemp;
         this.varToValForArrayComponents = varToValForArrayComponents;
         this.valToVar = valToVar;
+        this.complete = complete;
+        
     }
     
     /*
@@ -60,17 +65,48 @@ public class MapContainer {
         Map<SPSet, Var> expToTempN = new HashMap<SPSet, Var>();
         Map<IR_FieldDecl, Map<SPSet, ValueID>> varToValForArrayComponentsN = new HashMap<IR_FieldDecl, Map<SPSet, ValueID>>();
         Map<ValueID, List<Var>> valToVarN = new HashMap<ValueID, List<Var>>();
-        return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN);
+        return new MapContainer(varToValN, expToValN, expToTempN, varToValForArrayComponentsN, valToVarN, false);
     }
     
-    public MapContainer calculateIntersection(MapContainer otherContainer){
-    	if (otherContainer.equals(this)){
-    		return new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar);
-    	}
+    public static MapContainer keepGlobals(MapContainer startingContainer, List<IR_FieldDecl> globals){
+        MapContainer newContainer = makeEmptyContainer();
+        if (startingContainer == null) {
+            return newContainer;
+        }
+        for (IR_FieldDecl glob : globals) {
+            ValueID id = startingContainer.varToVal.get(glob);
+            if (glob.getLength() != null || id != null) {
+                if (glob.getLength() != null && id == null) {
+                    throw new RuntimeException("ArrayID should have been set in original MapContainer");
+                }
+                if (glob.getLength() == null) {
+                    id = new ValueID();
+                }
+                newContainer.varToVal.put(glob, id);
+                if (!newContainer.valToVar.containsKey(id)) {
+                    newContainer.valToVar.put(id, new ArrayList<Var>());
+                }
+                Descriptor globDesc = new Descriptor(glob);
+                globDesc.setLocation(new LocLabel(glob.getName()));
+                newContainer.valToVar.get(id).add(new Var(globDesc, null));
+            }
+            if (glob.getLength() != null) {
+                newContainer.varToValForArrayComponents.put(glob, startingContainer.varToValForArrayComponents.get(glob));
+            }
+        }
+        return newContainer;
+    }
+    
+    public MapContainer calculateIntersection(MapContainer otherContainer, List<IR_FieldDecl> globals){
+        if (otherContainer == null) {
+            System.err.println("WARNING: PASSED A NULL TO MapContainer.calculateIntersection");
+            return MapContainer.keepGlobals(this, globals);
+        }
         Map<IR_FieldDecl, ValueID> newVarToVal = new HashMap<IR_FieldDecl, ValueID>();
         for (IR_FieldDecl localDecl: this.varToVal.keySet()){
             if(varToVal.get(localDecl) == otherContainer.varToVal.get(localDecl)){
-                newVarToVal.put(localDecl, varToVal.get(localDecl));
+                ValueID id = varToVal.get(localDecl);
+                newVarToVal.put(localDecl, id);
             }
         }
 
@@ -86,8 +122,8 @@ public class MapContainer {
         Map<SPSet, Var> newExprToTemp = new HashMap<SPSet, Var>();
         for(SPSet sp : expToTemp.keySet()){
             Var myVar = expToTemp.get(sp);
-            Var otherVar = expToTemp.get(sp);
-            if(myVar.getVarDescriptor().getIR() == otherVar.getVarDescriptor().getIR()){
+            Var otherVar = otherContainer.expToTemp.get(sp);
+            if(otherVar != null && myVar.getVarDescriptor().getIR() == otherVar.getVarDescriptor().getIR()){
                 newExprToTemp.put(SPSet.copy(sp), myVar);
             }
         }
@@ -117,33 +153,24 @@ public class MapContainer {
             }
         }
 
-
-        Set<ValueID> otherValToVar = otherContainer.valToVar.keySet();
         Map<ValueID, List<Var>> newValToVar = new HashMap<ValueID, List<Var>>();
         for(ValueID valID : valToVar.keySet()){
             List<Var> newList = new ArrayList<Var>();
-            boolean valid = true;
-            if(!otherValToVar.contains(valID)){
-                continue;
-            } else {
-                List<Var> myList = valToVar.get(valID);
-                List<Var> otherList = otherContainer.valToVar.get(valID);
-                if (myList.size() != otherList.size()) {
-                    continue;
-                }
-                for (int i = 0; i < myList.size() - 1; i++) {
-                    if (otherList.get(i) != myList.get(i)) {
-                        valid = false;
-                        break;
-                    } else {
-                        newList.add(myList.get(i));
+            for (Var v : valToVar.get(valID)) {
+                if (v.getIndex() == null) {
+                    if (newVarToVal.get(v.getFieldDecl()) == valID) {
+                        newList.add(v);
+                    }
+                } else {
+                    if (Optimizer.setVarIDs(newVarToVal, newComponents, v.getIndex())) {
+                        if (newComponents.containsKey(v.getFieldDecl()) && newComponents.get(v.getFieldDecl()).get(new SPSet(v.getIndex()))  == valID) {
+                            newList.add(v);
+                        }
                     }
                 }
-                if (valid) {
-                    newValToVar.put(valID, newList);
-                }
             }
+            newValToVar.put(valID, newList);
         }
-        return new MapContainer(newVarToVal, newExprToVal, newExprToTemp, newComponents, newValToVar);
+        return new MapContainer(newVarToVal, newExprToVal, newExprToTemp, newComponents, newValToVar, complete && otherContainer.complete);
     }
 }
