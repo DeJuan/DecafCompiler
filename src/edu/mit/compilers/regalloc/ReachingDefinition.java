@@ -15,7 +15,12 @@ public class ReachingDefinition {
 	public ReachingDefinition() {}
 	
 	public ReachingDefinition(ReachingDefinition rd) {
-		webs = new HashMap<String, HashSet<Web>>(rd.getWebsMap());
+		// copy everything but the Web.
+		HashMap<String, HashSet<Web>> webMapToCopy = rd.getWebsMap();
+		for (String key : webMapToCopy.keySet()) {
+			HashSet<Web> setCopy = new HashSet<Web>(webMapToCopy.get(key));
+			webs.put(key, setCopy);
+		}
 	}
 	
 	public boolean changed(ReachingDefinition other) {
@@ -86,6 +91,7 @@ public class ReachingDefinition {
 	}
 	
 	public void setWebs(String varName, HashSet<Web> newWebs) {
+		System.out.println("I tried to set the web!!!");
 		webs.put(varName, newWebs);
 	}
 	
@@ -105,6 +111,7 @@ public class ReachingDefinition {
 	public void removeWeb(Web web) {
 		String varName = web.getVarName();
 		if (webs.containsKey(varName)) {
+			System.out.println("I'm removing a web!!!");
 			webs.get(varName).remove(web);
 		}
 	}

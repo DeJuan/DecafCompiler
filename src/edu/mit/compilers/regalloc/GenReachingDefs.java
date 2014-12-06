@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 import edu.mit.compilers.controlflow.Assignment;
+import edu.mit.compilers.controlflow.Branch;
+import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.controlflow.Codeblock;
 import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.FlowNode;
@@ -29,6 +31,7 @@ public class GenReachingDefs {
 	private HashMap<FlowNode, ReachingDefinition> IN = new HashMap<FlowNode, ReachingDefinition>();
 	private HashMap<FlowNode, ReachingDefinition> OUT = new HashMap<FlowNode, ReachingDefinition>();
 	
+	private HashMap<FlowNode, FlowNode> whileParent = new HashMap<FlowNode, FlowNode>();
 	
 	public GenReachingDefs(ControlflowContext context, 
 			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
@@ -79,7 +82,7 @@ public class GenReachingDefs {
 		}
 		return newRD;
 	}
-	
+
 	public ReachingDefinition generateCodeblockOUT(Codeblock node, ReachingDefinition RDin) {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
@@ -87,6 +90,7 @@ public class GenReachingDefs {
 				Assignment assign = (Assignment) st;
 				String varName = assign.getDestVar().getName();
 				Web gen = new Web(varName, st, (FlowNode) node);
+				System.out.println("\n======= Assigning to: " + varName);
 				System.out.println("Created web " + gen);
 				boolean addWeb = true;
 				if (rd.getWebsMap().containsKey(varName)) {
@@ -108,6 +112,7 @@ public class GenReachingDefs {
 			System.out.println("RD: " + rd);
 			st.setReachingDefinition(rd);
 			rd.setStatements(st);
+			System.out.println(rd.getAllWebs());
 		}
 		return rd;
 	}
@@ -128,7 +133,7 @@ public class GenReachingDefs {
 			
 			int loopLimit = 1;
 			while (!changed.isEmpty() && loopLimit < 20000) {
-				System.out.println(loopLimit);
+				System.out.println("\n========== " + loopLimit);
 				Iterator<FlowNode> it = changed.iterator();
 				FlowNode n = it.next();
 				it.remove();
@@ -137,10 +142,20 @@ public class GenReachingDefs {
 				//IN.put(n, new ReachingDefinition());
 				n.setIN(new ReachingDefinition());
 				for (FlowNode p : n.getParents()) {
+					System.out.println("Parents class: " + p.getClass());
 					//ReachingDefinition unionReachDef = union(IN.get(n), OUT.get(p));
 					//IN.put(n, unionReachDef);
 					ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
 					n.setIN(unionReachDef);
+				}
+				// Deal with issue where While doesn't have a parent (when it should be there)
+				if ((n instanceof Branch) && ((Branch) n).getType() == BranchType.WHILE) {
+					if (whileParent.containsKey(n)) {
+						System.out.println("Substituting extra while FlowNode");
+						FlowNode p = whileParent.get(n);
+						ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
+						n.setIN(unionReachDef);
+					}
 				}
 				System.out.println("IN after union with parents: " + n.getIN());
 				n.getIN().setFlowNodes(n);
@@ -161,6 +176,12 @@ public class GenReachingDefs {
 				if (n.getOUT().changed(OUTn)) {
 					System.out.println("Changed!");
 					for (FlowNode s : n.getChildren()) {
+						if ((s instanceof Branch) && ((Branch) s).getType() == BranchType.WHILE) {
+							if (!((Branch) s).getParents().contains(n)) {
+								System.out.println("Generating temp while parent");
+								whileParent.put(s, n);
+							}
+						}
 						changed.add(s);
 					}
 				}
