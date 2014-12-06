@@ -429,7 +429,142 @@ public class Optimizer {
         }
         return copy;
     }
-
+    
+    public boolean checkDominanceSetEquivalence(Set<FlowNode> older, Set<FlowNode> newer){
+		if(older.size() != newer.size()){
+			return false;
+		}
+		
+		//If they're the same size, check that all the entries are the same
+		Iterator<FlowNode> oldIter = older.iterator();
+		while(oldIter.hasNext()){
+			FlowNode nextCheck = oldIter.next();
+			if(!newer.contains(nextCheck)){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public Map<FlowNode, Set<FlowNode>> computeDominationMap(List<START> startsForMethods){
+		Map<FlowNode, Set<FlowNode>> dominanceMap = new HashMap<FlowNode, Set<FlowNode>>();
+		for(START methodStart : startsForMethods){
+			methodStart.totalVisitReset(); //for safety's sake
+			List<FlowNode> scanning = new ArrayList<FlowNode>();
+			Set<FlowNode> startDominatedBy = new LinkedHashSet<FlowNode>();
+			startDominatedBy.add(methodStart);
+			dominanceMap.put(methodStart, startDominatedBy); //D[N_0] = N_0
+			scanning.add(methodStart);
+			Set<FlowNode> allNodes = new LinkedHashSet<FlowNode>();
+			
+			//Need to initialize all other nodes to have dominance[node] = {all nodes}.
+			//First, find out what {all nodes} is!
+			while(!scanning.isEmpty()){
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				allNodes.add(currentNode);
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			methodStart.resetVisit(); //reset visit
+			scanning.addAll(methodStart.getChildren()); // get the children of method start since it's actually already completely done, don't want to reprocess
+			//First step in domination algorithm; set dominance[non-start node] = {all other nodes}
+			while(!scanning.isEmpty()){
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				Set<FlowNode> listForNode = new LinkedHashSet<FlowNode>();
+				listForNode.addAll(allNodes);
+				dominanceMap.put(currentNode, listForNode);
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			methodStart.resetVisit();
+			
+			//At this point, we've completed the initialization phase; for the start node, it is only dominated by itself,
+			//the other nodes are all dominated by all other nodes. Now we iterate.
+			scanning.addAll(methodStart.getChildren());
+			while(!scanning.isEmpty()){
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				Set<FlowNode> oldDominatedBy = dominanceMap.get(currentNode); //record what the old dominance listing is
+				Set<FlowNode> newDominatedBy = new LinkedHashSet<FlowNode>(); //make a brand new one we'll be replacing old with
+				newDominatedBy.add(currentNode); //put self in new dominance listing
+				List<FlowNode> predecessorIntersect = new ArrayList<FlowNode>(); //make new list we'll do the intersect part of the algorithm with
+				predecessorIntersect.addAll(dominanceMap.get(currentNode.getParents().get(0))); //get dominance mapping for first parent
+				for(FlowNode parent : currentNode.getParents()){ //for all the parents,
+					predecessorIntersect.retainAll(dominanceMap.get(parent)); //intersect their dominatedBy vectors
+				}
+				newDominatedBy.addAll(predecessorIntersect); //Set union: self U dominators of predecessors	
+				dominanceMap.put(currentNode, newDominatedBy);
+				boolean changed = !checkDominanceSetEquivalence(oldDominatedBy, newDominatedBy); //if they are equivalent, they have not changed.
+				
+				if(changed){
+					for(FlowNode child : currentNode.getChildren()){
+						scanning.add(child); //if changed, visit children regardless, may change them too, such as in loops
+					}
+				}
+				
+				else{
+					for(FlowNode child : currentNode.getChildren()){
+						if(!child.visited){
+							scanning.add(child); //if no change, don't need to revisit children that we've already seen.
+						}
+					}
+				}
+			}
+			//Before we move to next start, do a reset.
+			methodStart.resetVisit();
+		}
+		return dominanceMap;
+	}
+	
+	
+	
+	/**
+	 * In order to do loop optimizations, one must first find the loops.
+	 * This method takes in startsForMethods and for each branch, finds the loop 
+	 * it begins, if one exists. It needed such a specific return type because apparently triple nesting things is too hard
+	 * for Eclipse to figure out.
+	 * 
+	 * 
+	 * @param startsForMethods
+	 * @return
+	 */
+	public List<HashMap<Branch, List<FlowNode>>> findLoops(List<START> startsForMethods){
+		List<HashMap<Branch, List<FlowNode>>> loopContainer = new ArrayList<HashMap<Branch, List<FlowNode>>>();
+		//TODO TODO TODO TODO TODO TODO NOT DONE YET TODO TODO
+		for(START methodStart : startsForMethods){
+			methodStart.totalVisitReset(); //just in case
+			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Branches before we can do anything more.
+			scanning.add(methodStart);
+			Set<Branch> branchNodes = new LinkedHashSet<Branch>();
+			while(!scanning.isEmpty()){
+				FlowNode currentNode = scanning.remove(0);
+				currentNode.visit();
+				if(currentNode instanceof Branch){
+					branchNodes.add((Branch)currentNode);
+				}
+				
+				for (FlowNode child : currentNode.getChildren()){
+					if(!child.visited()){
+						scanning.add(child);
+					}
+				}
+			}
+			methodStart.resetVisit();
+			//TODO
+			//At this point, we've acquired a list of all branches. Some of these will not be loops; need a way to tell.
+			//Due to time constraints, we'll use naive solution of jus tsearching till we find  the path.
+		}
+		return loopContainer;
+	}
+    
    /**
 	 * This is the method we'll be actually using to generate liveness vectors to do DCE. 
 	 * It works backwards in reverse from each END in the program. 
@@ -445,7 +580,6 @@ public class Optimizer {
 	public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
 		Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
 		for(START methodStart : startsForMethods){
-			//System.err.println("BEGINNING METHOD.");
 			Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
 			Map<FlowNode, Bitvector> vectorStorageIN = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for input from children
 			Map<FlowNode, Bitvector> vectorStorageOUT = new HashMap<FlowNode, Bitvector>(); //set up place to store maps for output from blocks
@@ -456,7 +590,6 @@ public class Optimizer {
 			Set<END> endNodes = new LinkedHashSet<END>();
 			Set<IR_FieldDecl> allVars = getAllFieldDeclsInMethod(methodStart);
 			Bitvector zeroVector = new Bitvector(allVars); //Initializes all slots to 0 in constructor.
-			//System.err.printf("Size of bitvector for the current method is %d" + System.getProperty("line.separator"), zeroVector.getVectorMap().size());
 			while(!scanning.isEmpty()){ //scan through all nodes and track which ones are ENDs.
 				FlowNode currentNode = scanning.remove(0);
 				currentNode.visit();
@@ -533,16 +666,6 @@ public class Optimizer {
 							skipNode = true;
 							ticksForRevisit.put(currentNode, 4);
 						}
-						/*
-						else if(ticksForRevisit.get(currentNode).equals(4)){
-							System.err.println("We have processed this node at least four times, and no changes have occurred to its IN.");
-							ticksForRevisit.put(currentNode, 5);
-						}
-						else if(ticksForRevisit.get(currentNode).equals(5) || ticksForRevisit.get(currentNode) > 5){
-							System.err.println("We have processed this node at least five times, and no changes have occurred to its IN. No further reprocessing is required.");
-							skipNode = true;
-						}
-						*/
 					}
 					if (previousNode == currentNode){
 						ticksForRevisit.put(currentNode, ticksForRevisit.get(currentNode)+1);
@@ -597,23 +720,8 @@ public class Optimizer {
 								}									
 							}
 
-							/**
-							 * TODO : Reason this is commented out: Consider the following scenario being read from bottom to top:
-							 * 
-							 * int x;
-							 * x = 5;
-							 * z = x + 9;
-							 * 
-							 * When we see x on the rhs of the definition for Z, X would be alive. 
-							 * When we then see the definition for X, we'd set x to 0 in the bitvector.
-							 * Then we'd hit the declaration for x. The bit vector is 0 for x, so with this type of mentality, 
-							 * we'd delete the declaration! This is bad, so don't do it! Maybe just leave declarations alone?
-							 * Probably not worth the complexity increase to deal with them, actually...Would need to seperately track an 
-							 * "if ever used" quality and use that instead; if we ever set the vector to 1, then ifEverUsed becomes true.
-							 * If we see the declaration, check ifEverUsed ; if true, leave decl alone, else, remove it. Would get iffy around branches. 
-							 */
 							else if(currentState instanceof Declaration){ 
-								//if var declared isn't ever alive, could remove the decl; but have to make sure... 
+								//if var declared isn't ever alive, could remove the decl; but no time to work it out and debug 
 							}
 
 							else if(currentState instanceof MethodCallStatement){ //set liveness vectors for the args
@@ -667,11 +775,8 @@ public class Optimizer {
 					Bitvector previousOut = vectorStorageOUT.get(currentNode).copyBitvector();
 					Bitvector newOut = liveVector.vectorUnison(previousOut);
 					changed = !previousOut.compareBitvectorEquality(newOut);
-					//System.err.println("Previous out was: " + previousOut.toString());
-					//System.err.println("New out is: " + newOut.toString());
 					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
-						//System.err.println("Finished processing " + currentNode + "whose bitvector OUT did not change.");
 						for(FlowNode parent : currentNode.getParents()){
 							if(!parent.visited){
 								if(!processing.contains(parent)){
@@ -758,7 +863,7 @@ public class Optimizer {
 						}
 						else if(liveCheck.get(lhs) == 0 && !(containsMethodCall(assign.getValue()))){
 							statementIter.remove();
-							System.err.printf("Assignment to variable %s has been removed; it was a dead assignment with no method call." + System.getProperty("line.separator"), assign.getDestVar().getName());
+							//System.err.printf("Assignment to variable %s has been removed; it was a dead assignment with no method call." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
 							List<IR_FieldDecl> rhsDecls = new ArrayList<IR_FieldDecl>();
