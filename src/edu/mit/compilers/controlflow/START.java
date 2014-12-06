@@ -1,7 +1,9 @@
 package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.Type;
@@ -16,8 +18,6 @@ public class START extends FlowNode {
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private List<IR_FieldDecl> arguments = new ArrayList<IR_FieldDecl>();
 	private Type retType;
-	private boolean visited = false;
-	private String label;
 	
 	/**
 	 * This constructor assumes you want a blank start that will be updated later. 
@@ -92,13 +92,6 @@ public class START extends FlowNode {
 		return retType;
 	}
 	
-	/**
-	 * Traverse this FlowNode and mark visited as true.
-	 */
-	@Override
-	public void visit() {
-		visited = true;
-	}
 	
 	/**
 	 * Reset the visited flag of this FlowNode and its immediate children.
@@ -125,6 +118,7 @@ public class START extends FlowNode {
 	 */
 	public void totalVisitReset(){
 		visited = false;
+		Set<FlowNode> visitedNodes = new HashSet<FlowNode>();
 		if (children.size() > 0){
 			List<FlowNode> processing = new ArrayList<FlowNode>();
 			for (FlowNode child : children){
@@ -132,34 +126,15 @@ public class START extends FlowNode {
 			}
 			while(!processing.isEmpty()){
 				FlowNode cNode = processing.remove(0);
-				if(cNode.visited()){
-					cNode.resetVisit();
-					processing.addAll(cNode.getChildren());
+				cNode.makeVisitFalse();
+				visitedNodes.add(cNode);
+				for(FlowNode child : cNode.getChildren()){
+					if(!visitedNodes.contains(child)){
+						processing.add(child);
+					}
 				}
 			}
 		}
 	}
-	
-	/**
-	 * Returns whether or not this FlowNode has been traversed already.
-	 */
-	@Override
-	public boolean visited() {
-		return visited;
-	}
-	
-	@Override
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * SHOULD ONLY BE CALLED ONCE
-     */
-    @Override
-    public void setLabel(String label) {
-        // Enforce called once?
-        this.label = label;
-    }
 	
 }

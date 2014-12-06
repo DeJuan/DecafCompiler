@@ -1,0 +1,19 @@
+//This test case checks that we have working DCE in the case of a simple block with no branching and no return statement. If it works, we should see almost everything get eliminated.
+//The only remaining things in main should be the declaration line, a = 2, print a.  
+//THIS IS A BUGGED TEST: FOR SOME REASON, THE CHECK THAT MAIN SHOULD RETURN SOMETHING IS NOT ACTUALLY CATCHING THINGS. 
+callout printf;
+int get_int ( int x ) {
+  return x;
+}
+
+int main ( ) {
+  int a, b, c, d;
+  a = get_int ( 2 );
+  b = get_int ( 3 );
+  c = 0;
+  d = 0;
+  c = b + a;
+  b = c + b;
+  printf ( "%d\n", a );
+  }
+  

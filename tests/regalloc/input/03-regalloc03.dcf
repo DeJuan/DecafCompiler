@@ -1,0 +1,19 @@
+callout printf;
+int a;
+void main ( ) {
+  // tests shadowing
+  int a;
+  a = 1;
+  if (true) {
+    int a,b,c;
+    a = 2;
+    b = 3;
+    c = 4;
+    printf("%d\n", a);
+    printf("%d\n", b);
+  }
+  printf("%d\n", a);
+}
+
+
+

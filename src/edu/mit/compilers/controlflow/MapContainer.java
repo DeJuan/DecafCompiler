@@ -158,12 +158,12 @@ public class MapContainer {
             List<Var> newList = new ArrayList<Var>();
             for (Var v : valToVar.get(valID)) {
                 if (v.getIndex() == null) {
-                    if (newVarToVal.get(v.getDecl()) == valID) {
+                    if (newVarToVal.get(v.getFieldDecl()) == valID) {
                         newList.add(v);
                     }
                 } else {
                     if (Optimizer.setVarIDs(newVarToVal, newComponents, v.getIndex())) {
-                        if (newComponents.containsKey(v.getDecl()) && newComponents.get(v.getDecl()).get(new SPSet(v.getIndex()))  == valID) {
+                        if (newComponents.containsKey(v.getFieldDecl()) && newComponents.get(v.getFieldDecl()).get(new SPSet(v.getIndex()))  == valID) {
                             newList.add(v);
                         }
                     }

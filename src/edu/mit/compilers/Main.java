@@ -123,7 +123,7 @@ class Main {
   
   public static void main(String[] args) {
     try {
-      String[] optimizations = {"cse"};
+      String[] optimizations = {"cse", "dce", "regalloc"};
       CLI.parse(args, optimizations);
       InputStream inputStream = args.length == 0 ?
           System.in : new java.io.FileInputStream(CLI.infile);
@@ -207,9 +207,23 @@ class Main {
 			    	  if (CLI.outfile != null) {
 			    		  outFile = CLI.outfile;
 			    	  }
-			    	  
-			    	  if (CLI.opts[0]) {
-			    		  // common subexpression elimination optimization is turned on.
+			    	  boolean optimize = false;
+			    	  for(boolean optEnabled : CLI.opts){
+			    		  if(optEnabled){
+			    			  optimize = true;
+			    			  break;
+			    		  }
+			    	  }
+			    	  if (!optimize) {
+			    		  // =============== DIRECT TO ASSEMBLY =================
+			    		  //CodegenContext context = new CodegenContext();
+			    		  //Codegen.generateProgram(root, context);
+			    	      ControlflowContext context = Assembler.generateProgram(root);
+				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
+				    	  context.printInstructions(ps);
+				    	  ps.close();
+			    	  } else {
+			    		  // Optimizations turned on.
 			    		  // =============== GENERATE LOW-LEVEL IR =================
 			    		  System.out.println("Generating low-level IR.");
 			    		  ControlflowContext context = new ControlflowContext();
@@ -233,24 +247,29 @@ class Main {
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
-						  List<START> startsForMethods = new ArrayList<START>();
-						  for(String key : flowNodes.keySet()){
-							  startsForMethods.add(flowNodes.get(key));
+				    	  if (CLI.opts[0]) {
+				    		  // CSE
+				    		  context = optimizer.applyCSE(new ArrayList<START>(flowNodes.values())); 
+				    	  } 
+				    	  else if (CLI.opts[1]){
+				    		  // DCE
+							  context = optimizer.applyDCE(new ArrayList<START>(flowNodes.values()));
+				    	  }
+				    	  if (CLI.opts[2]) {
+							  // Register allocation
+							  //InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
+							  //ig.generateLivenessMap();
+							  //ig.buildGraph();
+							  //Coloring coloring = new Coloring(ig, 8);
+							  //List<GraphNode> assignments = coloring.run();
+							  //List<GraphNode> spillNodes = coloring.getSpilledNodes();
+							  //System.out.println("Number of spilled nodes: " + spillNodes.size());
 						  }
-						  ControlflowContext optimizeCSE = optimizer.applyCSE(startsForMethods);
-						  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
-                          optimizeCSE.printInstructions(ps);
-                          ps.close();
-			    	  } 
-			    	  else {
-			    		  // =============== DIRECT TO ASSEMBLY =================
-			    		  //CodegenContext context = new CodegenContext();
-			    		  //Codegen.generateProgram(root, context);
-			    	      ControlflowContext context = Assembler.generateProgram(root);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
-				    	  ps.close();
+                          //ps.close();
 			    	  }
+			    	  
 		    	  }
 	    		  else {
 	    			  System.err.println("Unrecognized command");

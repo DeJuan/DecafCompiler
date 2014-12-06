@@ -61,7 +61,7 @@ public class Var extends Expression {
 		return var;
 	}
 	
-	public IR_FieldDecl getDecl(){
+	public IR_FieldDecl getFieldDecl(){
 	    return decl;
 	}
 	
