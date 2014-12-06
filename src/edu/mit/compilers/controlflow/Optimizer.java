@@ -391,9 +391,11 @@ public class Optimizer {
             boolean worked = true;
             for(int i = 0; i < MCHammer.getArguments().size(); i++){
                 Expression arg = MCHammer.getArguments().get(i);
-                worked = worked && setVarIDs(varToVal, varToValForArrayComponents, arg);
-                if (worked) {
-                    MCHammer.setArgument(i, arg);
+                if (arg.getExprType() != ExpressionType.STRING_LIT) {
+                    worked = worked && setVarIDs(varToVal, varToValForArrayComponents, arg);
+                    if (worked) {
+                        MCHammer.setArgument(i, arg);
+                    }
                 }
             }
             return worked;
