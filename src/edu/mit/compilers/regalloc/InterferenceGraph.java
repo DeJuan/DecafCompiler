@@ -151,6 +151,7 @@ public class InterferenceGraph {
 			//nodeToLevel.put((FlowNode) initialNode, 1);
 			addCodeBlocks(listOfCodeblocks, initialNode, 1);
 			
+			/*
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 				FlowNode currentNode = scanning.remove(0);
 				System.out.println("Current node: " + currentNode.toString());
@@ -172,10 +173,10 @@ public class InterferenceGraph {
 						}
 						//System.out.println("Level for child " + child.toString() + ": " + nextLevel);
 						nodeToLevel.put(child, nextLevel);
-						*/
+						*//*
 					}
 				}
-			}	
+			}*/	
 			initialNode.resetVisit(); //fix the visited parameters.
 			
 			for (Codeblock cblock : listOfCodeblocks){

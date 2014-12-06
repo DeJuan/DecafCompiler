@@ -132,7 +132,7 @@ public class GenReachingDefs {
 			changed.remove(initialNode);
 			
 			int loopLimit = 1;
-			while (!changed.isEmpty() && loopLimit < 20000) {
+			while (!changed.isEmpty()) {
 				System.out.println("\n========== " + loopLimit);
 				Iterator<FlowNode> it = changed.iterator();
 				FlowNode n = it.next();

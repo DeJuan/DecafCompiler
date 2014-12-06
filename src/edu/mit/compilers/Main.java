@@ -269,6 +269,8 @@ class Main {
 							  List<GraphNode> assignments = coloring.run();
 							  List<GraphNode> spillNodes = coloring.getSpilledNodes();
 							  System.out.println("Number of spilled nodes: " + spillNodes.size());
+							  AssignRegisters assignRegisters = new AssignRegisters(assignments, context, callouts, globals, flowNodes);
+							  assignRegisters.run();
 						  }
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
