@@ -123,7 +123,7 @@ class Main {
   
   public static void main(String[] args) {
     try {
-      String[] optimizations = {"cse", "dce", "regalloc"};
+      String[] optimizations = {"dce", "dlr", "cse", "regalloc"};
       CLI.parse(args, optimizations);
       InputStream inputStream = args.length == 0 ?
           System.in : new java.io.FileInputStream(CLI.infile);
@@ -247,15 +247,43 @@ class Main {
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
+						  //{"dce", "dlr", "cse", "regalloc"}
 				    	  if (CLI.opts[0]) {
-				    		  // CSE
-				    		  context = optimizer.applyCSE(new ArrayList<START>(flowNodes.values())); 
-				    	  } 
-				    	  else if (CLI.opts[1]){
 				    		  // DCE
-							  context = optimizer.applyDCE(new ArrayList<START>(flowNodes.values()));
+				    		  boolean anythingRemoved = optimizer.applyDCE(new ArrayList<START>(flowNodes.values()));
+				    		  if(anythingRemoved){
+				    			  System.out.println("DCE has been executed, and something was removed.");
+				    		  }
+				    		  else{
+				    			  System.out.println("DCE has been executed, and nothing was removed.");
+				    		  }
+				    	  } 
+				    	  if (CLI.opts[1]){
+				    		  // DLR
+							  //boolean anyDeadLoops =  optimizer.applyDLR(new ArrayList<START>(flowNodes.values()));
 				    	  }
-				    	  if (CLI.opts[2]) {
+				    	  if(CLI.opts[2]){
+				    		  //CSE
+				    		  boolean anyChanges = optimizer.applyCSE(new ArrayList<START>(flowNodes.values()));
+				    		  if(CLI.opts[0]){
+				    			  if(anyChanges){
+				    				  System.out.println("CSE has been executed, and something was eliminated. Now running DCE for cleanup.");
+				    			  }
+				    			  else{
+				    				  System.out.println("CSE has been executed, and nothing was eliminated. Now running DCE for cleanup.");
+				    			  }
+				    			  optimizer.applyDCE(new ArrayList<START>(flowNodes.values()));
+				    		  }
+				    		  else{
+				    			  if(anyChanges){
+				    				  System.out.println("CSE has been executed, and something was eliminated. DCE disabled, so no cleanup.");
+				    			  }
+				    			  else{
+				    				  System.out.println("CSE has been executed, and nothing was eliminated. DCE disabled, so no cleanup.");
+				    			  }
+				    		  }
+				    	  }
+				    	  if (CLI.opts[3]) {
 							  // Register allocation
 							  //InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
 							  //ig.generateLivenessMap();
@@ -265,6 +293,7 @@ class Main {
 							  //List<GraphNode> spillNodes = coloring.getSpilledNodes();
 							  //System.out.println("Number of spilled nodes: " + spillNodes.size());
 						  }
+				    	  context = Assembler.generateProgram(callouts, globals, flowNodes);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
                           //ps.close();

@@ -817,7 +817,8 @@ public class Optimizer {
 	 * @param startsForMethods : List of START nodes for the given methods in the program. 
 	 * @return 
 	 */
-	public ControlflowContext applyDCE(List<START> startsForMethods){
+	public boolean applyDCE(List<START> startsForMethods){
+		boolean anythingRemoved = false;
 		System.err.println("Now applying DCE.");
 		//System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
 		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
@@ -863,6 +864,7 @@ public class Optimizer {
 						}
 						else if(liveCheck.get(lhs) == 0 && !(containsMethodCall(assign.getValue()))){
 							statementIter.remove();
+							anythingRemoved = true;
 							//System.err.printf("Assignment to variable %s has been removed; it was a dead assignment with no method call." + System.getProperty("line.separator"), assign.getDestVar().getName());
 						}
 						else{
@@ -906,7 +908,8 @@ public class Optimizer {
 				Collections.reverse(statementList);
 			}
 		}
-		return Assembler.generateProgram(calloutList, globalList, flowNodes);
+		return anythingRemoved;
+		//return Assembler.generateProgram(calloutList, globalList, flowNodes);
 	}
 
     /**
@@ -1206,7 +1209,8 @@ public class Optimizer {
      * 
      * @param startsForMethods
      */
-    public ControlflowContext applyCSE (List<START> startsForMethods){
+    public boolean applyCSE (List<START> startsForMethods){
+    	boolean anythingReplaced = false;
         for(START initialNode : startsForMethods){
             //Set up tables and lists we'll need. 
             //First thing we should do is reset visits, in case we're called after another optimization.
@@ -1326,6 +1330,7 @@ public class Optimizer {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
                             }
+                            anythingReplaced = true;
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
                             if (rhs.containsMethodCalls()) {
@@ -1588,6 +1593,7 @@ public class Optimizer {
             }
             initialNode.resetVisit();
         }
-        return Assembler.generateProgram(calloutList, globalList, flowNodes);
+        //return Assembler.generateProgram(calloutList, globalList, flowNodes);
+        return anythingReplaced;
     }
 }
