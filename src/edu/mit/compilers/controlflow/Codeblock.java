@@ -122,6 +122,10 @@ public class Codeblock extends FlowNode {
 		statements.add(newStatement);
 	}
 	
+	void prependDeclaration(Declaration newDeclare) {
+	    statements.add(0, newDeclare);
+	}
+	
 	public void setIsBreak(boolean isBreak) {
 	    this.isBreak = isBreak;
 	}
@@ -147,5 +151,13 @@ public class Codeblock extends FlowNode {
 			}
 		}
 	}
+	
+	@Override
+    public void replaceParent(FlowNode newParent, FlowNode oldParent) {
+        if (!parents.remove(oldParent)) {
+            throw new RuntimeException("Provided oldparent not a parent of this node");
+        }
+        addParent(newParent); 
+    }
 
 }
