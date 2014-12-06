@@ -33,12 +33,10 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 public class InterferenceGraph {
 	
 	private List<GraphNode> nodes = new ArrayList<GraphNode>();
-	private HashMap<String, HashMap<Integer, GraphNode>> varToNodes;
 	
 	private HashMap<GraphNode, Set<GraphNode>> adjList = new HashMap<GraphNode, Set<GraphNode>>();
 	private HashSet<HashSet<GraphNode>> bitMatrix = new HashSet<HashSet<GraphNode>>();
 	
-	private HashMap<FlowNode, Integer> nodeToLevel = new HashMap<FlowNode, Integer>();
 	private HashMap<Web, GraphNode> webToNode = new HashMap<Web, GraphNode>();
 	
 	private ControlflowContext context;
@@ -55,7 +53,7 @@ public class InterferenceGraph {
 		this.flowNodes = flowNodes;
 		this.optimizer = new Optimizer(context, callouts, globals, flowNodes);
 	}
-	
+	/*
 	private void setupGlobals() {
 		varToNodes = new HashMap<String, HashMap<Integer, GraphNode>>();
 		for(IR_FieldDecl global : globalList) {
@@ -73,6 +71,7 @@ public class InterferenceGraph {
 			varToNodes.put(parameter.getName(), graphNodes);
 		}
 	}
+	*/
 
 	private void addEdge(GraphNode from, GraphNode to) {
 		if (!adjList.containsKey(from)) {
@@ -95,33 +94,12 @@ public class InterferenceGraph {
 		bitMatrix.remove(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
-	private List<GraphNode> getAllNodesBeforeLevel(HashMap<Integer, GraphNode> levelToNode, int currentLevel) {
-		List<GraphNode> nodes = new ArrayList<GraphNode>();
-		for (int level : levelToNode.keySet()) {
-			if (level <= currentLevel) {
-				nodes.add(levelToNode.get(level));
-			}
-		}
-		return nodes;
-	}
-	
-	private List<GraphNode> getFirstNodeBeforeLevel(HashMap<Integer, GraphNode> levelToNode, int currentLevel) {
-		List<GraphNode> nodes = new ArrayList<GraphNode>();
-		for (int level = currentLevel; level >= 0; level--) {
-			if (levelToNode.containsKey(level)) {
-				nodes.add(levelToNode.get(level));
-				return nodes;
-			}
-		}
-		throw new RuntimeException("Not found in the map. Uh oh??");
-	}
-	
 	private void addEdges(Web curWeb, GraphNode node) {
 		ReachingDefinition rd = node.getReachingDefinition();
 		for (Web web : rd.getAllWebs()) {
 			if (!curWeb.equals(web)) {
 				if (!webToNode.containsKey(web)) {
-					throw new RuntimeException("webToNode should always contain the key for web: " + web.getVarName());
+					throw new RuntimeException("webToNode should always contain the key for web: " + web.getVarName() + ". " + web);
 				}
 				addEdge(node, webToNode.get(web));
 			}
@@ -130,34 +108,6 @@ public class InterferenceGraph {
 		if (!adjList.containsKey(node)) {
 			adjList.put(node, new HashSet<GraphNode>());
 		}
-		/*
-		List<String> liveVars = new ArrayList<String>();
-		String curVar = node.getVarName();
-		int currentLevel = node.getLevel();
-		System.out.println("Current level: " + currentLevel);
-		System.out.println("live vars: " + liveVars);
-		for (String var : liveVars) {
-			List<GraphNode> varNodes = null;
-			if (varToNodes.containsKey(var)) {
-				if (var.equals(curVar)) {
-					// get second to last element (since last element is the current node)
-					// TODO: Rewriting to same var can be assigned the same register
-					//System.out.println("Same variable! VarToNodes has size: " + varToNodes.get(var).size());
-					varNodes = getAllNodesBeforeLevel(varToNodes.get(var), currentLevel);
-				} else {
-					varNodes = getAllNodesBeforeLevel(varToNodes.get(var), currentLevel);
-				}
-			} else {
-				throw new RuntimeException("The live variable " + var + " is not found in the map. What happened??");
-			}
-			for (GraphNode n : varNodes) {
-				addEdge(node, n);
-			}
-		}
-		if (!adjList.containsKey(node)) {
-			adjList.put(node, new HashSet<GraphNode>());
-		}
-		*/
 	}
 	
 	/**
@@ -184,44 +134,27 @@ public class InterferenceGraph {
 				if (child instanceof Branch) {
 					nextLevel++;
 				}
-				System.out.println("Level for child " + child.toString() + ": " + nextLevel);
-				nodeToLevel.put(child, nextLevel);
+				//System.out.println("Level for child " + child.toString() + ": " + nextLevel);
+				//nodeToLevel.put(child, nextLevel);
 				addCodeBlocks(listOfCodeblocks, child, nextLevel);
 			}
 		}
 		
 	}
 	
-	/**
-	 * Remove all entries that have a higher level than the current level.
-	 * @param level
-	 */
-	public void removePrevLevels(int level) {
-		for (HashMap<Integer, GraphNode> v : varToNodes.values()) {
-			Iterator<Map.Entry<Integer, GraphNode>> iter = v.entrySet().iterator();
-			while (iter.hasNext()) {
-				Map.Entry<Integer, GraphNode> entry = iter.next();
-				if (entry.getKey() > level) {
-					System.out.println("Removing var: " + entry.getValue().getVarName());
-					iter.remove();
-				}
-			}
-		}
-	}
-	
 	public void buildGraph() {
 		for (START initialNode : flowNodes.values()) {
-			setupParams(initialNode);
+			//setupParams(initialNode);
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
-			nodeToLevel.put((FlowNode) initialNode, 1);
+			//nodeToLevel.put((FlowNode) initialNode, 1);
 			addCodeBlocks(listOfCodeblocks, initialNode, 1);
 			
 			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 				FlowNode currentNode = scanning.remove(0);
 				System.out.println("Current node: " + currentNode.toString());
-				int currentLevel = nodeToLevel.get(currentNode);
+				//int currentLevel = nodeToLevel.get(currentNode);
 				currentNode.visit();
 				if(currentNode instanceof Codeblock){
 					listOfCodeblocks.add((Codeblock)currentNode);
@@ -229,6 +162,7 @@ public class InterferenceGraph {
 				for (FlowNode child : currentNode.getChildren()){
 					if(!child.visited()){
 						scanning.add(child);
+						/*
 						int nextLevel = currentLevel;
 						if (currentNode instanceof NoOp) {
 							nextLevel--;
@@ -236,39 +170,45 @@ public class InterferenceGraph {
 						if (child instanceof Branch) {
 							nextLevel++;
 						}
-						System.out.println("Level for child " + child.toString() + ": " + nextLevel);
+						//System.out.println("Level for child " + child.toString() + ": " + nextLevel);
 						nodeToLevel.put(child, nextLevel);
+						*/
 					}
 				}
-			}
-			
-				
+			}	
 			initialNode.resetVisit(); //fix the visited parameters.
 			
 			for (Codeblock cblock : listOfCodeblocks){
 				System.out.println("New codeblock: " + cblock.toString());
-				int blockLevel = nodeToLevel.get((FlowNode) cblock);
-				removePrevLevels(blockLevel);
-				System.out.println("Level: " + blockLevel);
+				//int blockLevel = nodeToLevel.get((FlowNode) cblock);
+				//removePrevLevels(blockLevel);
+				//System.out.println("Level: " + blockLevel);
 				List<Statement> statementList = cblock.getStatements();
 				Iterator<Statement> statementIter = statementList.iterator();
 				while(statementIter.hasNext()){
 					Statement st = statementIter.next();
 					ReachingDefinition rd = st.getReachingDefinition();
 					System.out.println("RD size: " + rd.getAllWebs().size());
-					if (st instanceof Assignment){
+					if (st instanceof Assignment){	
 						Assignment assignment = (Assignment) st;
-						GraphNode node = new GraphNode(assignment, blockLevel);
-						assignment.setNode(node);
 						String varName = assignment.getDestVar().getName();
+						System.out.println("Variable being processed: " + varName);
+						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0);
+						GraphNode node;
+						if (webToNode.containsKey(curWeb)) {
+							System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
+							node = webToNode.get(curWeb);
+						} else {
+							node = new GraphNode(assignment);
+							System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
+							webToNode.put(curWeb, node);
+							nodes.add(node);
+						}
+						assignment.setNode(node);
+						
 						if (rd.getWebsMap().get(varName).size() != 1) {
 							throw new RuntimeException("There should only be one Web for varName: " + varName);
 						}
-						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0);
-						webToNode.put(curWeb, node);
-						System.out.println("Variable being assigned: " + varName);
-
-						nodes.add(node);
 						addEdges(curWeb, node);
 					}
 				}

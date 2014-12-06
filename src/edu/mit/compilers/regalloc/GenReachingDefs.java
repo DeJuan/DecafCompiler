@@ -86,17 +86,28 @@ public class GenReachingDefs {
 			if (st instanceof Assignment) {
 				Assignment assign = (Assignment) st;
 				String varName = assign.getDestVar().getName();
-				Web gen = new Web(varName);
+				Web gen = new Web(varName, st, (FlowNode) node);
+				System.out.println("Created web " + gen);
+				boolean addWeb = true;
 				if (rd.getWebsMap().containsKey(varName)) {
-					System.out.println("Killing var: " + varName);
-					rd.removeWeb(varName);
+					if (!(new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0).getStartingStatements().contains(st)) {
+						// Not the same web.
+						System.out.println("Killing var: " + varName);
+						rd.removeWeb(varName);
+					} else {
+						System.out.println("This is actually the same web. No change to webs.");
+						addWeb = false;
+					}
 				}
 				System.out.println("Before adding web: " + rd);
-				rd.addWeb(gen);
+				if (addWeb) {
+					rd.addWeb(gen);
+				}
 				System.out.println("After adding web: " + rd);
 			}
 			System.out.println("RD: " + rd);
 			st.setReachingDefinition(rd);
+			rd.setStatements(st);
 		}
 		return rd;
 	}
@@ -106,45 +117,57 @@ public class GenReachingDefs {
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
 			System.out.println("Number of FlowNodes: " + listFlowNodes.size());
 			LinkedHashSet<FlowNode> changed = new LinkedHashSet<FlowNode>(); // this will change
-			IN.put(initialNode, new ReachingDefinition());
+			//IN.put(initialNode, new ReachingDefinition());
+			initialNode.setIN(new ReachingDefinition());
 			for (FlowNode flowNode : listFlowNodes) {
-				OUT.put(flowNode, new ReachingDefinition());
+				//OUT.put(flowNode, new ReachingDefinition());
+				flowNode.setOUT(new ReachingDefinition());
 				changed.add(flowNode);
 			}
 			changed.remove(initialNode);
 			
-			int loopLimit = 100;
-			while (!changed.isEmpty() && loopLimit > 0) {
+			int loopLimit = 1;
+			while (!changed.isEmpty() && loopLimit < 20000) {
 				System.out.println(loopLimit);
 				Iterator<FlowNode> it = changed.iterator();
 				FlowNode n = it.next();
 				it.remove();
 				System.out.println(n.getClass());
 				
-				IN.put(n, new ReachingDefinition());
+				//IN.put(n, new ReachingDefinition());
+				n.setIN(new ReachingDefinition());
 				for (FlowNode p : n.getParents()) {
-					ReachingDefinition unionReachDef = union(IN.get(n), OUT.get(p));
-					IN.put(n, unionReachDef);
+					//ReachingDefinition unionReachDef = union(IN.get(n), OUT.get(p));
+					//IN.put(n, unionReachDef);
+					ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
+					n.setIN(unionReachDef);
 				}
-				System.out.println("IN after union with parents: " + IN.get(n));
+				System.out.println("IN after union with parents: " + n.getIN());
+				n.getIN().setFlowNodes(n);
 				
 				ReachingDefinition OUTn;
 				if (n instanceof Codeblock) {
-					OUTn = generateCodeblockOUT((Codeblock) n, IN.get(n));
+					//OUTn = generateCodeblockOUT((Codeblock) n, IN.get(n));
+					OUTn = generateCodeblockOUT((Codeblock) n, n.getIN());
 				} else {
-					OUTn = IN.get(n);
-					n.setReachingDefinition(OUTn);
+					//OUTn = IN.get(n);
+					OUTn = n.getIN();
+					//n.setReachingDefinition(OUTn);
 				}
-				System.out.println("OLD OUT: " + OUT.get(n));
+				//System.out.println("OLD OUT: " + OUT.get(n));
+				System.out.println("OLD OUT: " + n.getOUT());
 				System.out.println("NEW OUT: " + OUTn);
-				if (OUT.get(n).changed(OUTn)) {
+				//if (OUT.get(n).changed(OUTn)) {
+				if (n.getOUT().changed(OUTn)) {
 					System.out.println("Changed!");
 					for (FlowNode s : n.getChildren()) {
 						changed.add(s);
 					}
 				}
-				OUT.put(n, OUTn);
-				loopLimit--;
+				//OUT.put(n, OUTn);
+				n.setOUT(OUTn);
+				n.getOUT().setFlowNodes(n);
+				loopLimit++;
 				
 			}
 			

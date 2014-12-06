@@ -9,7 +9,6 @@ import edu.mit.compilers.regalloc.Web;
 
 public abstract class Statement {
 	
-	protected Bitvector liveMap;
 	protected GraphNode node;
 	protected ReachingDefinition rd;
 	public enum StatementType{
@@ -17,14 +16,6 @@ public abstract class Statement {
 	};
 	
 	public abstract StatementType getStatementType();
-	
-	public Bitvector getLiveMap() {
-		return liveMap;
-	}
-	
-	public void setLiveMap(Bitvector bv) {
-		this.liveMap = bv;
-	}
 	
 	public void setNode(GraphNode node) {
 		this.node = node;

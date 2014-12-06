@@ -259,10 +259,13 @@ class Main {
 				    	  if (CLI.opts[2]) {
 							  // Register allocation
 				    		  GenReachingDefs genRDs = new GenReachingDefs(context, callouts, globals, flowNodes);
+				    		  System.out.println("\nGenerating Reaching Definitions\n===================================");
 				    		  genRDs.run();
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
+							  System.out.println("\nBuilding Interference Graph\n===================================");
 							  ig.buildGraph();
 							  Coloring coloring = new Coloring(ig, 8);
+							  System.out.println("\nColoring nodes\n===================================");
 							  List<GraphNode> assignments = coloring.run();
 							  List<GraphNode> spillNodes = coloring.getSpilledNodes();
 							  System.out.println("Number of spilled nodes: " + spillNodes.size());

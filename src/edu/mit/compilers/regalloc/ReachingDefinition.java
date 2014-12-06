@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.Statement;
 
 public class ReachingDefinition {
@@ -21,23 +22,37 @@ public class ReachingDefinition {
 		HashSet<Web> thisAllWebs = this.getAllWebs();
 		HashSet<Web> otherAllWebs = other.getAllWebs();
 		if (thisAllWebs.size() != otherAllWebs.size()) {
-			System.out.println(thisAllWebs.size());
-			System.out.println(otherAllWebs.size());
 			return true;
 		}
+		System.out.println("This webs: " + thisAllWebs);
+		System.out.println("Other webs: " + otherAllWebs);
+		for (Web web : otherAllWebs) {
+			System.out.println("Web: " + web.getVarName());
+			if (!thisAllWebs.contains(web)) {
+				System.out.println("Different!");
+				return true;
+			}
+		}
 		return false;
-		//return !thisAllWebs.containsAll(otherAllWebs);
-		 
+		
 	}
 	
 	public Web mergeWebs(String varName) {
 		Web newWeb = new Web(varName);
+		System.out.println("Created web " + newWeb);
+		HashSet<Statement> startingStatements = new HashSet<Statement>();
 		for (Web web : webs.get(varName)) {
 			for (Statement st : web.getStatements()) {
 				newWeb.addStatement(st);
 				st.setWeb(newWeb);
 			}
+			for (FlowNode node : web.getNodes()) {
+				newWeb.addNode(node);
+				node.setWeb(newWeb);
+			}
+			startingStatements.addAll(web.getStartingStatements());
 		}
+		newWeb.setStartingStatements(startingStatements);
 		return newWeb;
 	}
 	
@@ -56,6 +71,18 @@ public class ReachingDefinition {
 			}
 		}
 		return didMerge;
+	}
+	
+	public void setStatements(Statement st) {
+		for (Web web : getAllWebs()) {
+			web.addStatement(st);
+		}
+	}
+	
+	public void setFlowNodes(FlowNode node) {
+		for (Web web : getAllWebs()) {
+			web.addNode(node);
+		}
 	}
 	
 	public void setWebs(String varName, HashSet<Web> newWebs) {
@@ -87,8 +114,8 @@ public class ReachingDefinition {
 		int count = 1;
 		Iterator<Web> it = curWebs.iterator();
 		while (it.hasNext()) {
-			it.next();
-			System.out.println("Removing web #" + count);
+			Web web = it.next();
+			System.out.println("Removing web #" + count + ": " + web);
 			it.remove();
 			count++;
 		}
