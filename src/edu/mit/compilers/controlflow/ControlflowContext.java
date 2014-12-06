@@ -86,11 +86,11 @@ public class ControlflowContext {
         return symbol.lookup(name);
     }
 
-    void addIns(Instruction ii){
+    public void addIns(Instruction ii){
         ins.add(ii);
     }
 
-    void addIns(List<Instruction>ll){
+    public void addIns(List<Instruction>ll){
         ins.addAll(ll);
     }
 

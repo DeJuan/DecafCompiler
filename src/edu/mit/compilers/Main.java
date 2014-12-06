@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,11 @@ import edu.mit.compilers.ir.IRMaker;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.IR_Node;
+import edu.mit.compilers.regalloc.AssignRegisters;
+import edu.mit.compilers.regalloc.Coloring;
+import edu.mit.compilers.regalloc.GenReachingDefs;
+import edu.mit.compilers.regalloc.GraphNode;
+import edu.mit.compilers.regalloc.InterferenceGraph;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -265,11 +271,10 @@ class Main {
 							  ig.buildGraph();
 							  Coloring coloring = new Coloring(ig, 8);
 							  System.out.println("\nColoring nodes\n===================================");
-							  List<GraphNode> assignments = coloring.run();
-							  List<GraphNode> spillNodes = coloring.getSpilledNodes();
+							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
+							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
 							  System.out.println("Number of spilled nodes: " + spillNodes.size());
-							  AssignRegisters assignRegisters = new AssignRegisters(assignments, context, callouts, globals, flowNodes);
-							  assignRegisters.run();
+							  AssignRegisters.generateProgram(assignments, spillNodes, callouts, globals, flowNodes);
 						  }
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
