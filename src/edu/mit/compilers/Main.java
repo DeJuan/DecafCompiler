@@ -305,7 +305,7 @@ class Main {
 							  ig.generateLivenessMap();
 							  ig.buildGraph();
 							  System.out.println("\nColoring nodes\n===================================");
-							  Coloring coloring = new Coloring(ig, 8, fieldDeclToSpillCost);
+							  Coloring coloring = new Coloring(ig, 4, fieldDeclToSpillCost);
 							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
 							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());

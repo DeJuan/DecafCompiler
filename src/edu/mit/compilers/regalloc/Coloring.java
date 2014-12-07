@@ -1,6 +1,7 @@
 package edu.mit.compilers.regalloc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +20,8 @@ public class Coloring {
 	
 	HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Integer>();
 	HashMap<GraphNode, Double> nodeToSpillCost = new HashMap<GraphNode, Double>();
+	
+	private final static List<Regs> regsToHoldVars = Arrays.asList(Regs.R12, Regs.R13, Regs.R14, Regs.R15);
 	
 	int k; // maximum number of colors
 	
@@ -41,8 +44,8 @@ public class Coloring {
 		return regs;
 	}
 	
-	private Boolean isGenPurposeReg(Regs reg) {
-		return reg.toString().substring(2).matches("\\d+");
+	private boolean isGenPurposeReg(Regs reg) {
+		return regsToHoldVars.contains(reg);
 	}
 	
 	private Regs assignRegister(GraphNode node, Set<Regs> assignedRegisters) {
