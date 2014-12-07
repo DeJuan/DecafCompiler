@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocReg;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
 /**
@@ -10,6 +11,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
  */
 public class Var extends Expression {
 	private Descriptor var;
+	private LocReg colorReg;
 	private String name;
 	private IR_FieldDecl decl;
 	private Expression index;
@@ -43,6 +45,14 @@ public class Var extends Expression {
         this.index = index;
         isCompilerTemp = temp;
     }
+    
+    public LocReg getColorReg() {
+    	return this.colorReg;
+    }
+    
+    public void setColorReg(LocReg reg) {
+    	this.colorReg = reg;
+    }
 	
 	@Override
 	/**
@@ -75,6 +85,10 @@ public class Var extends Expression {
 	
 	void setIndex(Expression newInd) {
 	    index = newInd;
+	}
+	
+	public boolean isArray() {
+	    return (index != null);
 	}
 	
 	public void setValueID(ValueID val){

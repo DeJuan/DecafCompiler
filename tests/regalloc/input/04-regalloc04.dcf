@@ -1,0 +1,6 @@
+void main ( ) {
+  int a1, a2;
+  for (a1 = 1, 5) {
+   a2 = 1;
+  }
+}
