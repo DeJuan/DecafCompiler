@@ -54,6 +54,8 @@ public class InterferenceGraph {
 	}
  
 	private List<IR_FieldDecl> getLiveVars(Bitvector liveMap) {
+		if (liveMap == null)
+			return null;
 		List<IR_FieldDecl> liveVars = new ArrayList<IR_FieldDecl>(); 
 		for (IR_FieldDecl decl : liveMap.getVectorMap().keySet()) {
 			if (liveMap.get(decl) == 1) {
