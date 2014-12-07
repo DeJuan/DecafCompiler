@@ -1,0 +1,11 @@
+callout printf;
+void main ( ) {
+  int a,b,c;
+  a = 1;
+  while ( a < 10):100 {
+    // a must be in the same register
+    c = a;
+    a = a + 1;
+    printf("\n%d", a);
+  }
+}

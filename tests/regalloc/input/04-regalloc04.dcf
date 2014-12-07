@@ -1,6 +1,12 @@
+callout printf;
+
 void main ( ) {
-  int a1, a2;
-  for (a1 = 1, 5) {
-   a2 = 1;
+  int a;
+  a = 4;
+  if (true) {
+    int a;
+    a = 2; // needs to be allocated to a different register
+    printf("%d", a);
   }
+  printf("%d", a);
 }
