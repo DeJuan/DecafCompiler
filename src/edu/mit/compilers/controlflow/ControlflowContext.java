@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -312,21 +313,46 @@ public class ControlflowContext {
      * @param ins : ArrayList<Instruction> of all instructions.
      */
     private void instructionEfficiencyHack(ArrayList<Instruction> ins){
-    	//Let's do (delete adjacent push pop) instructions.
+    	//Get rid of add 0 Location.
+    	//Also do (delete adjacent push pop) instructions.
     	//We'll also do combine push 1 pop 2 instructions into movq.
     	//What we're looking for: push(loc1) pop(loc1) or push(loc1) pop(loc2)
     	Set<Instruction> instructionsToDelete = new HashSet<Instruction>();
+    	Iterator<Instruction> scanner = ins.iterator();
+    	while(scanner.hasNext()){
+    		Instruction currentInstruction = scanner.next();
+    		String currentIns = currentInstruction.cmd;
+    		if(currentIns == null){continue;}
+    		if(!currentIns.startsWith("ad") && !currentIns.startsWith("su")){continue;}
+    		if(currentInstruction.args.get(0).equals(new LocLiteral(0))){scanner.remove();}
+    	}
+    	
+    	instructionsToDelete = new HashSet<Instruction>();
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
-    		if(currentIns == null){
-    			continue;
-    		}
+    		if(currentIns == null || !currentIns.equals("jmp")){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
-    		if(nextIns == null){
-    			continue;
+    		if(nextIns == null || !(nextInstruction.args.get(0) instanceof LocLabel)){continue;}
+    		if(currentInstruction.args.get(0).equals(nextInstruction.args.get(0))){
+    			instructionsToDelete.add(currentInstruction);
+    			ii++;
     		}
+    	}
+    	
+    	for(Instruction unneededJump : instructionsToDelete){
+    		ins.remove(unneededJump);
+    	}
+    	
+    	instructionsToDelete = new HashSet<Instruction>();
+    	for(int ii = 0; ii < ins.size()-2; ii++){
+    		Instruction currentInstruction = ins.get(ii);
+    		String currentIns = currentInstruction.cmd;
+    		if(currentIns == null){continue;}
+    		Instruction nextInstruction = ins.get(ii+1);
+    		String nextIns = nextInstruction.cmd;
+    		if(nextIns == null){continue;}
     		if(currentIns.startsWith("pu")){ //efficiency hack; check pu instead of full push
     			if(!nextIns.startsWith("po")){ //same as above, po vs pop
     				continue;
@@ -337,9 +363,7 @@ public class ControlflowContext {
     				continue;
     			}
     		}
-    		else{
-    			continue;
-    		}
+    		else{continue;}
     		//By this point, we've proved these are push and pop instructions,
     		//so check that they push and pop the same location. 
     		LocationMem loc1 = currentInstruction.args.get(0);
@@ -350,9 +374,7 @@ public class ControlflowContext {
     			//infinite search horizon logic
     			int leftBound = ii - 1;
     			int rightBound = ii+2;
-    			if(leftBound < 0 || rightBound >= ins.size()){
-    				continue;
-    			}
+    			if(leftBound < 0 || rightBound >= ins.size()){continue;}
     			while(true){
     				Instruction leftInst = ins.get(leftBound); //left instruction
     				String leftCmd = leftInst.cmd; //left command
@@ -446,6 +468,8 @@ public class ControlflowContext {
     	for(Instruction unneededPop : instructionsToDelete){
     		ins.remove(unneededPop);
     	}
+    	
+    	
     }
     
     private void clearJumps() {
