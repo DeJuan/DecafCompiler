@@ -71,6 +71,7 @@ public class ReachingDefinition {
 		for (IR_FieldDecl decl : webs.keySet()) {
 			Set<Web> webSet = webs.get(decl);
 			if (webSet.size() > 1) {
+				System.out.println("Merging webs for var: " + decl.getName());
 				Web newWeb = mergeWebs(decl);
 				setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 				didMerge = true;
@@ -92,7 +93,7 @@ public class ReachingDefinition {
 	}
 	
 	public void setWebs(IR_FieldDecl decl, HashSet<Web> newWebs) {
-		System.out.println("I tried to set the web!!!");
+		System.out.println("Setting web for var: " + decl.getName());
 		webs.put(decl, newWebs);
 	}
 	

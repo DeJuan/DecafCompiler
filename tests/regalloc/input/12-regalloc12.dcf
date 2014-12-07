@@ -1,0 +1,11 @@
+callout printf;
+void main ( ) {
+  // this tests liveness
+  int a, b, c;
+  a = 1;
+  b = 2;
+  b = a;
+  printf("\n%d", b);
+  c = 1; // should overwrite the register of a or b, since both are dead.
+  printf("\n%d", c);
+}

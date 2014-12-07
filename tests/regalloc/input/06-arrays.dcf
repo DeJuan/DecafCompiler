@@ -1,0 +1,16 @@
+callout printf;
+
+void main ( ) {
+  int a[10];
+  a[0] = 4;
+  a[1] = 5;
+  printf("%d", a[0]);
+  printf("%d", a[1]);
+  if (a[1] > 0) {
+  	int a;
+  	a = 5;
+  	a = a+1;
+  } else {
+  	a[2] = 4;
+  }
+}

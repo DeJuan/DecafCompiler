@@ -1,13 +1,14 @@
 package edu.mit.compilers.regalloc;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
 import edu.mit.compilers.codegen.Regs;
+import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class Coloring {
 	
@@ -16,13 +17,15 @@ public class Coloring {
 	Stack<GraphNode> removedNodes = new Stack<GraphNode>();
 	Stack<GraphNode> spillNodes = new Stack<GraphNode>();
 	
+	HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Integer>();
 	HashMap<GraphNode, Double> nodeToSpillCost = new HashMap<GraphNode, Double>();
 	
 	int k; // maximum number of colors
 	
-	public Coloring(InterferenceGraph graph, int k) {
+	public Coloring(InterferenceGraph graph, int k, HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost) {
 		this.graph = graph;
 		this.k = k;
+		this.fieldDeclToSpillCost = fieldDeclToSpillCost;
 	}
 	
 	private Set<Regs> getAssignedRegisters(Set<GraphNode> neighbors) {
@@ -54,7 +57,7 @@ public class Coloring {
 	public void assignColors() {
 		while (!removedNodes.empty()) {
 			GraphNode node = removedNodes.pop();
-			System.out.println("Variable: " + node.getVarName());
+			System.out.println("\n========== Variable: " + node.getWeb().getFieldDecl().getName());
 			Set<GraphNode> neighbors = graph.getAdjList().get(node);
 			System.out.println("Neighbors size: " + neighbors.size());
 			Set<Regs> asssignedRegisters = getAssignedRegisters(neighbors);
@@ -73,20 +76,16 @@ public class Coloring {
 		}
 	}
 	
-	public Boolean removeNodes(List<GraphNode> nodesToProcess) {
-		Boolean changed = false;
-		if (nodesToProcess.size() == 0)
-			return false;
-		for (Iterator<GraphNode> iterator = nodesToProcess.iterator(); iterator.hasNext();) {
-			GraphNode node = iterator.next();
-			if (graph.getNumEdges(node) < k) {
-				removedNodes.push(node);
-				node.markAsRemoved();
-				iterator.remove();
-				changed = true;
+	private GraphNode getMaxSpillCost(List<GraphNode> nodes) {
+		double maxSpillCost = Integer.MIN_VALUE;
+		GraphNode returnNode = null;
+		for (GraphNode node : nodes) {
+			if (nodeToSpillCost.get(node) > maxSpillCost) {
+				returnNode = node;
+				maxSpillCost = nodeToSpillCost.get(node);
 			}
 		}
-		return changed;
+		return returnNode;
 	}
 	
 	private GraphNode getMinSpillCost(List<GraphNode> nodes) {
@@ -101,6 +100,24 @@ public class Coloring {
 		return returnNode;
 	}
 	
+	public Boolean removeNodes(List<GraphNode> nodesToProcess) {
+		Boolean changed = false;
+		if (nodesToProcess.size() == 0)
+			return false;
+		List<GraphNode> copyNodes = new ArrayList<GraphNode>(nodesToProcess);
+		while (!copyNodes.isEmpty()) {
+			GraphNode node = getMaxSpillCost(copyNodes);
+			copyNodes.remove(node);
+			if (graph.getNumEdges(node) < k) {
+				removedNodes.push(node);
+				node.markAsRemoved();
+				nodesToProcess.remove(node);
+				changed = true;
+			}
+		}
+		return changed;
+	}
+	
 	public List<GraphNode> run() {
 		Boolean changed = true;
 		List<GraphNode> nodesToProcess = graph.getNodes();
@@ -113,8 +130,8 @@ public class Coloring {
 			}
 			if (nodesToProcess.size() > 0) {
 				// must spill one node, then try again.
-				System.out.println("Spilling");
 				GraphNode nodeToSpill = getMinSpillCost(nodesToProcess);
+				System.out.println("Spilling var: " + nodeToSpill.getWeb().getFieldDecl().getName());
 				spillNodes.push(nodeToSpill);
 				nodeToSpill.markAsRemoved();
 				nodeToSpill.spill();
@@ -132,6 +149,9 @@ public class Coloring {
 	
 	public double calcSpillCost(GraphNode node) {
 		// Simple heuristic for now.
-		return 1;
+		IR_FieldDecl decl = node.getWeb().getFieldDecl();
+		double spillCost = fieldDeclToSpillCost.get(decl) * 1.0;
+		System.out.println("Spill cost for var " + decl.getName() + " is: " + spillCost);
+		return spillCost;
 	}
 }

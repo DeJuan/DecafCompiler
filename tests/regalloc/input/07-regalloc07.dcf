@@ -1,0 +1,8 @@
+void main ( ) {
+  int a,b,c;
+  for ( b = 0, 10 ) {
+    // test case where var a needs the web for c, which hasn't been created yet.
+    a = 1;
+    c = 1;
+  }
+}

@@ -54,4 +54,21 @@ public class LocArray extends LocationMem{
 	public LocType getType(){
 		return LocType.ARRAY_LOC;
 	}
+
+	@Override
+	public boolean equals(LocationMem other) {
+		if(!(other instanceof LocArray)){
+			return false;
+		}
+		LocArray otherLoc = (LocArray)other;
+		
+		if(!otherLoc.array.equals(this.array)){
+			return false;
+		}
+		
+		if (otherLoc.offset.equals(this.offset)){
+			return true;
+		}
+		return false;
+	}
 }

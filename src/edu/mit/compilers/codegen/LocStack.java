@@ -29,4 +29,17 @@ public class LocStack extends LocationMem{
 	public LocStack clone(){
 		return new LocStack(offset);
 	}
+	
+	public boolean equals(LocationMem other){
+		if(!(other instanceof LocStack)){
+			return false;
+		}
+		else{
+			LocStack otherLoc = (LocStack)other;
+			if(otherLoc.getValue() == (this.offset)){
+				return true;
+			}
+		}
+		return false;
+	}
 }
