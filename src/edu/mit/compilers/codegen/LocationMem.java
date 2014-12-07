@@ -16,4 +16,8 @@ abstract public class LocationMem {
 	public long getValue(){
 		return 0;
 	}
+	
+	abstract public boolean equals(LocationMem other);
 }
+
+

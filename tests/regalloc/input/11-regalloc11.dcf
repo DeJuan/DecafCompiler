@@ -1,0 +1,9 @@
+void main ( ) {
+  // this test is to make sure the interference graph doesn't go into infinite loop
+  int a, b, c;
+  for ( a = 0, 10 ) {
+    for ( b = 1, 10 ) {
+      c = 1;
+    }
+  }
+}

@@ -149,8 +149,8 @@ public class Optimizer {
         else if(expr instanceof Ternary){
             Ternary tern = (Ternary)expr;
             allVars.addAll(getVarsFromExpression(tern.getTernaryCondition()));
-            allVars.addAll(getVarsFromExpression(tern.trueBranch));
-            allVars.addAll(getVarsFromExpression(tern.falseBranch));
+            allVars.addAll(getVarsFromExpression(tern.getTrueBranch()));
+            allVars.addAll(getVarsFromExpression(tern.getFalseBranch()));
         }
         else if(expr instanceof MethodCall){
             MethodCall MCHammer = (MethodCall)expr;
@@ -779,7 +779,7 @@ public class Optimizer {
 					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
 						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited){
+							if(!parent.visited()){
 								if(!processing.contains(parent)){
 									processing.add(parent);
 									//System.err.println("Just added parent " + parent + "of current node " + currentNode);

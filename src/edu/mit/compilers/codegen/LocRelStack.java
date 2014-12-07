@@ -31,5 +31,18 @@ public class LocRelStack extends LocationMem {
     public LocRelStack clone(){
         return new LocRelStack(offset);
     }
+	
+    public boolean equals(LocationMem other) {
+		if(!(other instanceof LocRelStack)){
+			return false;
+		}
+		else{
+			LocRelStack otherLoc = (LocRelStack)other;
+			if(otherLoc.getValue() == this.offset){
+				return true;
+			}
+		}
+		return false;
+	}
 
 }

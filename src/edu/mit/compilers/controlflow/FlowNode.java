@@ -79,7 +79,10 @@ public abstract class FlowNode {
 	
 	public void setWeb(Web web) {
 		IR_FieldDecl decl = web.getFieldDecl();
-		this.IN.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+		if (this.IN.getWebsMap().containsKey(decl)) {
+			// only set IN if original IN contains old web.
+			this.IN.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+		}
 		this.OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
 	}
 	
