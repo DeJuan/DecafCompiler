@@ -1,6 +1,7 @@
 package edu.mit.compilers.controlflow;
 
 import edu.mit.compilers.codegen.Descriptor;
+import edu.mit.compilers.codegen.LocReg;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
 /**
@@ -10,6 +11,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
  */
 public class Var extends Expression {
 	private Descriptor var;
+	protected LocReg colorReg;
 	private String name;
 	private IR_FieldDecl decl;
 	private Expression index;

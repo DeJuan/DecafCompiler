@@ -13,7 +13,6 @@ import edu.mit.compilers.ir.Type;
  */
 public class Descriptor {
 	protected LocationMem loc;
-	protected LocReg colorReg;
 	protected IR_Node node;
 	
 	public Descriptor(IR_Node n){

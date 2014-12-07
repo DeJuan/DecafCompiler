@@ -1,5 +1,7 @@
 package edu.mit.compilers.controlflow;
 
+import edu.mit.compilers.codegen.LocReg;
+import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.ir.Ops;
 
 /**
@@ -23,6 +25,15 @@ public class Assignment extends Statement {
 		this.destVar = destinationVariable;
 		this.operator = operator;
 		this.value = valueExpr;
+	}
+	
+	public LocReg getRegister() {
+		Regs reg = this.getNode().getRegister();
+		if (reg != null) {
+			return new LocReg(reg);
+		} else{
+			return null;
+		}
 	}
 	
 	/**

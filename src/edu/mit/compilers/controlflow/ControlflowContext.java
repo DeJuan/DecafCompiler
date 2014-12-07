@@ -19,6 +19,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.SymbolTable;
+import edu.mit.compilers.regalloc.RegisterTable;
 
 /**@brief Information used throughout the control flow.
  */
@@ -31,6 +32,8 @@ public class ControlflowContext {
 
     /**@brief symbol table for locations of variables*/
     public SymbolTable<Descriptor> symbol;
+    
+    public RegisterTable<LocReg> registers;
 
     // Stack implementation that keeps track of which for/while loop we are in.
     private Stack<Branch> loopScope;
