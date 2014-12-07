@@ -1,0 +1,14 @@
+callout printf;
+void main() {
+	int a;
+	if (true) {
+		a = 2;
+	} else {
+		int b;
+		a = 3;
+		b = a;
+		a = 4;
+		printf("%d", b);
+	}
+	printf("%d", a); // must be able to find register
+}

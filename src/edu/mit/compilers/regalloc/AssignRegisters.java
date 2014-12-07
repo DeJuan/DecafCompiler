@@ -31,6 +31,7 @@ import edu.mit.compilers.ir.Type;
 public class AssignRegisters {
 	static HashSet<GraphNode> assignments; 
 	static HashSet<GraphNode> spilledNodes;
+	static HashMap<IR_FieldDecl, LocReg> fieldDeclToReg = new HashMap<IR_FieldDecl, LocReg>();
 
     public static void setUp(ControlflowContext context, 
             List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals,
@@ -565,8 +566,9 @@ public class AssignRegisters {
     	String varName = var.getName();
     	if (!var.isArray()) {
     		// We only assign registers to non-array variables.
-	    	LocReg reg = context.findRegister(varName);
-	    	System.out.println("\"" + varName + "\" has a register location: " + reg);
+	    	//LocReg reg = context.findRegister(varName);
+    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
+	    	System.out.println("\"" + varName + "\" has register location: " + reg);
 	    	if (reg != null) {
 	    		var.setColorReg(reg);
 	    	}
@@ -780,6 +782,7 @@ public class AssignRegisters {
 	        LocReg reg = assign.getRegister();
 	        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
 	        lhs.setColorReg(reg);
+	        fieldDeclToReg.put(lhs.getFieldDecl(), reg);
 	        context.putRegister(lhs.getName(), reg);
         }
         

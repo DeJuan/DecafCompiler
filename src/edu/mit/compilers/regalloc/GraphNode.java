@@ -1,12 +1,10 @@
 package edu.mit.compilers.regalloc;
 
 import edu.mit.compilers.codegen.Regs;
-import edu.mit.compilers.controlflow.Assignment;
 
 public class GraphNode {
 	
-	Assignment st;
-	ReachingDefinition rd;
+	Web web;
 	
 	Boolean isGlobal = false;
 	Boolean isParam = false;
@@ -16,13 +14,12 @@ public class GraphNode {
 	Boolean removed = false; // used to represent that a node has been removed in coloring
 	Boolean spill = false;
 	
-	public GraphNode(Assignment st) {
-		this.st = st;
-		this.rd = st.getReachingDefinition();
+	public GraphNode(Web web) {
+		this.web = web;
 	}
 	
-	public Assignment getAssignment() {
-		return this.st;
+	public Web getWeb() {
+		return this.web;
 	}
 	
 	public boolean hasAssignedRegister() {
@@ -61,7 +58,4 @@ public class GraphNode {
 		return this.spill;
 	}
 	
-	public ReachingDefinition getReachingDefinition() {
-		return this.rd;
-	}
 }

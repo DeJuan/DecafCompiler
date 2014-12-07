@@ -322,7 +322,7 @@ public class InterferenceGraph {
 	
 	private boolean addEdges(Web curWeb, GraphNode node, Statement st) {
 		boolean done = true;
-		ReachingDefinition rd = node.getReachingDefinition();
+		ReachingDefinition rd = st.getReachingDefinition();
 		for (Web web : rd.getAllWebs()) {
 			if (!curWeb.equals(web)) {
 				if (!webToNode.containsKey(web)) {
@@ -429,7 +429,7 @@ public class InterferenceGraph {
 								System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
 								node = webToNode.get(curWeb);
 							} else {
-								node = new GraphNode(assignment);
+								node = new GraphNode(curWeb);
 								System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
 								webToNode.put(curWeb, node);
 								nodes.add(node);
