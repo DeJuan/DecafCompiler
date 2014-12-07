@@ -11,7 +11,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
  */
 public class Var extends Expression {
 	private Descriptor var;
-	protected LocReg colorReg;
+	private LocReg colorReg;
 	private String name;
 	private IR_FieldDecl decl;
 	private Expression index;
@@ -44,6 +44,14 @@ public class Var extends Expression {
         this.name = ir.getName();
         this.index = index;
         isCompilerTemp = temp;
+    }
+    
+    public LocReg getColorReg() {
+    	return this.colorReg;
+    }
+    
+    public void setColorReg(LocReg reg) {
+    	this.colorReg = reg;
     }
 	
 	@Override

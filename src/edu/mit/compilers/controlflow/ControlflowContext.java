@@ -65,8 +65,10 @@ public class ControlflowContext {
         stringLiterals = new HashMap<String,Long>();
         ins = new ArrayList<Instruction>();
         symbol = new SymbolTable<Descriptor>();
+        registers = new RegisterTable<LocReg>();
         loopScope = new Stack<Branch>();
         symbol.incScope();
+        registers.incScope();
         rsp = new LocStack();
         numLabels = 0;
     }
@@ -79,6 +81,10 @@ public class ControlflowContext {
     public boolean putSymbol(String name, Descriptor d){
         return symbol.put(name, d);
     }
+    
+    public boolean putRegister(String name, LocReg reg){
+        return registers.put(name, reg);
+    }
 
     /**
      * @param name
@@ -87,6 +93,10 @@ public class ControlflowContext {
      */
     public Descriptor findSymbol(String name){
         return symbol.lookup(name);
+    }
+    
+    public LocReg findRegister(String name){
+        return registers.lookup(name);
     }
 
     public void addIns(Instruction ii){
@@ -141,12 +151,14 @@ public class ControlflowContext {
      */
     public void incScope(Boolean isLoop){
         symbol.incScope();
+        registers.incScope();
         localVarSize.add(0L);
         this.isLoop.add(isLoop);
     }
 
     public void decScopeWithSideEffects(){
         symbol.decScope();
+        registers.decScope();
         int idx = localVarSize.size()-1;
         long locals = localVarSize.get(idx);
         localVarSize.remove(idx);

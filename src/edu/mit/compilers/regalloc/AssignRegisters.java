@@ -562,6 +562,12 @@ public class AssignRegisters {
 
     private static List<Instruction>  generateVarExpr(Var var,
             ControlflowContext context) {
+    	String varName = var.getName();
+    	LocReg reg = context.findRegister(varName);
+    	if (reg != null) {
+    		System.out.println("\"" + varName + "\" has a register location: " + reg);
+    		var.setColorReg(reg);
+    	}
         List<Instruction> ins = new ArrayList<Instruction>();
         LocationMem loc = generateVarLoc(var, context, ins);
         ins.addAll(context.push(loc));
@@ -764,8 +770,13 @@ public class AssignRegisters {
         Ops op = assign.getOperator();
         Var lhs = assign.getDestVar();
         Expression rhs = assign.getValue();
-
         ins.addAll(generateExpression(rhs,context));
+        
+        LocReg reg = assign.getRegister();
+        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
+        lhs.setColorReg(reg);
+        context.putRegister(lhs.getName(), reg);
+        
         LocReg r10 = new LocReg(Regs.R10);
         LocReg r11 = new LocReg(Regs.R11);
         LocationMem dst= generateVarLoc(lhs, context, ins);
