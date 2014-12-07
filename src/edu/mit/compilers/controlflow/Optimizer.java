@@ -236,6 +236,46 @@ public class Optimizer {
         node.resetVisit();
         return allVarDecls;
     }
+    
+    public Set<IR_FieldDecl> getAllUsedDeclsInMethod(START node){
+        Set<IR_FieldDecl> allVarDecls = new HashSet<IR_FieldDecl>();
+        List<FlowNode> processing = new ArrayList<FlowNode>();
+        Set<FlowNode> seen = new HashSet<FlowNode>();
+        processing.add(node.getChildren().get(0));
+        while (!processing.isEmpty()) {
+            FlowNode currentNode = processing.remove(0);
+            if (seen.add(currentNode)) {
+                processing.addAll(currentNode.getChildren());
+            }
+            if (currentNode instanceof Codeblock) {
+                for (Statement s : ((Codeblock) currentNode).getStatements()) {
+                    if (s instanceof Assignment) {
+                       allVarDecls.addAll(getVarIRsFromExpression(((Assignment) s).getValue()));
+                    } else if (s instanceof MethodCallStatement) {
+                        allVarDecls.addAll(getVarIRsFromExpression(((MethodCallStatement) s).getMethodCall()));
+                    } else if (s instanceof Declaration) {
+                        continue;
+                    } else {
+                        throw new RuntimeException("Missed a case");
+                    }
+                }
+            } else if (currentNode instanceof Branch) {
+                allVarDecls.addAll(getVarIRsFromExpression(((Branch) currentNode).getExpr()));
+            } else if (currentNode instanceof NoOp) {
+                continue;
+            } else if (currentNode instanceof START) {
+                continue;
+            } else if (currentNode instanceof END) {
+                Expression ret = ((END) currentNode).getReturnExpression();
+                if (ret != null) {
+                    allVarDecls.addAll(getVarIRsFromExpression(ret));
+                }
+            } else {
+                throw new RuntimeException("missed a case");
+            }
+        }
+        return allVarDecls;
+    }
 
     public boolean containsMethodCall(Expression expr){
         if(expr instanceof BinExpr){
@@ -1702,7 +1742,7 @@ public class Optimizer {
     
     private void clearUnusedDeclarations(START beginMethod){
         Set<FlowNode> seen = new HashSet<FlowNode>();
-        Set<IR_FieldDecl> assigned = getAllFieldDeclsInMethod(beginMethod);
+        Set<IR_FieldDecl> assigned = getAllUsedDeclsInMethod(beginMethod);
         List<FlowNode> processing = new ArrayList<FlowNode>();
         processing.add(beginMethod.getChildren().get(0));
         seen = new HashSet<FlowNode>();
