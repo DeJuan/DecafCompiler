@@ -310,9 +310,10 @@ class Main {
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
 							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());
 							  System.out.println("\nGenerating Assembly for program\n===================================");
-							  AssignRegisters.generateProgram(assignments, spillNodes, callouts, globals, flowNodes);
+							  context = AssignRegisters.generateProgram(assignments, spillNodes, callouts, globals, flowNodes);
+						  } else {
+							  context = Assembler.generateProgram(callouts, globals, flowNodes);
 						  }
-				    	  context = Assembler.generateProgram(callouts, globals, flowNodes);
 				    	  PrintStream ps = new PrintStream(new FileOutputStream(outFile));
 				    	  context.printInstructions(ps);
                           //ps.close();
