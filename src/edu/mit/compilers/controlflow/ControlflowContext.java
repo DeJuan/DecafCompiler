@@ -3,7 +3,9 @@ package edu.mit.compilers.controlflow;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 import edu.mit.compilers.codegen.CodegenConst;
@@ -279,12 +281,146 @@ public class ControlflowContext {
                     new LocLiteral(CodegenConst.ERR_ARRAY_BOUND), new LocReg(Regs.RDI)));
             ins.add(new Instruction("call", new LocLabel("exit")));
         }
-
+        
+        
+        instructionEfficiencyHack(ins);
+        
         for(int ii = 0;ii<ins.size();ii++){
             ps.println(ins.get(ii));
         }
     }
+    
+    /**
+     * Directly hack the assembly to reduce number of instructions.
+     * -DeJuan
+     * 
+     * @param ins : ArrayList<Instruction> of all instructions.
+     */
+    private void instructionEfficiencyHack(ArrayList<Instruction> ins){
+    	//Let's do (delete adjacent push pop) instructions.
+    	//We'll also do combine push 1 pop 2 instructions into movq.
+    	//What we're looking for: push(loc1) pop(loc1) or push(loc1) pop(loc2)
+    	Set<Instruction> instructionsToDelete = new HashSet<Instruction>();
+    	for(int ii = 0; ii < ins.size()-2; ii++){
+    		Instruction currentInstruction = ins.get(ii);
+    		String currentIns = currentInstruction.cmd;
+    		Instruction nextInstruction = ins.get(ii+1);
+    		String nextIns = nextInstruction.cmd;
+    		if(currentIns.startsWith("pu")){ //efficiency hack; check pu instead of full push
+    			if(!nextIns.startsWith("po")){ //same as above, po vs pop
+    				continue;
+    			}
+    		}
+    		else if(currentIns.startsWith("po")){
+    			if(!nextIns.startsWith("pu")){
+    				continue;
+    			}
+    		}
+    		else{
+    			continue;
+    		}
+    		//By this point, we've proved these are push and pop instructions,
+    		//so check that they push and pop the same location. 
+    		LocationMem loc1 = currentInstruction.args.get(0);
+    		LocationMem loc2 = nextInstruction.args.get(0);
+    		if(loc1.equals(loc2)){
+    			instructionsToDelete.add(currentInstruction);
+    			instructionsToDelete.add(nextInstruction);
+    			//infinite search horizon logic
+    			int leftBound = ii - 1;
+    			int rightBound = ii+2;
+    			if(leftBound < 0 || rightBound >= ins.size()){
+    				continue;
+    			}
+    			while(true){
+    				Instruction leftInst = ins.get(leftBound); //left instruction
+    				String leftCmd = leftInst.cmd; //left command
+    				Instruction rightInst = ins.get(rightBound);
+    				String rightCmd = rightInst.cmd;
+    				if(leftCmd.startsWith("pu")){ 
+    	    			if(!rightCmd.startsWith("po")){ break;}
+    	    		}
+    	    		else if(leftCmd.startsWith("po")){
+    	    			if(!rightCmd.startsWith("pu")){break;}
+    	    		}
+    	    		else{break;}
+    				LocationMem locL = leftInst.args.get(0);
+    	    		LocationMem locR = rightInst.args.get(0);
+    	    		if(locL.equals(locR)){
+    	    			instructionsToDelete.add(leftInst);
+    	    			instructionsToDelete.add(rightInst);
+    	    			leftBound-=1;
+    	    			rightBound+=1;
+    	    			if(leftBound < 0 || rightBound >= ins.size()){break;}
+    	    		}
+    	    		else{ break;}
+    			}
+    		}
+    		else{continue;}
+    	}
 
+    	for (Instruction redundantMovement : instructionsToDelete){
+    		ins.remove(redundantMovement);
+    	}
+    	
+    	instructionsToDelete = new HashSet<Instruction>();
+    	
+    	//Now do combination logic: push x pop y --> moveq x y
+    	for(int ii = 0; ii < ins.size()-2; ii++){
+    		Instruction currentInstruction = ins.get(ii);
+    		String currentIns = currentInstruction.cmd;
+    		Instruction nextInstruction = ins.get(ii+1);
+    		String nextIns = nextInstruction.cmd;
+    		if(currentIns.startsWith("pu")){
+    			if(!nextIns.startsWith("po")){ //It's gotta be pupo!
+    				continue;
+    			}
+    		}
+    		else{continue;}
+    		//By this point, we've proved these are push and pop instructions,
+    		//so check that they push and pop different locations! 
+    		LocationMem loc1 = currentInstruction.args.get(0);
+    		LocationMem loc2 = nextInstruction.args.get(0);
+    		if(!(loc1.equals(loc2))){
+    			ins.set(ii, new Instruction("movq", loc1, loc2));
+    			instructionsToDelete.add(nextInstruction);
+    			//search infinitely in both directions for hidden replacements if possible.
+    			int leftBound = ii - 1;
+    			int rightBound = ii+2;
+    			if(leftBound < 0 || rightBound > ins.size()){
+    				continue;
+    			}
+    			while(true){
+    				Instruction leftInst = ins.get(leftBound); //left instruction
+    				String leftCmd = leftInst.cmd; //left command
+    				Instruction rightInst = ins.get(rightBound);
+    				String rightCmd = rightInst.cmd;
+    				if(leftCmd.startsWith("pu")){ 
+    	    			if(!rightCmd.startsWith("po")){ break;}
+    	    		}
+    	    		else{ break;}
+    				LocationMem locL = leftInst.args.get(0);
+    	    		LocationMem locR = rightInst.args.get(0);
+    	    		if(!locL.equals(locR)){
+    	    			ins.set(leftBound, new Instruction("movq", locL, locR));
+    	    			instructionsToDelete.add(rightInst);
+    	    			leftBound-=1;
+    	    			rightBound+=1;
+    	    			if(leftBound < 0 || rightBound >= ins.size()){
+    	    				break;
+    	    			}
+    	    		}
+    	    		else{break;}
+    			}
+    		}
+    		else{continue;}
+    	}
+    	
+    	for(Instruction unneededPop : instructionsToDelete){
+    		ins.remove(unneededPop);
+    	}
+    }
+    
     private void clearJumps() {
         //TODO: Implement
         // will eventually clear out unneeded labels
