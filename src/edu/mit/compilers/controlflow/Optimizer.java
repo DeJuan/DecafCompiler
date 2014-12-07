@@ -1702,25 +1702,8 @@ public class Optimizer {
     
     private void clearUnusedDeclarations(START beginMethod){
         Set<FlowNode> seen = new HashSet<FlowNode>();
-        Set<IR_FieldDecl> assigned = new HashSet<IR_FieldDecl>();
+        Set<IR_FieldDecl> assigned = getAllFieldDeclsInMethod(beginMethod);
         List<FlowNode> processing = new ArrayList<FlowNode>();
-        processing.add(beginMethod.getChildren().get(0));
-        while (!processing.isEmpty()) {
-            FlowNode current = processing.remove(0);
-            if (seen.add(current)) {
-                processing.addAll(current.getChildren());
-            }
-            if (current instanceof Codeblock) {
-                Codeblock cBlock = (Codeblock) current;
-                for (Statement s : cBlock.getStatements()) {
-                    if (s instanceof Assignment) {
-                        Assignment assn = (Assignment) s;
-                        assigned.add(assn.getDestVar().getFieldDecl());
-                    }
-                }
-            }
-        }
-        processing = new ArrayList<FlowNode>();
         processing.add(beginMethod.getChildren().get(0));
         seen = new HashSet<FlowNode>();
         while (!processing.isEmpty()) {
