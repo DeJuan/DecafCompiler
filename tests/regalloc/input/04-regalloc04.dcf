@@ -1,0 +1,12 @@
+callout printf;
+
+void main ( ) {
+  int a;
+  a = 4;
+  if (true) {
+    int a;
+    a = 2; // needs to be allocated to a different register
+    printf("%d", a);
+  }
+  printf("%d", a);
+}

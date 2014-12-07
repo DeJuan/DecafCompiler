@@ -1,11 +1,20 @@
 callout printf;
 int a;
+int foo(int b) {
+  int c;
+  a = 1;
+  c = 2;
+  printf("%d\n", b);
+  printf("%d\n", c);
+}
 void main ( ) {
   // tests shadowing
-  int a;
+  int a,b,c;
   a = 1;
-  if (true) {
-    int a,b,c;
+  foo(a);
+  b = a+1;
+  a = a + 2;
+  if (a > 3) {
     a = 2;
     b = 3;
     c = 4;

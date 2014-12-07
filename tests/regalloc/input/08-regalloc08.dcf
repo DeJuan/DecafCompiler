@@ -1,0 +1,8 @@
+void main ( ) {
+  int a,b;
+  for ( b = 0, 10 ) {
+    // test case where the 2nd web for a appears in the IN for the 1st web.
+    a = 1;
+    a = 1;
+  }
+}

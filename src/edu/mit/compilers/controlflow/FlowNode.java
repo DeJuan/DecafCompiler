@@ -1,10 +1,18 @@
 package edu.mit.compilers.controlflow;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+
+import edu.mit.compilers.ir.IR_FieldDecl;
+import edu.mit.compilers.regalloc.ReachingDefinition;
+import edu.mit.compilers.regalloc.Web;
 
 public abstract class FlowNode {
 	
 	protected Bitvector liveMap;
+	protected ReachingDefinition IN;
+	protected ReachingDefinition OUT;
 	protected boolean visited = false;
 	protected String label;
 	
@@ -51,6 +59,31 @@ public abstract class FlowNode {
 	
 	public void setLiveMap(Bitvector bv) {
 		this.liveMap = bv;
+	}
+	
+	public ReachingDefinition getOUT() {
+		return this.OUT;
+	}
+	
+	public void setOUT(ReachingDefinition OUT) {
+		this.OUT = OUT;
+	}
+	
+	public ReachingDefinition getIN() {
+		return this.IN;
+	}
+	
+	public void setIN(ReachingDefinition IN) {
+		this.IN = IN;
+	}
+	
+	public void setWeb(Web web) {
+		IR_FieldDecl decl = web.getFieldDecl();
+		if (this.IN.getWebsMap().containsKey(decl)) {
+			// only set IN if original IN contains old web.
+			this.IN.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+		}
+		this.OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
 	}
 	
 }

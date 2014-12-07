@@ -8,6 +8,8 @@ public class GraphNode {
 	
 	String varName;
 	int level;
+	ReachingDefinition rd;
+	
 	Boolean isGlobal = false;
 	Boolean isParam = false;
 	
@@ -19,6 +21,7 @@ public class GraphNode {
 	public GraphNode(Assignment assign, int level) {
 		this.varName = assign.getDestVar().getName();
 		this.level = level;
+		this.rd = assign.getReachingDefinition();
 	}
 	
 	public GraphNode(String varName, int level) {
@@ -40,6 +43,7 @@ public class GraphNode {
 			// might not need a GraphNode for non-Assignment statements
 			this.varName = "";
 		}
+		this.rd = st.getReachingDefinition();
 	}
 	
 	public String getVarName() {
@@ -84,5 +88,9 @@ public class GraphNode {
 	
 	public int getLevel() {
 		return this.level;
+	}
+	
+	public ReachingDefinition getReachingDefinition() {
+		return this.rd;
 	}
 }
