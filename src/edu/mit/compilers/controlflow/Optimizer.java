@@ -1466,11 +1466,6 @@ public class Optimizer {
                             newCodeblock.addStatement(currentStatement);
                         }
                     }
-                    
-                    Codeblock topOfScope = findTopOfScope(cblock);
-                    for (Declaration newTemp : tempsUsed) {
-                        topOfScope.prependDeclaration(newTemp);
-                    }
 
                     swapCodeblocks(cblock, newCodeblock);
                     newCodeblock.visit();
@@ -1488,6 +1483,11 @@ public class Optimizer {
                                 processing.add(child);
                             }
                         }
+                    }
+                    
+                    Codeblock topOfScope = findTopOfScope(cblock);
+                    for (Declaration newTemp : tempsUsed) {
+                        topOfScope.prependDeclaration(newTemp);
                     }
                 }
 
