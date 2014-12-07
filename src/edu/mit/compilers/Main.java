@@ -33,6 +33,7 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.regalloc.AssignRegisters;
 import edu.mit.compilers.regalloc.Coloring;
+import edu.mit.compilers.regalloc.CountUses;
 import edu.mit.compilers.regalloc.GenReachingDefs;
 import edu.mit.compilers.regalloc.GraphNode;
 import edu.mit.compilers.regalloc.InterferenceGraph;
@@ -291,15 +292,20 @@ class Main {
 				    	  }
 				    	  if (CLI.opts[3]) {
 							  // Register allocation
-				    		  GenReachingDefs genRDs = new GenReachingDefs(context, callouts, globals, flowNodes);
+				    		  System.out.println("\nCounting uses\n===================================");
+				    		  CountUses uses = new CountUses(context, callouts, globals, flowNodes);
+				    		  uses.run();
+				    		  HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
+				    		  System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
 				    		  System.out.println("\nGenerating Reaching Definitions\n===================================");
+				    		  GenReachingDefs genRDs = new GenReachingDefs(context, flowNodes);
 				    		  genRDs.run();
+				    		  System.out.println("\nBuilding Interference Graph\n===================================");
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
-							  System.out.println("\nBuilding Interference Graph\n===================================");
 							  ig.generateLivenessMap();
 							  ig.buildGraph();
-							  Coloring coloring = new Coloring(ig, 8);
 							  System.out.println("\nColoring nodes\n===================================");
+							  Coloring coloring = new Coloring(ig, 8, fieldDeclToSpillCost);
 							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
 							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());

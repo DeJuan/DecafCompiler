@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import edu.mit.compilers.codegen.Regs;
+import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class Coloring {
 	
@@ -16,13 +17,15 @@ public class Coloring {
 	Stack<GraphNode> removedNodes = new Stack<GraphNode>();
 	Stack<GraphNode> spillNodes = new Stack<GraphNode>();
 	
+	HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Double>();
 	HashMap<GraphNode, Double> nodeToSpillCost = new HashMap<GraphNode, Double>();
 	
 	int k; // maximum number of colors
 	
-	public Coloring(InterferenceGraph graph, int k) {
+	public Coloring(InterferenceGraph graph, int k, HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost) {
 		this.graph = graph;
 		this.k = k;
+		this.fieldDeclToSpillCost = fieldDeclToSpillCost;
 	}
 	
 	private Set<Regs> getAssignedRegisters(Set<GraphNode> neighbors) {
@@ -127,8 +130,8 @@ public class Coloring {
 			}
 			if (nodesToProcess.size() > 0) {
 				// must spill one node, then try again.
-				System.out.println("Spilling");
 				GraphNode nodeToSpill = getMinSpillCost(nodesToProcess);
+				System.out.println("Spilling var: " + nodeToSpill.getAssignment().getDestVar().getName());
 				spillNodes.push(nodeToSpill);
 				nodeToSpill.markAsRemoved();
 				nodeToSpill.spill();
@@ -146,6 +149,9 @@ public class Coloring {
 	
 	public double calcSpillCost(GraphNode node) {
 		// Simple heuristic for now.
-		return 1;
+		IR_FieldDecl decl = node.getAssignment().getDestVar().getFieldDecl();
+		double spillCost = fieldDeclToSpillCost.get(decl);
+		System.out.println("Spill cost for var " + decl.getName() + " is: " + spillCost);
+		return spillCost;
 	}
 }

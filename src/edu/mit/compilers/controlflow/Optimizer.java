@@ -149,8 +149,8 @@ public class Optimizer {
         else if(expr instanceof Ternary){
             Ternary tern = (Ternary)expr;
             allVars.addAll(getVarsFromExpression(tern.getTernaryCondition()));
-            allVars.addAll(getVarsFromExpression(tern.trueBranch));
-            allVars.addAll(getVarsFromExpression(tern.falseBranch));
+            allVars.addAll(getVarsFromExpression(tern.getTrueBranch()));
+            allVars.addAll(getVarsFromExpression(tern.getFalseBranch()));
         }
         else if(expr instanceof MethodCall){
             MethodCall MCHammer = (MethodCall)expr;
