@@ -1373,10 +1373,11 @@ public class Optimizer {
                                     //Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
                                     //So if we had a = x + y, we now have a temp value temp1 = a.
                                     rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
-                                    Var tempVar = new Var(context.findSymbol(rhsTempDecl.getName()), null, true);
+                                    Descriptor tempDescriptor = context.findSymbol(rhsTempDecl.getName());
+                                    Var tempVar = new Var(tempDescriptor, null, true);
                                     expToTemp.put(rhs, tempVar);
                                     varList.add(tempVar);
-                                    tempsUsed.add(new Declaration(rhsTempDecl));
+                                    tempsUsed.add(new Declaration((IR_FieldDecl) tempDescriptor.getIR()));
                                 }
                             }
                             // Update valToVar to dest
