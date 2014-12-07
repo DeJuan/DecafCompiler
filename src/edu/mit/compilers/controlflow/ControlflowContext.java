@@ -304,8 +304,14 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
+    		if(currentIns == null){
+    			continue;
+    		}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
+    		if(nextIns == null){
+    			continue;
+    		}
     		if(currentIns.startsWith("pu")){ //efficiency hack; check pu instead of full push
     			if(!nextIns.startsWith("po")){ //same as above, po vs pop
     				continue;
