@@ -905,6 +905,9 @@ public class AssignRegisters {
     }
 
     private static LocationMem generateVarLoc(Var var, ControlflowContext context, List<Instruction> ins) {
+        if (var.getColorReg() != null) {
+            return var.getColorReg();
+        }
         Descriptor d = context.findSymbol(var.getName());
         switch (d.getIR().getType()) {
         case INT:
