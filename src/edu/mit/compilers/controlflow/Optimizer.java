@@ -820,7 +820,6 @@ public class Optimizer {
 	 */
 	public boolean applyDCE(List<START> startsForMethods){
 		boolean anythingRemoved = false;
-		System.err.println("Now applying DCE.");
 		//System.err.println("====================================ENTERING MAP SETUP PHASE===================================");
 		Map<START, Map<FlowNode, Bitvector>> livenessMap = generateLivenessMap(startsForMethods);
 		//System.err.println("====================================MAP SETUP COMPLETE. NOW EXECUTING==========================");
@@ -906,6 +905,7 @@ public class Optimizer {
 				}
 				Collections.reverse(statementList);
 			}
+			clearUnusedDeclarations(initialNode);
 		}
 		return anythingRemoved;
 		//return Assembler.generateProgram(calloutList, globalList, flowNodes);
@@ -1698,5 +1698,51 @@ public class Optimizer {
             }
         }
         throw new RuntimeException("No upper parent found");
+    }
+    
+    private void clearUnusedDeclarations(START beginMethod){
+        Set<FlowNode> seen = new HashSet<FlowNode>();
+        Set<IR_FieldDecl> assigned = new HashSet<IR_FieldDecl>();
+        List<FlowNode> processing = new ArrayList<FlowNode>();
+        processing.add(beginMethod.getChildren().get(0));
+        while (!processing.isEmpty()) {
+            FlowNode current = processing.remove(0);
+            if (seen.add(current)) {
+                processing.addAll(current.getChildren());
+            }
+            if (current instanceof Codeblock) {
+                Codeblock cBlock = (Codeblock) current;
+                for (Statement s : cBlock.getStatements()) {
+                    if (s instanceof Assignment) {
+                        Assignment assn = (Assignment) s;
+                        assigned.add(assn.getDestVar().getFieldDecl());
+                    }
+                }
+            }
+        }
+        processing = new ArrayList<FlowNode>();
+        processing.add(beginMethod.getChildren().get(0));
+        seen = new HashSet<FlowNode>();
+        while (!processing.isEmpty()) {
+            FlowNode current = processing.remove(0);
+            if (seen.add(current)) {
+                processing.addAll(current.getChildren());
+            }
+            if (current instanceof Codeblock) {
+                Codeblock cBlock = (Codeblock) current;
+                List<Declaration> toRemove = new ArrayList<Declaration>();
+                for (Statement s : cBlock.getStatements()) {
+                    if (s instanceof Declaration) {
+                        Declaration decl = (Declaration) s;
+                        if (!assigned.contains(decl.getFieldDecl())) {
+                            toRemove.add(decl);
+                        }
+                    }
+                }
+                for (Declaration d : toRemove) {
+                    cBlock.statements.remove(d);
+                }
+            }
+        }
     }
 }

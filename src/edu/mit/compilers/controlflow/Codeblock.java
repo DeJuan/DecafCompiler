@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class Codeblock extends FlowNode {
 	private int temp = -1;
-	private List<Statement> statements = new ArrayList<Statement>();
+	List<Statement> statements = new ArrayList<Statement>();
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private boolean isBreak = false;;
