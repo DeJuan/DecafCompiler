@@ -296,6 +296,7 @@ class Main {
 				    		  genRDs.run();
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
 							  System.out.println("\nBuilding Interference Graph\n===================================");
+							  ig.generateLivenessMap();
 							  ig.buildGraph();
 							  Coloring coloring = new Coloring(ig, 8);
 							  System.out.println("\nColoring nodes\n===================================");

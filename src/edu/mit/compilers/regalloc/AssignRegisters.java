@@ -566,8 +566,8 @@ public class AssignRegisters {
     	if (!var.isArray()) {
     		// We only assign registers to non-array variables.
 	    	LocReg reg = context.findRegister(varName);
+	    	System.out.println("\"" + varName + "\" has a register location: " + reg);
 	    	if (reg != null) {
-	    		System.out.println("\"" + varName + "\" has a register location: " + reg);
 	    		var.setColorReg(reg);
 	    	}
     	}

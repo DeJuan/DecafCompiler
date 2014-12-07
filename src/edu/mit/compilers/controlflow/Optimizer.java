@@ -779,7 +779,7 @@ public class Optimizer {
 					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
 						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited){
+							if(!parent.visited()){
 								if(!processing.contains(parent)){
 									processing.add(parent);
 									//System.err.println("Just added parent " + parent + "of current node " + currentNode);
