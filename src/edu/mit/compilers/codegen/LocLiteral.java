@@ -16,5 +16,18 @@ public class LocLiteral extends LocationMem{
 	public long getValue(){
 		return val;
 	}
+	@Override
+	public boolean equals(LocationMem other) {
+		if(!(other instanceof LocLiteral)){
+			return false;
+		}
+		else{
+			LocLiteral otherLoc = (LocLiteral)other;
+			if(otherLoc.getValue() == this.getValue()){
+				return true;
+			}
+		}
+		return false;
+	}
 }
 
