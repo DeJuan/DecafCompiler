@@ -341,8 +341,10 @@ public class ControlflowContext {
     			while(true){
     				Instruction leftInst = ins.get(leftBound); //left instruction
     				String leftCmd = leftInst.cmd; //left command
+    				if(leftCmd == null){break;}
     				Instruction rightInst = ins.get(rightBound);
     				String rightCmd = rightInst.cmd;
+    				if(rightCmd == null){break;}
     				if(leftCmd.startsWith("pu")){ 
     	    			if(!rightCmd.startsWith("po")){ break;}
     	    		}
@@ -375,8 +377,10 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
+    		if(currentIns == null){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
+    		if(nextIns == null){continue;}
     		if(currentIns.startsWith("pu")){
     			if(!nextIns.startsWith("po")){ //It's gotta be pupo!
     				continue;
@@ -399,8 +403,10 @@ public class ControlflowContext {
     			while(true){
     				Instruction leftInst = ins.get(leftBound); //left instruction
     				String leftCmd = leftInst.cmd; //left command
+    				if (leftCmd == null){break;}
     				Instruction rightInst = ins.get(rightBound);
     				String rightCmd = rightInst.cmd;
+    				if(rightCmd == null){break;}
     				if(leftCmd.startsWith("pu")){ 
     	    			if(!rightCmd.startsWith("po")){ break;}
     	    		}
