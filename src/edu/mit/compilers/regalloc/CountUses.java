@@ -98,7 +98,7 @@ public class CountUses {
         return allFieldDecls;
     }
     
-    public Set<IR_FieldDecl> getAllFieldDecls(START node){
+    public Set<IR_FieldDecl> getAllFieldDeclsInMethod(START node){
         Set<IR_FieldDecl> allVarDecls = new LinkedHashSet<IR_FieldDecl>();
         List<FlowNode> processing = new ArrayList<FlowNode>();
         allVarDecls.addAll(globalList);
@@ -209,7 +209,7 @@ public class CountUses {
 		// Get all IR_FieldDecls
         fieldDecls.addAll(globalList);
 		for (START initialNode : flowNodes.values()) {
-			fieldDecls.addAll(getAllFieldDecls(initialNode));
+			fieldDecls.addAll(getAllFieldDeclsInMethod(initialNode));
 		}
 		// Populate fieldDecl HashMap with initial spill cost.
 		for (IR_FieldDecl decl : fieldDecls) {
