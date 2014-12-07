@@ -10,7 +10,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.Bitvector;
@@ -26,7 +25,6 @@ import edu.mit.compilers.controlflow.NoOp;
 import edu.mit.compilers.controlflow.Optimizer;
 import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.controlflow.Statement;
-import edu.mit.compilers.controlflow.Var;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.Ops;
@@ -54,25 +52,6 @@ public class InterferenceGraph {
 		this.flowNodes = flowNodes;
 		this.optimizer = new Optimizer(context, callouts, globals, flowNodes);
 	}
-	/*
-	private void setupGlobals() {
-		varToNodes = new HashMap<String, HashMap<Integer, GraphNode>>();
-		for(IR_FieldDecl global : globalList) {
-			HashMap<Integer, GraphNode> graphNodes = new HashMap<Integer, GraphNode>();
-			graphNodes.put(0, new GraphNode(global.getName(), 0, true, false));
-			varToNodes.put(global.getName(), graphNodes);
-		}
-	}
-	
-	private void setupParams(START node) {
-		setupGlobals();
-		for(IR_FieldDecl parameter : node.getArguments()){
-			HashMap<Integer, GraphNode> graphNodes = new HashMap<Integer, GraphNode>();
-			graphNodes.put(1, new GraphNode(parameter.getName(), 1, true, false));
-			varToNodes.put(parameter.getName(), graphNodes);
-		}
-	}
-	*/
  
 	private List<IR_FieldDecl> getLiveVars(Bitvector liveMap) {
 		List<IR_FieldDecl> liveVars = new ArrayList<IR_FieldDecl>(); 
@@ -213,10 +192,7 @@ public class InterferenceGraph {
 						while(statementIter.hasNext()){
 							Statement currentState = statementIter.next();
 							if(currentState instanceof Assignment){ 
-								// EDIT BY YOUYANG:
-								System.out.println("Live vars: " + getLiveVars(liveVector));
-								currentState.setLiveMap(liveVector.copyBitvector());
-								// END EDIT BY YOUYANG
+								currentState.setLiveMap(liveVector.copyBitvector()); // Set live vector of current statement
 								Assignment assign = (Assignment)currentState;
 								IR_FieldDecl lhs = assign.getDestVar().getFieldDecl();
 								List<IR_FieldDecl> varsInRHS = optimizer.getVarIRsFromExpression(assign.getValue());
@@ -363,7 +339,7 @@ public class InterferenceGraph {
 				System.out.println("Considering adding edge to var: " + web.getFieldDecl().getName());
 				System.out.println("Live map: " + getLiveVars(st.getLiveMap()));
 				GraphNode otherNode = webToNode.get(web);
-				if (st.getLiveMap().get(web.getFieldDecl()) == 1) {
+				if (st.getLiveMap() == null || st.getLiveMap().get(web.getFieldDecl()) == 1) {
 					// Variable will be live later, so we want to add an edge to that web
 					System.out.println("Live web. Adding edge");
 					addEdge(node, otherNode);
