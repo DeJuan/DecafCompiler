@@ -164,12 +164,15 @@ public class InterferenceGraph {
 			
 			initialNode.resetVisit(); //fix the visited parameters.
 			
-			for (Codeblock cblock : listOfCodeblocks){
-				List<Statement> statementList = cblock.getStatements();
-				boolean complete = false;
-				while (!complete) {
+			boolean complete = false;
+			while (!complete) {
+				complete = true;
+				Iterator<Codeblock> codeblockIter = listOfCodeblocks.iterator();
+				while (codeblockIter.hasNext()) {
+					Codeblock cblock = codeblockIter.next();
+					List<Statement> statementList = cblock.getStatements();
 					System.out.println("\n====== Processing codeblock: " + cblock.toString());
-					complete = true;
+					
 					Iterator<Statement> statementIter = statementList.iterator();
 					while(statementIter.hasNext()){
 						Statement st = statementIter.next();
