@@ -89,6 +89,12 @@ public class END extends FlowNode {
 		visited = false;
 	}
 	
-
+	@Override
+    public void replaceParent(FlowNode newParent, FlowNode oldParent) {
+        if (!parents.remove(oldParent)) {
+            throw new RuntimeException("Provided oldparent not a parent of this node");
+        }
+        addParent(newParent); 
+    }
 	
 }

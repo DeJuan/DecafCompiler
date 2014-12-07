@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.codegen.LocationMem;
+import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
@@ -701,7 +703,6 @@ public class Optimizer {
 								//LEFT HAND FIRST LOGIC
 								if(liveVector.get(lhs) == 1 || (liveVector.get(lhs) == 0 && containsMethodCall(assign.getValue()))){ //If this is alive, MAY need to flip the bit
 									for(IR_FieldDecl varDecl : varsInRHS){
-										String varName = varDecl.getName();
 										liveVector.setVectorVal(varDecl, 1); //rhs if we changed it is not alive, because the assignment as a whole is dead.
 										//System.err.printf("Bitvector entry for variable %s has been set to 1 in building phase due to use in live assigment OR one with method call." + System.getProperty("line.separator"), varName);
 										rhsDecls.add(varDecl);
@@ -869,9 +870,7 @@ public class Optimizer {
 						}
 						else{
 							List<IR_FieldDecl> rhsDecls = new ArrayList<IR_FieldDecl>();
-							String nameOfVar = assign.getDestVar().getName();
 							for(IR_FieldDecl varDecl : getVarIRsFromExpression(assign.getValue())){
-								String varName = varDecl.getName();
 								liveCheck.setVectorVal(varDecl, 1);
 								//System.err.printf("Bitvector entry for variable %s has been set to 1 by use in assignment." + System.getProperty("line.separator"), varName);
 								rhsDecls.add(varDecl);
@@ -1291,6 +1290,7 @@ public class Optimizer {
                     //Before we do anything, set up the temporary variable declarations:
                     List<String> nextTempHolder = new ArrayList<String>();
                     List<Var> allTheVarsInBlock = checkVariablesAssigned(cblock);
+                    List<Declaration> tempsUsed = new ArrayList<Declaration>();
                     for(Var current : allTheVarsInBlock){
                         String nextTemp = generateNextTemp(allVarNames);
                         Descriptor d = new Descriptor(new IR_FieldDecl(getTempType(current.getVarDescriptor().getIR().getType()), nextTemp));
@@ -1330,7 +1330,6 @@ public class Optimizer {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
                             }
-                            anythingReplaced = true;
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
                             if (rhs.containsMethodCalls()) {
@@ -1357,6 +1356,7 @@ public class Optimizer {
                                         rhs.replace(key, expToVal.get(key), valToVar);
                                         changed = true; //Need to repass over, one substitution could lead to another
                                         changedAtAll = true;
+                                        anythingReplaced = true;
                                     }
                                 }
                             }
@@ -1373,9 +1373,11 @@ public class Optimizer {
                                     //Next line creates a new IR_FieldDecl for the compiler-generated temp, and makes the temp equal the assigned variable above.
                                     //So if we had a = x + y, we now have a temp value temp1 = a.
                                     rhsTempDecl = new IR_FieldDecl(getTempType(currentDestVar.getVarDescriptor().getType()), nextTempHolder.remove(0));
-                                    Var tempVar = new Var(context.findSymbol(rhsTempDecl.getName()), null, true);
+                                    Descriptor tempDescriptor = context.findSymbol(rhsTempDecl.getName());
+                                    Var tempVar = new Var(tempDescriptor, null, true);
                                     expToTemp.put(rhs, tempVar);
                                     varList.add(tempVar);
+                                    tempsUsed.add(new Declaration((IR_FieldDecl) tempDescriptor.getIR()));
                                 }
                             }
                             // Update valToVar to dest
@@ -1422,7 +1424,6 @@ public class Optimizer {
                             }
                             if(rhsTempDecl != null){
                                 newCodeblock.addStatement(new Assignment(expToTemp.get(rhs), Ops.ASSIGN, currentDestVar)); //t1 = previous variable
-                                globalList.add((IR_FieldDecl) expToTemp.get(rhs).getVarDescriptor().getIR());
                             }
                             if (rhs.containsMethodCalls() 
                                     || (currentDestVar.getIndex() != null && (!setVarIDs(varToVal, varToValForArrayComponents, currentDestVar.getIndex()) 
@@ -1456,6 +1457,7 @@ public class Optimizer {
                                                     arg.replace(key, expToVal.get(key), valToVar);
                                                     changed = true; //Need to repass over, one substitution could lead to another
                                                     changedAtAll = true;
+                                                    anythingReplaced = true;
                                                 }
                                             }
                                         }
@@ -1475,9 +1477,14 @@ public class Optimizer {
 
                     swapCodeblocks(cblock, newCodeblock);
                     newCodeblock.visit();
+                    Codeblock topOfScope = findTopOfScope(newCodeblock, containerForNode);
+                    if (topOfScope != newCodeblock ) {
+                        processing.add(topOfScope);
+                    }
                     MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, true);
                     containerForNode.put(newCodeblock, currentNodeContainer);
                     containerForNode.remove(cblock);
+                    anythingReplaced = changedAtAll || anythingReplaced || tempsUsed.size() > 0;
                     if(changedAtAll){
                         for(FlowNode child : newCodeblock.getChildren()){
                             processing.add(child);
@@ -1489,6 +1496,10 @@ public class Optimizer {
                                 processing.add(child);
                             }
                         }
+                    }
+                    
+                    for (Declaration newTemp : tempsUsed) {
+                        topOfScope.prependDeclaration(newTemp);
                     }
                 }
 
@@ -1509,6 +1520,7 @@ public class Optimizer {
                                 }
                             }
                         }
+                        anythingReplaced = changedAtAll || anythingReplaced;
                         if(changedAtAll){ //don't do anything if we never changed the expr, no need to do busywork
                             cbranch.setExpr(branchExprSP.toExpression(valToVar)); //in place modification on block. No need to make a new one.
                         }
@@ -1582,6 +1594,7 @@ public class Optimizer {
                                     }
                                 }
                             }
+                            anythingReplaced = changedAtAll || anythingReplaced;
 
                             if(changedAtAll){
                                 theEnd.setReturnExpression(retSP.toExpression(valToVar));
@@ -1595,5 +1608,95 @@ public class Optimizer {
         }
         //return Assembler.generateProgram(calloutList, globalList, flowNodes);
         return anythingReplaced;
+    }
+
+    private Codeblock findTopOfScope(Codeblock cblock, Map<FlowNode, MapContainer> nodeToContainer) {
+        FlowNode currentNode = cblock;
+        while (!(currentNode instanceof START)) {
+            if (currentNode instanceof END) {
+                throw new RuntimeException("this should have been impossible");
+            } else if (currentNode instanceof Codeblock) {
+                currentNode = currentNode.getParents().get(0);
+            } else if (currentNode instanceof Branch) {
+                currentNode = findUpperParent((Branch) currentNode);
+            } else if (currentNode instanceof NoOp) {
+                currentNode = findBranch((NoOp) currentNode);
+            } else {
+                throw new RuntimeException("missing case");
+            }
+        }
+        FlowNode nextChild = currentNode.getChildren().get(0);
+        Codeblock topOfScope;
+        if (nextChild instanceof Codeblock) {
+            topOfScope = (Codeblock) nextChild;
+        } else {
+            topOfScope = new Codeblock();
+            topOfScope.addParent(currentNode);
+            ((START) currentNode).removeChild(nextChild);
+            currentNode.addChild(topOfScope);
+            topOfScope.addChild(nextChild);
+            nextChild.replaceParent(topOfScope, currentNode);
+            MapContainer startContainer = nodeToContainer.get(currentNode);
+            MapContainer newContainer = startContainer.calculateIntersection(startContainer, globalList);
+            nodeToContainer.put(topOfScope, newContainer);
+        }
+        return topOfScope;
+    }
+    
+    private Branch findBranch(NoOp nop) {
+        for (FlowNode p : nop.getParents()) {
+            if (p instanceof Branch) {
+                // must have been the nop of a while/for
+                return (Branch) p;
+            }
+        }
+        if (nop.getParents().size() > 2) {
+            throw new RuntimeException("I think I'm an IF-NOP, but I have more than two parents");
+        }
+        FlowNode next = nop.getParents().get(0);
+        while (!(next instanceof START)) {
+            if (next instanceof Codeblock) {
+                next = next.getParents().get(0);
+            } else if (next instanceof Branch) {
+                next = findUpperParent((Branch) next);
+            } else if (next instanceof END) {
+                throw new RuntimeException("this should never occur");
+            } else if (next instanceof NoOp) {
+                next = findBranch((NoOp) next);
+            } else {
+                throw new RuntimeException("missing case");
+            }
+        }
+        if (next.getParents().size() != 1 || !(next.getParents().get(0) instanceof Branch)) {
+            throw new RuntimeException("This start should've had one branch for its parent");
+        }
+        return (Branch) next.getParents().get(0);
+    }
+    
+    private FlowNode findUpperParent(Branch br) {
+        if (br.getType() == BranchType.IF) {
+            if (br.getParents().size() != 1) {
+                throw new RuntimeException("IF branches should have exactly one parent");
+            }
+            return br.getParents().get(0);
+        }
+        List<FlowNode> processing = new ArrayList<FlowNode>();
+        Set<FlowNode> nodesInTrueBranch = new HashSet<FlowNode>();
+        processing.add(br.getTrueBranch());
+        nodesInTrueBranch.add(br.getFalseBranch());
+        while (!processing.isEmpty()) {
+            FlowNode current = processing.remove(0);
+            for (FlowNode c : current.getChildren()) {
+                if (nodesInTrueBranch.add(c)) {
+                    processing.add(c);
+                }
+            }
+        }
+        for (FlowNode p : br.getParents()) {
+            if (!nodesInTrueBranch.contains(p)) {
+                return p;
+            }
+        }
+        throw new RuntimeException("No upper parent found");
     }
 }
