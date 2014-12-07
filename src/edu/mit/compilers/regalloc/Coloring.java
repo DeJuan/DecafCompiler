@@ -1,8 +1,8 @@
 package edu.mit.compilers.regalloc;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -54,7 +54,7 @@ public class Coloring {
 	public void assignColors() {
 		while (!removedNodes.empty()) {
 			GraphNode node = removedNodes.pop();
-			System.out.println("\n========== Variable: " + node.getVarName());
+			System.out.println("\n========== Variable: " + node.getAssignment().getDestVar().getName());
 			Set<GraphNode> neighbors = graph.getAdjList().get(node);
 			System.out.println("Neighbors size: " + neighbors.size());
 			Set<Regs> asssignedRegisters = getAssignedRegisters(neighbors);
@@ -73,20 +73,16 @@ public class Coloring {
 		}
 	}
 	
-	public Boolean removeNodes(List<GraphNode> nodesToProcess) {
-		Boolean changed = false;
-		if (nodesToProcess.size() == 0)
-			return false;
-		for (Iterator<GraphNode> iterator = nodesToProcess.iterator(); iterator.hasNext();) {
-			GraphNode node = iterator.next();
-			if (graph.getNumEdges(node) < k) {
-				removedNodes.push(node);
-				node.markAsRemoved();
-				iterator.remove();
-				changed = true;
+	private GraphNode getMaxSpillCost(List<GraphNode> nodes) {
+		double maxSpillCost = Integer.MIN_VALUE;
+		GraphNode returnNode = null;
+		for (GraphNode node : nodes) {
+			if (nodeToSpillCost.get(node) > maxSpillCost) {
+				returnNode = node;
+				maxSpillCost = nodeToSpillCost.get(node);
 			}
 		}
-		return changed;
+		return returnNode;
 	}
 	
 	private GraphNode getMinSpillCost(List<GraphNode> nodes) {
@@ -99,6 +95,24 @@ public class Coloring {
 			}
 		}
 		return returnNode;
+	}
+	
+	public Boolean removeNodes(List<GraphNode> nodesToProcess) {
+		Boolean changed = false;
+		if (nodesToProcess.size() == 0)
+			return false;
+		List<GraphNode> copyNodes = new ArrayList<GraphNode>(nodesToProcess);
+		while (!copyNodes.isEmpty()) {
+			GraphNode node = getMaxSpillCost(copyNodes);
+			copyNodes.remove(node);
+			if (graph.getNumEdges(node) < k) {
+				removedNodes.push(node);
+				node.markAsRemoved();
+				nodesToProcess.remove(node);
+				changed = true;
+			}
+		}
+		return changed;
 	}
 	
 	public List<GraphNode> run() {
