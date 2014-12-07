@@ -1330,7 +1330,6 @@ public class Optimizer {
                                 newCodeblock.addStatement(currentStatement);
                                 continue;
                             }
-                            anythingReplaced = true;
                             ValueID currentValID = new ValueID(); //make a new value ID we'll use when we put things in the map/make a new temp.
                             SPSet rhs = new SPSet(assignExprValue); //Construct an SPSet from the expression.
                             if (rhs.containsMethodCalls()) {
@@ -1357,6 +1356,7 @@ public class Optimizer {
                                         rhs.replace(key, expToVal.get(key), valToVar);
                                         changed = true; //Need to repass over, one substitution could lead to another
                                         changedAtAll = true;
+                                        anythingReplaced = true;
                                     }
                                 }
                             }
@@ -1456,6 +1456,7 @@ public class Optimizer {
                                                     arg.replace(key, expToVal.get(key), valToVar);
                                                     changed = true; //Need to repass over, one substitution could lead to another
                                                     changedAtAll = true;
+                                                    anythingReplaced = true;
                                                 }
                                             }
                                         }
@@ -1482,6 +1483,7 @@ public class Optimizer {
                     MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, true);
                     containerForNode.put(newCodeblock, currentNodeContainer);
                     containerForNode.remove(cblock);
+                    anythingReplaced = changedAtAll || anythingReplaced || tempsUsed.size() > 0;
                     if(changedAtAll){
                         for(FlowNode child : newCodeblock.getChildren()){
                             processing.add(child);
@@ -1517,6 +1519,7 @@ public class Optimizer {
                                 }
                             }
                         }
+                        anythingReplaced = changedAtAll || anythingReplaced;
                         if(changedAtAll){ //don't do anything if we never changed the expr, no need to do busywork
                             cbranch.setExpr(branchExprSP.toExpression(valToVar)); //in place modification on block. No need to make a new one.
                         }
@@ -1590,6 +1593,7 @@ public class Optimizer {
                                     }
                                 }
                             }
+                            anythingReplaced = changedAtAll || anythingReplaced;
 
                             if(changedAtAll){
                                 theEnd.setReturnExpression(retSP.toExpression(valToVar));
