@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class Codeblock extends FlowNode {
 	private int temp = -1;
-	private List<Statement> statements = new ArrayList<Statement>();
+	List<Statement> statements = new ArrayList<Statement>();
 	private List<FlowNode> children = new ArrayList<FlowNode>();
 	private List<FlowNode> parents = new ArrayList<FlowNode>();
 	private boolean isBreak = false;;
@@ -122,6 +122,10 @@ public class Codeblock extends FlowNode {
 		statements.add(newStatement);
 	}
 	
+	void prependDeclaration(Declaration newDeclare) {
+	    statements.add(0, newDeclare);
+	}
+	
 	public void setIsBreak(boolean isBreak) {
 	    this.isBreak = isBreak;
 	}
@@ -147,5 +151,13 @@ public class Codeblock extends FlowNode {
 			}
 		}
 	}
+	
+	@Override
+    public void replaceParent(FlowNode newParent, FlowNode oldParent) {
+        if (!parents.remove(oldParent)) {
+            throw new RuntimeException("Provided oldparent not a parent of this node");
+        }
+        addParent(newParent); 
+    }
 
 }

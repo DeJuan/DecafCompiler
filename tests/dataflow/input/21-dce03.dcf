@@ -32,6 +32,6 @@ void main ( ) {
   	c = b + a;
   }
   b = c + b;
-  printf ( "Sum should be 45: is %i", sum);
+  printf ( "Sum should be 45: is %i\n", sum);
   }
   

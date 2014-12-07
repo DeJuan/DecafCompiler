@@ -20,6 +20,7 @@ public abstract class FlowNode {
 	public abstract List<FlowNode> getChildren();
 	public abstract void addParent(FlowNode newParent);
 	public abstract void addChild(FlowNode newChild);
+	public abstract void replaceParent(FlowNode newParent, FlowNode oldParent);
 	public abstract void resetVisit();
 	
 	/**
