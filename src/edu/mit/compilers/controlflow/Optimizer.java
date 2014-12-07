@@ -15,6 +15,7 @@ import edu.mit.compilers.codegen.CodegenConst;
 import edu.mit.compilers.codegen.Descriptor;
 import edu.mit.compilers.codegen.LocLabel;
 import edu.mit.compilers.codegen.LocationMem;
+import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.controlflow.Expression.ExpressionType;
 import edu.mit.compilers.controlflow.Statement.StatementType;
 import edu.mit.compilers.ir.IR_FieldDecl;
@@ -1469,6 +1470,10 @@ public class Optimizer {
 
                     swapCodeblocks(cblock, newCodeblock);
                     newCodeblock.visit();
+                    Codeblock topOfScope = findTopOfScope(newCodeblock, containerForNode);
+                    if (topOfScope != newCodeblock ) {
+                        processing.add(topOfScope);
+                    }
                     MapContainer currentNodeContainer = new MapContainer(varToVal, expToVal, expToTemp, varToValForArrayComponents, valToVar, true);
                     containerForNode.put(newCodeblock, currentNodeContainer);
                     containerForNode.remove(cblock);
@@ -1485,7 +1490,6 @@ public class Optimizer {
                         }
                     }
                     
-                    Codeblock topOfScope = findTopOfScope(cblock);
                     for (Declaration newTemp : tempsUsed) {
                         topOfScope.prependDeclaration(newTemp);
                     }
@@ -1595,7 +1599,7 @@ public class Optimizer {
         return Assembler.generateProgram(calloutList, globalList, flowNodes);
     }
 
-    private Codeblock findTopOfScope(Codeblock cblock) {
+    private Codeblock findTopOfScope(Codeblock cblock, Map<FlowNode, MapContainer> nodeToContainer) {
         FlowNode currentNode = cblock;
         while (!(currentNode instanceof START)) {
             if (currentNode instanceof END) {
@@ -1621,7 +1625,9 @@ public class Optimizer {
             currentNode.addChild(topOfScope);
             topOfScope.addChild(nextChild);
             nextChild.replaceParent(topOfScope, currentNode);
-            
+            MapContainer startContainer = nodeToContainer.get(currentNode);
+            MapContainer newContainer = startContainer.calculateIntersection(startContainer, globalList);
+            nodeToContainer.put(topOfScope, newContainer);
         }
         return topOfScope;
     }
@@ -1633,8 +1639,8 @@ public class Optimizer {
                 return (Branch) p;
             }
         }
-        if (nop.getParents().size() != 2) {
-            throw new RuntimeException("I think I'm an IF-NOP, but I don't have two parents");
+        if (nop.getParents().size() > 2) {
+            throw new RuntimeException("I think I'm an IF-NOP, but I have more than two parents");
         }
         FlowNode next = nop.getParents().get(0);
         while (!(next instanceof START)) {
@@ -1657,9 +1663,16 @@ public class Optimizer {
     }
     
     private FlowNode findUpperParent(Branch br) {
+        if (br.getType() == BranchType.IF) {
+            if (br.getParents().size() != 1) {
+                throw new RuntimeException("IF branches should have exactly one parent");
+            }
+            return br.getParents().get(0);
+        }
         List<FlowNode> processing = new ArrayList<FlowNode>();
         Set<FlowNode> nodesInTrueBranch = new HashSet<FlowNode>();
         processing.add(br.getTrueBranch());
+        nodesInTrueBranch.add(br.getFalseBranch());
         while (!processing.isEmpty()) {
             FlowNode current = processing.remove(0);
             for (FlowNode c : current.getChildren()) {
