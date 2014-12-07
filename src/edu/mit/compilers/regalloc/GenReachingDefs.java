@@ -89,15 +89,16 @@ public class GenReachingDefs {
 			if (st instanceof Assignment) {
 				Assignment assign = (Assignment) st;
 				String varName = assign.getDestVar().getName();
-				Web gen = new Web(varName, st, (FlowNode) node);
+				IR_FieldDecl decl = assign.getDestVar().getFieldDecl();
+				Web gen = new Web(decl, st, (FlowNode) node);
 				System.out.println("\n======= Assigning to: " + varName);
 				System.out.println("Created web " + gen);
 				boolean addWeb = true;
-				if (rd.getWebsMap().containsKey(varName)) {
-					if (!(new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0).getStartingStatements().contains(st)) {
+				if (rd.getWebsMap().containsKey(decl)) {
+					if (!(new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0).getStartingStatements().contains(st)) {
 						// Not the same web.
 						System.out.println("Killing var: " + varName);
-						rd.removeWeb(varName);
+						rd.removeWeb(decl);
 					} else {
 						System.out.println("This is actually the same web. No change to webs.");
 						addWeb = false;

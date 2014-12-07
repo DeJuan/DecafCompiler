@@ -99,7 +99,7 @@ public class InterferenceGraph {
 		for (Web web : rd.getAllWebs()) {
 			if (!curWeb.equals(web)) {
 				if (!webToNode.containsKey(web)) {
-					throw new RuntimeException("webToNode should always contain the key for web: " + web.getVarName() + ". " + web);
+					throw new RuntimeException("webToNode should always contain the key for web: " + web.getFieldDecl().getName() + ". " + web);
 				}
 				addEdge(node, webToNode.get(web));
 			}
@@ -193,8 +193,9 @@ public class InterferenceGraph {
 					if (st instanceof Assignment){	
 						Assignment assignment = (Assignment) st;
 						String varName = assignment.getDestVar().getName();
+						IR_FieldDecl decl = assignment.getDestVar().getFieldDecl();
 						System.out.println("Variable being processed: " + varName);
-						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(varName))).get(0);
+						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
 						GraphNode node;
 						if (webToNode.containsKey(curWeb)) {
 							System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
@@ -207,7 +208,7 @@ public class InterferenceGraph {
 						}
 						assignment.setNode(node);
 						
-						if (rd.getWebsMap().get(varName).size() != 1) {
+						if (rd.getWebsMap().get(decl).size() != 1) {
 							throw new RuntimeException("There should only be one Web for varName: " + varName);
 						}
 						addEdges(curWeb, node);

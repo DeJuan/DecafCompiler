@@ -3,6 +3,7 @@ package edu.mit.compilers.controlflow;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.regalloc.GraphNode;
 import edu.mit.compilers.regalloc.ReachingDefinition;
 import edu.mit.compilers.regalloc.Web;
@@ -34,7 +35,7 @@ public abstract class Statement {
 	}
 	
 	public void setWeb(Web web) {
-		String varName = web.getVarName();
-		this.rd.setWebs(varName, new HashSet<Web>(Arrays.asList(web)));
+		IR_FieldDecl decl = web.getFieldDecl();
+		this.rd.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
 	}
 }

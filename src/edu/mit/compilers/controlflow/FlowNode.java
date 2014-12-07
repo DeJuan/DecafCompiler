@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.regalloc.ReachingDefinition;
 import edu.mit.compilers.regalloc.Web;
 
@@ -76,9 +77,9 @@ public abstract class FlowNode {
 	}
 	
 	public void setWeb(Web web) {
-		String varName = web.getVarName();
-		this.IN.setWebs(varName, new HashSet<Web>(Arrays.asList(web)));
-		this.OUT.setWebs(varName, new HashSet<Web>(Arrays.asList(web)));
+		IR_FieldDecl decl = web.getFieldDecl();
+		this.IN.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+		this.OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
 	}
 	
 }

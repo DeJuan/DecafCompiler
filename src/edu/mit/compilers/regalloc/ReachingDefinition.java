@@ -8,16 +8,17 @@ import java.util.Set;
 
 import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.Statement;
+import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class ReachingDefinition {
 	
-	private HashMap<String, HashSet<Web>> webs = new HashMap<String, HashSet<Web>>();
+	private HashMap<IR_FieldDecl, HashSet<Web>> webs = new HashMap<IR_FieldDecl, HashSet<Web>>();
 	public ReachingDefinition() {}
 	
 	public ReachingDefinition(ReachingDefinition rd) {
 		// copy everything but the Web.
-		HashMap<String, HashSet<Web>> webMapToCopy = rd.getWebsMap();
-		for (String key : webMapToCopy.keySet()) {
+		HashMap<IR_FieldDecl, HashSet<Web>> webMapToCopy = rd.getWebsMap();
+		for (IR_FieldDecl key : webMapToCopy.keySet()) {
 			HashSet<Web> setCopy = new HashSet<Web>(webMapToCopy.get(key));
 			webs.put(key, setCopy);
 		}
@@ -32,7 +33,7 @@ public class ReachingDefinition {
 		System.out.println("This webs: " + thisAllWebs);
 		System.out.println("Other webs: " + otherAllWebs);
 		for (Web web : otherAllWebs) {
-			System.out.println("Web: " + web.getVarName());
+			System.out.println("Web: " + web.getFieldDecl().getName());
 			if (!thisAllWebs.contains(web)) {
 				System.out.println("Different!");
 				return true;
@@ -42,11 +43,11 @@ public class ReachingDefinition {
 		
 	}
 	
-	public Web mergeWebs(String varName) {
-		Web newWeb = new Web(varName);
+	public Web mergeWebs(IR_FieldDecl decl) {
+		Web newWeb = new Web(decl);
 		System.out.println("Created web " + newWeb);
 		HashSet<Statement> startingStatements = new HashSet<Statement>();
-		for (Web web : webs.get(varName)) {
+		for (Web web : webs.get(decl)) {
 			for (Statement st : web.getStatements()) {
 				newWeb.addStatement(st);
 				st.setWeb(newWeb);
@@ -67,11 +68,11 @@ public class ReachingDefinition {
 	 */
 	public boolean merge() {
 		boolean didMerge = false;
-		for (String varName : webs.keySet()) {
-			Set<Web> webSet = webs.get(varName);
+		for (IR_FieldDecl decl : webs.keySet()) {
+			Set<Web> webSet = webs.get(decl);
 			if (webSet.size() > 1) {
-				Web newWeb = mergeWebs(varName);
-				setWebs(varName, new HashSet<Web>(Arrays.asList(newWeb)));
+				Web newWeb = mergeWebs(decl);
+				setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 				didMerge = true;
 			}
 		}
@@ -90,34 +91,34 @@ public class ReachingDefinition {
 		}
 	}
 	
-	public void setWebs(String varName, HashSet<Web> newWebs) {
+	public void setWebs(IR_FieldDecl decl, HashSet<Web> newWebs) {
 		System.out.println("I tried to set the web!!!");
-		webs.put(varName, newWebs);
+		webs.put(decl, newWebs);
 	}
 	
 	public void addWeb(Web web) {
-		String varName = web.getVarName();
+		IR_FieldDecl decl = web.getFieldDecl();
 		HashSet<Web> webSet;
-		if (webs.containsKey(varName)) {
-			webSet = webs.get(varName);
+		if (webs.containsKey(decl)) {
+			webSet = webs.get(decl);
 			webSet.add(web);
 		} else {
 			webSet = new HashSet<Web>();
 			webSet.add(web);
-			webs.put(varName, webSet);
+			webs.put(decl, webSet);
 		}
 	}
 	
 	public void removeWeb(Web web) {
-		String varName = web.getVarName();
-		if (webs.containsKey(varName)) {
+		IR_FieldDecl decl = web.getFieldDecl();
+		if (webs.containsKey(decl)) {
 			System.out.println("I'm removing a web!!!");
-			webs.get(varName).remove(web);
+			webs.get(decl).remove(web);
 		}
 	}
 	
-	public void removeWeb(String varName) {
-		HashSet<Web> curWebs = webs.get(varName);
+	public void removeWeb(IR_FieldDecl decl) {
+		HashSet<Web> curWebs = webs.get(decl);
 		int count = 1;
 		Iterator<Web> it = curWebs.iterator();
 		while (it.hasNext()) {
@@ -128,7 +129,7 @@ public class ReachingDefinition {
 		}
 	}
 	
-	public HashMap<String, HashSet<Web>> getWebsMap() {
+	public HashMap<IR_FieldDecl, HashSet<Web>> getWebsMap() {
 		return this.webs;
 	}
 	
@@ -145,7 +146,7 @@ public class ReachingDefinition {
 		System.out.println("Size of webs: " + getAllWebs().size());
 		StringBuilder sb = new StringBuilder();
 		for (Web web : getAllWebs()) {
-			sb.append(web.getVarName() + " ");
+			sb.append(web.getFieldDecl().getName() + " ");
 		}
 		return sb.toString();
 	}
