@@ -251,6 +251,10 @@ public class Optimizer {
                 for (Statement s : ((Codeblock) currentNode).getStatements()) {
                     if (s instanceof Assignment) {
                        allVarDecls.addAll(getVarIRsFromExpression(((Assignment) s).getValue()));
+                       Var lhs = ((Assignment) s).getDestVar();
+                       if (lhs.getIndex() != null) {
+                           allVarDecls.addAll(getVarIRsFromExpression(lhs.getIndex()));
+                       }
                     } else if (s instanceof MethodCallStatement) {
                         allVarDecls.addAll(getVarIRsFromExpression(((MethodCallStatement) s).getMethodCall()));
                     } else if (s instanceof Declaration) {
