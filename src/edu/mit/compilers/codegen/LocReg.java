@@ -11,4 +11,17 @@ public class LocReg extends LocationMem{
 	public LocType getType(){
 		return LocType.REG_LOC;
 	}
+	
+	public boolean equals(LocationMem other){
+		if(!(other instanceof LocReg)){
+			return false;
+		}
+		else{
+			LocReg otherLoc = (LocReg)other;
+			if(otherLoc.reg.name() == this.reg.name()){
+				return true;
+			}
+		}
+		return false;
+	}
 }
