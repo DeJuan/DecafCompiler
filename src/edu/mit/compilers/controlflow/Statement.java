@@ -12,6 +12,8 @@ public abstract class Statement {
 	
 	protected GraphNode node;
 	protected ReachingDefinition rd;
+	protected Bitvector liveMap;
+	
 	public enum StatementType{
 		ASSIGNMENT, METHOD_CALL_STATEMENT, DECLARATION
 	};
@@ -24,6 +26,14 @@ public abstract class Statement {
 	
 	public GraphNode getNode() {
 		return node;
+	}
+	
+	public Bitvector getLiveMap() {
+		return liveMap;
+	}
+	
+	public void setLiveMap(Bitvector liveMap) {
+		this.liveMap = liveMap;
 	}
 	
 	public ReachingDefinition getReachingDefinition() {

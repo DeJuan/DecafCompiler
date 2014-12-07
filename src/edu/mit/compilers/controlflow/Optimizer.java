@@ -149,8 +149,8 @@ public class Optimizer {
         else if(expr instanceof Ternary){
             Ternary tern = (Ternary)expr;
             allVars.addAll(getVarsFromExpression(tern.getTernaryCondition()));
-            allVars.addAll(getVarsFromExpression(tern.trueBranch));
-            allVars.addAll(getVarsFromExpression(tern.falseBranch));
+            allVars.addAll(getVarsFromExpression(tern.getTrueBranch()));
+            allVars.addAll(getVarsFromExpression(tern.getFalseBranch()));
         }
         else if(expr instanceof MethodCall){
             MethodCall MCHammer = (MethodCall)expr;
@@ -234,6 +234,50 @@ public class Optimizer {
             }
         }
         node.resetVisit();
+        return allVarDecls;
+    }
+    
+    public Set<IR_FieldDecl> getAllUsedDeclsInMethod(START node){
+        Set<IR_FieldDecl> allVarDecls = new HashSet<IR_FieldDecl>();
+        List<FlowNode> processing = new ArrayList<FlowNode>();
+        Set<FlowNode> seen = new HashSet<FlowNode>();
+        processing.add(node.getChildren().get(0));
+        while (!processing.isEmpty()) {
+            FlowNode currentNode = processing.remove(0);
+            if (seen.add(currentNode)) {
+                processing.addAll(currentNode.getChildren());
+            }
+            if (currentNode instanceof Codeblock) {
+                for (Statement s : ((Codeblock) currentNode).getStatements()) {
+                    if (s instanceof Assignment) {
+                       allVarDecls.addAll(getVarIRsFromExpression(((Assignment) s).getValue()));
+                       Var lhs = ((Assignment) s).getDestVar();
+                       if (lhs.getIndex() != null) {
+                           allVarDecls.addAll(getVarIRsFromExpression(lhs.getIndex()));
+                       }
+                    } else if (s instanceof MethodCallStatement) {
+                        allVarDecls.addAll(getVarIRsFromExpression(((MethodCallStatement) s).getMethodCall()));
+                    } else if (s instanceof Declaration) {
+                        continue;
+                    } else {
+                        throw new RuntimeException("Missed a case");
+                    }
+                }
+            } else if (currentNode instanceof Branch) {
+                allVarDecls.addAll(getVarIRsFromExpression(((Branch) currentNode).getExpr()));
+            } else if (currentNode instanceof NoOp) {
+                continue;
+            } else if (currentNode instanceof START) {
+                continue;
+            } else if (currentNode instanceof END) {
+                Expression ret = ((END) currentNode).getReturnExpression();
+                if (ret != null) {
+                    allVarDecls.addAll(getVarIRsFromExpression(ret));
+                }
+            } else {
+                throw new RuntimeException("missed a case");
+            }
+        }
         return allVarDecls;
     }
 
@@ -779,7 +823,7 @@ public class Optimizer {
 					vectorStorageOUT.put(currentNode, newOut);
 					if(!changed){
 						for(FlowNode parent : currentNode.getParents()){
-							if(!parent.visited){
+							if(!parent.visited()){
 								if(!processing.contains(parent)){
 									processing.add(parent);
 									//System.err.println("Just added parent " + parent + "of current node " + currentNode);
@@ -1702,7 +1746,7 @@ public class Optimizer {
     
     private void clearUnusedDeclarations(START beginMethod){
         Set<FlowNode> seen = new HashSet<FlowNode>();
-        Set<IR_FieldDecl> assigned = getAllFieldDeclsInMethod(beginMethod);
+        Set<IR_FieldDecl> assigned = getAllUsedDeclsInMethod(beginMethod);
         List<FlowNode> processing = new ArrayList<FlowNode>();
         processing.add(beginMethod.getChildren().get(0));
         seen = new HashSet<FlowNode>();

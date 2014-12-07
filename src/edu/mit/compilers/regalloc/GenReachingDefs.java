@@ -2,11 +2,9 @@ package edu.mit.compilers.regalloc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.Branch;
@@ -14,29 +12,18 @@ import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.controlflow.Codeblock;
 import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.FlowNode;
-import edu.mit.compilers.controlflow.Optimizer;
 import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.ir.IR_FieldDecl;
-import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class GenReachingDefs {
 	
-	private ControlflowContext context;
-	private List<IR_MethodDecl> calloutList;
-	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
-	private Optimizer optimizer;
 	
 	private HashMap<FlowNode, FlowNode> whileParent = new HashMap<FlowNode, FlowNode>();
 	
-	public GenReachingDefs(ControlflowContext context, 
-			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
-		this.context = context;
-		this.calloutList = callouts;
-		this.globalList = globals;
+	public GenReachingDefs(ControlflowContext context, HashMap<String, START> flowNodes){
 		this.flowNodes = flowNodes;
-		this.optimizer = new Optimizer(context, callouts, globals, flowNodes);
 	}
 	
 	public List<FlowNode> getAllFlowNodes(START initialNode) {

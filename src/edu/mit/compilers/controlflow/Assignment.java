@@ -72,10 +72,10 @@ public class Assignment extends Statement {
 	public StatementType getStatementType() {
 		return StatementType.ASSIGNMENT;
 	}
-	/*
+	
 	@Override
 	public String toString(){
 		return destVar.getName() + " = some expression";
-	}*/
+	}
 
 }
