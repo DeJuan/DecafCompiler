@@ -28,6 +28,9 @@ public class Assignment extends Statement {
 	}
 	
 	public LocReg getRegister() {
+		if (this.getNode() == null) {
+			return null;
+		}
 		Regs reg = this.getNode().getRegister();
 		if (reg != null) {
 			return new LocReg(reg);

@@ -28,9 +28,6 @@ public class GenReachingDefs {
 	private HashMap<String, START> flowNodes;
 	private Optimizer optimizer;
 	
-	private HashMap<FlowNode, ReachingDefinition> IN = new HashMap<FlowNode, ReachingDefinition>();
-	private HashMap<FlowNode, ReachingDefinition> OUT = new HashMap<FlowNode, ReachingDefinition>();
-	
 	private HashMap<FlowNode, FlowNode> whileParent = new HashMap<FlowNode, FlowNode>();
 	
 	public GenReachingDefs(ControlflowContext context, 
@@ -89,6 +86,14 @@ public class GenReachingDefs {
 			if (st instanceof Assignment) {
 				Assignment assign = (Assignment) st;
 				String varName = assign.getDestVar().getName();
+				if (assign.getDestVar().isArray()) {
+					System.out.println("RD: " + rd);
+					st.setReachingDefinition(rd);
+					rd.setStatements(st);
+					System.out.println(rd.getAllWebs());
+					System.out.println("\"" + varName + "\" is an array. Skipping.");
+					continue;
+				}
 				IR_FieldDecl decl = assign.getDestVar().getFieldDecl();
 				Web gen = new Web(decl, st, (FlowNode) node);
 				System.out.println("\n======= Assigning to: " + varName);
@@ -123,10 +128,8 @@ public class GenReachingDefs {
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
 			System.out.println("Number of FlowNodes: " + listFlowNodes.size());
 			LinkedHashSet<FlowNode> changed = new LinkedHashSet<FlowNode>(); // this will change
-			//IN.put(initialNode, new ReachingDefinition());
 			initialNode.setIN(new ReachingDefinition());
 			for (FlowNode flowNode : listFlowNodes) {
-				//OUT.put(flowNode, new ReachingDefinition());
 				flowNode.setOUT(new ReachingDefinition());
 				changed.add(flowNode);
 			}
@@ -140,12 +143,9 @@ public class GenReachingDefs {
 				it.remove();
 				System.out.println(n.getClass());
 				
-				//IN.put(n, new ReachingDefinition());
 				n.setIN(new ReachingDefinition());
 				for (FlowNode p : n.getParents()) {
 					System.out.println("Parents class: " + p.getClass());
-					//ReachingDefinition unionReachDef = union(IN.get(n), OUT.get(p));
-					//IN.put(n, unionReachDef);
 					ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
 					n.setIN(unionReachDef);
 				}
@@ -163,17 +163,12 @@ public class GenReachingDefs {
 				
 				ReachingDefinition OUTn;
 				if (n instanceof Codeblock) {
-					//OUTn = generateCodeblockOUT((Codeblock) n, IN.get(n));
 					OUTn = generateCodeblockOUT((Codeblock) n, n.getIN());
 				} else {
-					//OUTn = IN.get(n);
 					OUTn = n.getIN();
-					//n.setReachingDefinition(OUTn);
 				}
-				//System.out.println("OLD OUT: " + OUT.get(n));
 				System.out.println("OLD OUT: " + n.getOUT());
 				System.out.println("NEW OUT: " + OUTn);
-				//if (OUT.get(n).changed(OUTn)) {
 				if (n.getOUT().changed(OUTn)) {
 					System.out.println("Changed!");
 					for (FlowNode s : n.getChildren()) {
@@ -186,7 +181,6 @@ public class GenReachingDefs {
 						changed.add(s);
 					}
 				}
-				//OUT.put(n, OUTn);
 				n.setOUT(OUTn);
 				n.getOUT().setFlowNodes(n);
 				loopLimit++;

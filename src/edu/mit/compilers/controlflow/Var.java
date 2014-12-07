@@ -87,6 +87,10 @@ public class Var extends Expression {
 	    index = newInd;
 	}
 	
+	public boolean isArray() {
+	    return (index != null);
+	}
+	
 	public void setValueID(ValueID val){
 	    this.val = val;
 	}

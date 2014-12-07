@@ -563,10 +563,13 @@ public class AssignRegisters {
     private static List<Instruction>  generateVarExpr(Var var,
             ControlflowContext context) {
     	String varName = var.getName();
-    	LocReg reg = context.findRegister(varName);
-    	if (reg != null) {
-    		System.out.println("\"" + varName + "\" has a register location: " + reg);
-    		var.setColorReg(reg);
+    	if (!var.isArray()) {
+    		// We only assign registers to non-array variables.
+	    	LocReg reg = context.findRegister(varName);
+	    	if (reg != null) {
+	    		System.out.println("\"" + varName + "\" has a register location: " + reg);
+	    		var.setColorReg(reg);
+	    	}
     	}
         List<Instruction> ins = new ArrayList<Instruction>();
         LocationMem loc = generateVarLoc(var, context, ins);
@@ -772,10 +775,13 @@ public class AssignRegisters {
         Expression rhs = assign.getValue();
         ins.addAll(generateExpression(rhs,context));
         
-        LocReg reg = assign.getRegister();
-        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
-        lhs.setColorReg(reg);
-        context.putRegister(lhs.getName(), reg);
+        if (!lhs.isArray()) {
+        	// We only assign registers to non-arrays variables.
+	        LocReg reg = assign.getRegister();
+	        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
+	        lhs.setColorReg(reg);
+	        context.putRegister(lhs.getName(), reg);
+        }
         
         LocReg r10 = new LocReg(Regs.R10);
         LocReg r11 = new LocReg(Regs.R11);

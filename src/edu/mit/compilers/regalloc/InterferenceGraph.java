@@ -193,6 +193,10 @@ public class InterferenceGraph {
 					if (st instanceof Assignment){	
 						Assignment assignment = (Assignment) st;
 						String varName = assignment.getDestVar().getName();
+						if (assignment.getDestVar().isArray()) {
+							System.out.println("\"" + varName + "\" is an array. Skipping.");
+							continue;
+						}
 						IR_FieldDecl decl = assignment.getDestVar().getFieldDecl();
 						System.out.println("Variable being processed: " + varName);
 						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
