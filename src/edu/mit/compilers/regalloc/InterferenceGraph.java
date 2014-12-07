@@ -94,12 +94,23 @@ public class InterferenceGraph {
 		bitMatrix.remove(new HashSet<GraphNode>(Arrays.asList(from, to)));
 	}
 	
-	private void addEdges(Web curWeb, GraphNode node) {
+	private boolean addEdges(Web curWeb, GraphNode node) {
+		boolean done = true;
 		ReachingDefinition rd = node.getReachingDefinition();
 		for (Web web : rd.getAllWebs()) {
 			if (!curWeb.equals(web)) {
 				if (!webToNode.containsKey(web)) {
-					throw new RuntimeException("webToNode should always contain the key for web: " + web.getFieldDecl().getName() + ". " + web);
+					// This happens when the RD contains a web that has not been put in the webToNode map yet. For example:
+					// int a,b,c;
+					// for (b=0, 10) {
+					//   a = 1;  <-- RD contains web of c, even though it hasn't been put in map yet.
+					//   c = 1;
+					// }
+					// Thus, we need to process it later.
+					System.out.println("We do not yet have the web for var: " + web.getFieldDecl().getName() + ". Need to reprocess.");
+					done = false;
+					continue;
+					//throw new RuntimeException("webToNode should always contain the key for web: " + web.getFieldDecl().getName() + ". " + web);
 				}
 				addEdge(node, webToNode.get(web));
 			}
@@ -108,6 +119,7 @@ public class InterferenceGraph {
 		if (!adjList.containsKey(node)) {
 			adjList.put(node, new HashSet<GraphNode>());
 		}
+		return done;
 	}
 	
 	/**
@@ -148,74 +160,51 @@ public class InterferenceGraph {
 			Set<Codeblock> listOfCodeblocks = new LinkedHashSet<Codeblock>();
 			List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 			scanning.add(initialNode);
-			//nodeToLevel.put((FlowNode) initialNode, 1);
 			addCodeBlocks(listOfCodeblocks, initialNode, 1);
 			
-			/*
-			while(!scanning.isEmpty()){ //scan through all nodes and create listing.
-				FlowNode currentNode = scanning.remove(0);
-				System.out.println("Current node: " + currentNode.toString());
-				//int currentLevel = nodeToLevel.get(currentNode);
-				currentNode.visit();
-				if(currentNode instanceof Codeblock){
-					listOfCodeblocks.add((Codeblock)currentNode);
-				}
-				for (FlowNode child : currentNode.getChildren()){
-					if(!child.visited()){
-						scanning.add(child);
-						/*
-						int nextLevel = currentLevel;
-						if (currentNode instanceof NoOp) {
-							nextLevel--;
-						}
-						if (child instanceof Branch) {
-							nextLevel++;
-						}
-						//System.out.println("Level for child " + child.toString() + ": " + nextLevel);
-						nodeToLevel.put(child, nextLevel);
-						*//*
-					}
-				}
-			}*/	
 			initialNode.resetVisit(); //fix the visited parameters.
 			
 			for (Codeblock cblock : listOfCodeblocks){
-				System.out.println("New codeblock: " + cblock.toString());
-				//int blockLevel = nodeToLevel.get((FlowNode) cblock);
-				//removePrevLevels(blockLevel);
-				//System.out.println("Level: " + blockLevel);
 				List<Statement> statementList = cblock.getStatements();
-				Iterator<Statement> statementIter = statementList.iterator();
-				while(statementIter.hasNext()){
-					Statement st = statementIter.next();
-					ReachingDefinition rd = st.getReachingDefinition();
-					System.out.println("RD size: " + rd.getAllWebs().size());
-					if (st instanceof Assignment){	
-						Assignment assignment = (Assignment) st;
-						String varName = assignment.getDestVar().getName();
-						if (assignment.getDestVar().isArray()) {
-							System.out.println("\"" + varName + "\" is an array. Skipping.");
-							continue;
+				boolean complete = false;
+				while (!complete) {
+					System.out.println("\n====== Processing codeblock: " + cblock.toString());
+					complete = true;
+					Iterator<Statement> statementIter = statementList.iterator();
+					while(statementIter.hasNext()){
+						Statement st = statementIter.next();
+						ReachingDefinition rd = st.getReachingDefinition();
+						System.out.println("RD size: " + rd.getAllWebs().size());
+						if (st instanceof Assignment){	
+							Assignment assignment = (Assignment) st;
+							String varName = assignment.getDestVar().getName();
+							if (assignment.getDestVar().isArray()) {
+								System.out.println("\"" + varName + "\" is an array. Skipping.");
+								continue;
+							}
+							IR_FieldDecl decl = assignment.getDestVar().getFieldDecl();
+							System.out.println("Variable being processed: " + varName);
+							Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
+							GraphNode node;
+							if (webToNode.containsKey(curWeb)) {
+								System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
+								node = webToNode.get(curWeb);
+							} else {
+								node = new GraphNode(assignment);
+								System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
+								webToNode.put(curWeb, node);
+								nodes.add(node);
+							}
+							assignment.setNode(node);
+							
+							if (rd.getWebsMap().get(decl).size() != 1) {
+								throw new RuntimeException("There should only be one Web for varName: " + varName);
+							}
+							if (!addEdges(curWeb, node)) {
+								// there are webs that are needed that haven't been defined yet.
+								complete = false;
+							}
 						}
-						IR_FieldDecl decl = assignment.getDestVar().getFieldDecl();
-						System.out.println("Variable being processed: " + varName);
-						Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
-						GraphNode node;
-						if (webToNode.containsKey(curWeb)) {
-							System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
-							node = webToNode.get(curWeb);
-						} else {
-							node = new GraphNode(assignment);
-							System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
-							webToNode.put(curWeb, node);
-							nodes.add(node);
-						}
-						assignment.setNode(node);
-						
-						if (rd.getWebsMap().get(decl).size() != 1) {
-							throw new RuntimeException("There should only be one Web for varName: " + varName);
-						}
-						addEdges(curWeb, node);
 					}
 				}
 			}

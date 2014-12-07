@@ -54,7 +54,7 @@ public class Coloring {
 	public void assignColors() {
 		while (!removedNodes.empty()) {
 			GraphNode node = removedNodes.pop();
-			System.out.println("Variable: " + node.getVarName());
+			System.out.println("\n========== Variable: " + node.getVarName());
 			Set<GraphNode> neighbors = graph.getAdjList().get(node);
 			System.out.println("Neighbors size: " + neighbors.size());
 			Set<Regs> asssignedRegisters = getAssignedRegisters(neighbors);

@@ -84,10 +84,15 @@ public class GenReachingDefs {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
 			if (st instanceof Assignment) {
+				System.out.println("\n=======");
+				System.out.println("Statement: " + st);
 				Assignment assign = (Assignment) st;
 				String varName = assign.getDestVar().getName();
 				if (assign.getDestVar().isArray()) {
 					System.out.println("RD: " + rd);
+					if (rd == null) {
+						throw new RuntimeException("NULL RD");
+					}
 					st.setReachingDefinition(rd);
 					rd.setStatements(st);
 					System.out.println(rd.getAllWebs());
@@ -95,27 +100,56 @@ public class GenReachingDefs {
 					continue;
 				}
 				IR_FieldDecl decl = assign.getDestVar().getFieldDecl();
-				Web gen = new Web(decl, st, (FlowNode) node);
-				System.out.println("\n======= Assigning to: " + varName);
-				System.out.println("Created web " + gen);
-				boolean addWeb = true;
+				System.out.println("Assigning to: " + varName);
+				Boolean addWeb = true;
 				if (rd.getWebsMap().containsKey(decl)) {
-					if (!(new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0).getStartingStatements().contains(st)) {
-						// Not the same web.
-						System.out.println("Killing var: " + varName);
-						rd.removeWeb(decl);
-					} else {
-						System.out.println("This is actually the same web. No change to webs.");
-						addWeb = false;
+					Web existingWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
+					System.out.println("Web: " + existingWeb + " size: " + rd.getWebsMap().get(decl).size());
+					
+					if (st.getReachingDefinition() != null && st.getReachingDefinition().getWebsMap().containsKey(decl)) {
+						Web origAssignmentWeb = (new ArrayList<Web>(st.getReachingDefinition().getWebsMap().get(decl))).get(0);
+						if (!origAssignmentWeb.equals(existingWeb)) {
+							// Must union the two webs because they overlap
+							// Used for the following case:
+							// int a, b;
+							// for (b=0, 10) {
+							//   a = 1;  <-- An alternate web for a could technically exist before assignment
+							//   a = 2;
+							// }
+							// Note: if a is assigned the for loop, then there would be no issue because the webs would be merged.
+							// Note 2: Union is probably not completely necessary - we could probably just use the original web.
+							System.out.println("Weird case happened here where we have to union mid-statement.");
+							rd = union(st.getReachingDefinition(), rd);
+							addWeb = false;
+						}
+					}
+					if (addWeb) {
+						if (!(existingWeb.getStartingStatements().contains(st))) {
+							// Not the same web.
+							System.out.println("Size of starting Statements: " + existingWeb.getStartingStatements().size());
+							for (Statement s : existingWeb.getStartingStatements()) {
+								System.out.println(((Assignment) s).getDestVar().getName() + ": " + s);
+							}
+							System.out.println("Killing var: " + varName);
+							rd.removeWeb(decl);
+						} else {
+							addWeb = false;
+							System.out.println("This is actually the same web. No change to webs.");
+						}
 					}
 				}
 				System.out.println("Before adding web: " + rd);
 				if (addWeb) {
-					rd.addWeb(gen);
+					Web web = new Web(decl, st, (FlowNode) node);
+					System.out.println("Created web " + web);
+					rd.addWeb(web);
 				}
 				System.out.println("After adding web: " + rd);
 			}
 			System.out.println("RD: " + rd);
+			if (rd == null) {
+				throw new RuntimeException("NULL RD");
+			}
 			st.setReachingDefinition(rd);
 			rd.setStatements(st);
 			System.out.println(rd.getAllWebs());
@@ -137,7 +171,7 @@ public class GenReachingDefs {
 			
 			int loopLimit = 1;
 			while (!changed.isEmpty()) {
-				System.out.println("\n========== " + loopLimit);
+				System.out.println("\n" + loopLimit + " ===================================");
 				Iterator<FlowNode> it = changed.iterator();
 				FlowNode n = it.next();
 				it.remove();

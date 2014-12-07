@@ -32,6 +32,9 @@ public abstract class Statement {
 	
 	public void setReachingDefinition(ReachingDefinition rd) {
 		this.rd = new ReachingDefinition(rd);
+		if (this.rd == null) {
+			throw new RuntimeException("NULL RD");
+		}
 	}
 	
 	public void setWeb(Web web) {

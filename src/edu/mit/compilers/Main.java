@@ -273,7 +273,7 @@ class Main {
 							  System.out.println("\nColoring nodes\n===================================");
 							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
-							  System.out.println("Number of spilled nodes: " + spillNodes.size());
+							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());
 							  System.out.println("\nGenerating Assembly for program\n===================================");
 							  AssignRegisters.generateProgram(assignments, spillNodes, callouts, globals, flowNodes);
 						  }
