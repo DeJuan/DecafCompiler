@@ -421,7 +421,7 @@ public class SPSet {
     		}
     	}
     	else if(operator == Ops.TIMES){
-    		long product = 0;
+    		long product = 1;
     		Iterator<Long> intSetIter = intSet.iterator();
     		while(intSetIter.hasNext()){
     			Long nextNumber = intSetIter.next();
