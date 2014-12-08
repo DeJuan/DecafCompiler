@@ -617,11 +617,11 @@ public class AssignRegisters {
         String tLabel = context.genLabel();
         String fLabel = context.genLabel();
 
-        ShortCircuitNode.SCLabel t = new ShortCircuitNode.SCLabel(tLabel);
-        ShortCircuitNode.SCLabel f = new ShortCircuitNode.SCLabel(fLabel);
+        ShortCircuitNodeReg.SCLabel t = new ShortCircuitNodeReg.SCLabel(tLabel);
+        ShortCircuitNodeReg.SCLabel f = new ShortCircuitNodeReg.SCLabel(fLabel);
         String endLabel = context.genLabel();
 
-        ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
+        ShortCircuitNodeReg cfg = ShortCircuitNodeReg.shortCircuit(expr, t, f);
 
         List<Instruction> ins = cfg.codegen(context);
 
@@ -897,10 +897,7 @@ public class AssignRegisters {
     }
 
     private static LocationMem generateVarLoc(Var var, ControlflowContext context, List<Instruction> ins) {
-        System.out.println("========== VARLOC BEING CALLED ===========: " + var.getName());
-	System.out.println("WHAT");
     	if (!var.isArray()) {
-		System.out.println("WHAT");
     		// We only assign registers to non-array variables.
 	    	//LocReg reg = context.findRegister(varName);
     		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
@@ -908,9 +905,7 @@ public class AssignRegisters {
 	    	if (reg != null) {
 			return reg;
 	    	}
-    	} else {
-		System.out.println("Something is wrong");
-        }
+    	}
         Descriptor d = context.findSymbol(var.getName());
         switch (d.getIR().getType()) {
         case INT:
