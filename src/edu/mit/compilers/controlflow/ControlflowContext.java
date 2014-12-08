@@ -331,11 +331,11 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
-    		if(currentIns == null || !currentIns.equals("jmp")){continue;}
+    		if(currentIns == null || !currentIns.startsWith("j")){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
-    		if(nextIns == null || !(nextInstruction.args.get(0) instanceof LocLabel)){continue;}
-    		if(currentInstruction.args.get(0).equals(nextInstruction.args.get(0))){
+    		if(nextIns == null || nextInstruction.label.equals("")){continue;}
+    		if(((LocLabel)currentInstruction.args.get(0)).label.equals(nextInstruction.label)){
     			instructionsToDelete.add(currentInstruction);
     			ii++;
     		}
@@ -349,10 +349,10 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
-    		if(currentIns == null){continue;}
+    		if(currentIns == null || instructionsToDelete.contains(currentInstruction)){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
-    		if(nextIns == null){continue;}
+    		if(nextIns == null || instructionsToDelete.contains(nextInstruction)){continue;}
     		if(currentIns.startsWith("pu")){ //efficiency hack; check pu instead of full push
     			if(!nextIns.startsWith("po")){ //same as above, po vs pop
     				continue;
@@ -376,10 +376,29 @@ public class ControlflowContext {
     			int rightBound = ii+2;
     			if(leftBound < 0 || rightBound >= ins.size()){continue;}
     			while(true){
+    				boolean needToBreak = false;
     				Instruction leftInst = ins.get(leftBound); //left instruction
+    					while(instructionsToDelete.contains(leftInst)){
+    						leftBound-=1;
+    						if(leftBound < 0){
+    							needToBreak = true; 
+    							break;
+    						}
+    						leftInst = ins.get(leftBound);
+    					}
+    				if(needToBreak){break;}
     				String leftCmd = leftInst.cmd; //left command
     				if(leftCmd == null){break;}
     				Instruction rightInst = ins.get(rightBound);
+    					while(instructionsToDelete.contains(rightInst)){
+    						rightBound+=1;
+    						if(rightBound >= ins.size()){
+    							needToBreak = true;
+    							break;
+    						}
+    						rightInst = ins.get(rightBound);
+    					}
+    				if(needToBreak){break;}
     				String rightCmd = rightInst.cmd;
     				if(rightCmd == null){break;}
     				if(leftCmd.startsWith("pu")){ 
@@ -414,7 +433,7 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
-    		if(currentIns == null){continue;}
+    		if(currentIns == null || instructionsToDelete.contains(currentInstruction)){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
     		if(nextIns == null){continue;}
@@ -438,10 +457,29 @@ public class ControlflowContext {
     				continue;
     			}
     			while(true){
+    				boolean needToBreak = false;
     				Instruction leftInst = ins.get(leftBound); //left instruction
+    					while(instructionsToDelete.contains(leftInst)){
+    						leftBound-=1;
+    						if(leftBound < 0){
+    							needToBreak = true; 
+    							break;
+    						}
+    						leftInst = ins.get(leftBound);
+    					}
+    				if(needToBreak){break;}
     				String leftCmd = leftInst.cmd; //left command
-    				if (leftCmd == null){break;}
+    				if(leftCmd == null){break;}
     				Instruction rightInst = ins.get(rightBound);
+    					while(instructionsToDelete.contains(rightInst)){
+    						rightBound+=1;
+    						if(rightBound >= ins.size()){
+    							needToBreak = true;
+    							break;
+    						}
+    						rightInst = ins.get(rightBound);
+    					}
+    				if(needToBreak){break;}
     				String rightCmd = rightInst.cmd;
     				if(rightCmd == null){break;}
     				if(leftCmd.startsWith("pu")){ 
