@@ -771,7 +771,7 @@ public class AssignRegisters {
         if (!lhs.isArray()) {
         	// We only assign registers to non-arrays variables.
 	        LocReg reg = assign.getRegister();
-	        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
+	        System.out.println("Def: " + lhs.getName() + ": " + reg);
 	        lhs.setColorReg(reg);
 	        fieldDeclToReg.put(lhs.getFieldDecl(), reg);
 	        context.putRegister(lhs.getName(), reg);
@@ -901,7 +901,7 @@ public class AssignRegisters {
     		// We only assign registers to non-array variables.
 	    	//LocReg reg = context.findRegister(varName);
     		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
-	    	System.out.println("\"" + var.getName() + "\" has register location: " + reg);
+	    	System.out.println("Use: " + var.getName() + ": " + reg);
 	    	if (reg != null) {
 			return reg;
 	    	}
