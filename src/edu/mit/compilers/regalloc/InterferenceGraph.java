@@ -373,10 +373,9 @@ public class InterferenceGraph {
 				GraphNode from = webToNode.get(web);
 				for (Web toWeb : allWebsInOtherMethods) {
 					GraphNode to = webToNode.get(toWeb);
-					if (to == null || from == null) {
-						throw new RuntimeException("Somethign is wrong.");
+					if (to != null && from != null) {
+						addEdge(from, to);
 					}
-					addEdge(from, to);
 				}
 			}
 		}
