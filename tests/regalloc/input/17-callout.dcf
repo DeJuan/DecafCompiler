@@ -1,0 +1,12 @@
+callout printf;
+void foo(boolean a) {
+	
+}
+
+void main() {
+	boolean a;
+	a = true;
+	//a = !a;
+	foo(!a);
+	//printf("%d", a); // Register corresponds to loc of "a" in if loop.
+}

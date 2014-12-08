@@ -1,13 +1,13 @@
 callout printf;
 int a;
-void read() {
-  a = 1;
+void read(int b) {
+  a = b;
 }
 void write() {
   printf("%d", a);
 }
 
 void main() {
-  read();
+  read(5);
   write();
 }
