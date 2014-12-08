@@ -377,9 +377,8 @@ public class InterferenceGraph {
 		for (START initialNode : flowNodes.values()) {
 			System.out.println("====== Method name: " + STARTToName.get(initialNode));
 			HashSet<Web> allWebsInOtherMethods = new HashSet<Web>();
-			for (START method : methodToMethodCalls.get(initialNode)) {
-				// all methods that are called from initialNode.
-				// All webs between them must have edges.
+			for (START method : websForEachMethod.keySet()) {
+				// get all methods. All webs between them must have edges.
 				System.out.println(STARTToName.get(method));
 				if (method != null && !method.equals(initialNode)) {
 					// not own method.
