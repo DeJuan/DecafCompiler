@@ -803,7 +803,6 @@ public class AssignRegisters {
     }
 
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
-        System.out.println("GENERATECALL BEING CALLED");
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
         for(int ii = 0; ii < args.size(); ii++){
