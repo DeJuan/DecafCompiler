@@ -413,7 +413,7 @@ public class Assembler {
         return stIns;
     }
 
-    private static NoOp findNop(Branch begin) {
+    public static NoOp findNop(Branch begin) {
         if (begin.getType() != BranchType.IF) {
             return (NoOp) begin.getFalseBranch();
         }

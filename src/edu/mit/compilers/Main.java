@@ -37,6 +37,7 @@ import edu.mit.compilers.regalloc.CountUses;
 import edu.mit.compilers.regalloc.GenReachingDefs;
 import edu.mit.compilers.regalloc.GraphNode;
 import edu.mit.compilers.regalloc.InterferenceGraph;
+import edu.mit.compilers.regalloc.Web;
 import edu.mit.compilers.tools.CLI;
 import edu.mit.compilers.tools.CLI.Action;
 
@@ -299,13 +300,13 @@ class Main {
 				    		  System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
 				    		  System.out.println("\nGenerating Reaching Definitions\n===================================");
 				    		  GenReachingDefs genRDs = new GenReachingDefs(globals, flowNodes);
-				    		  genRDs.run();
+				    		  HashMap<START, HashSet<Web>> websForEachMethod = genRDs.run();
 				    		  System.out.println("\nBuilding Interference Graph\n===================================");
-							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
+							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes, websForEachMethod);
 							  ig.generateLivenessMap();
 							  ig.buildGraph();
 							  System.out.println("\nColoring nodes\n===================================");
-							  Coloring coloring = new Coloring(ig, 8, fieldDeclToSpillCost);
+							  Coloring coloring = new Coloring(ig, 4, fieldDeclToSpillCost);
 							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
 							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());

@@ -32,6 +32,9 @@ public class AssignRegisters {
 	static HashSet<GraphNode> assignments; 
 	static HashSet<GraphNode> spilledNodes;
 	static HashMap<IR_FieldDecl, LocReg> fieldDeclToReg = new HashMap<IR_FieldDecl, LocReg>();
+	
+	static HashSet<IR_FieldDecl> assignedVars = new HashSet<IR_FieldDecl>(); // hack to deal with use before assignment
+	static HashSet<IR_FieldDecl> usedBeforeAssignment = new HashSet<IR_FieldDecl>(); // hack to deal with use before assignment
 
     public static void setUp(ControlflowContext context, 
             List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals,
@@ -564,15 +567,6 @@ public class AssignRegisters {
     private static List<Instruction>  generateVarExpr(Var var,
             ControlflowContext context) {
     	String varName = var.getName();
-    	if (!var.isArray()) {
-    		// We only assign registers to non-array variables.
-	    	//LocReg reg = context.findRegister(varName);
-    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
-	    	System.out.println("\"" + varName + "\" has register location: " + reg);
-	    	if (reg != null) {
-	    		var.setColorReg(reg);
-	    	}
-    	}
         List<Instruction> ins = new ArrayList<Instruction>();
         LocationMem loc = generateVarLoc(var, context, ins);
         ins.addAll(context.push(loc));
@@ -626,11 +620,11 @@ public class AssignRegisters {
         String tLabel = context.genLabel();
         String fLabel = context.genLabel();
 
-        ShortCircuitNode.SCLabel t = new ShortCircuitNode.SCLabel(tLabel);
-        ShortCircuitNode.SCLabel f = new ShortCircuitNode.SCLabel(fLabel);
+        ShortCircuitNodeReg.SCLabel t = new ShortCircuitNodeReg.SCLabel(tLabel);
+        ShortCircuitNodeReg.SCLabel f = new ShortCircuitNodeReg.SCLabel(fLabel);
         String endLabel = context.genLabel();
 
-        ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
+        ShortCircuitNodeReg cfg = ShortCircuitNodeReg.shortCircuit(expr, t, f);
 
         List<Instruction> ins = cfg.codegen(context);
 
@@ -778,12 +772,23 @@ public class AssignRegisters {
         ins.addAll(generateExpression(rhs,context));
         
         if (!lhs.isArray()) {
+        	IR_FieldDecl decl = lhs.getFieldDecl();
+        	usedBeforeAssignment.add(decl);
         	// We only assign registers to non-arrays variables.
-	        LocReg reg = assign.getRegister();
-	        System.out.println("The assignment for " + lhs.getName() + " has reg: " + reg);
+        	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
+        		// used before assigned
+        		System.out.println("USED BEFORE ASSIGNMENT: " + decl.getName());
+        		usedBeforeAssignment.add(decl);
+        		assignedVars.add(decl);
+        	}
+        	LocReg reg = assign.getRegister();
+        	if (usedBeforeAssignment.contains(decl))
+        		reg = null;
+	        System.out.println("Def: " + lhs.getName() + ": " + reg);
 	        lhs.setColorReg(reg);
-	        fieldDeclToReg.put(lhs.getFieldDecl(), reg);
+	        fieldDeclToReg.put(decl, reg);
 	        context.putRegister(lhs.getName(), reg);
+	        assignedVars.add(decl);
         }
         
         LocReg r10 = new LocReg(Regs.R10);
@@ -905,6 +910,22 @@ public class AssignRegisters {
     }
 
     private static LocationMem generateVarLoc(Var var, ControlflowContext context, List<Instruction> ins) {
+    	if (!var.isArray()) {
+    		// We only assign registers to non-array variables.
+    		IR_FieldDecl decl = var.getFieldDecl();
+    		if (!usedBeforeAssignment.contains(decl) && assignedVars.contains(decl)) {
+	    		// that have been assigned previously (not just declared).
+		    	//LocReg reg = context.findRegister(varName);
+	    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
+		    	System.out.println("Use: " + var.getName() + ": " + reg);
+		    	if (reg != null) {
+		    		return reg;
+		    	}
+	    	} else {
+	    		System.out.println("heheh: " + decl.getName());
+	    		usedBeforeAssignment.add(decl);
+	    	}
+    	}
         Descriptor d = context.findSymbol(var.getName());
         switch (d.getIR().getType()) {
         case INT:
