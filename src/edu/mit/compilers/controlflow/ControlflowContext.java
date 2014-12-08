@@ -333,8 +333,7 @@ public class ControlflowContext {
     		String currentIns = currentInstruction.cmd;
     		if(currentIns == null || !currentIns.startsWith("j")){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
-    		String nextIns = nextInstruction.cmd;
-    		if(nextIns == null || nextInstruction.label.equals("")){continue;}
+    		if(nextInstruction.label.equals("")){continue;}
     		if(((LocLabel)currentInstruction.args.get(0)).label.equals(nextInstruction.label)){
     			instructionsToDelete.add(currentInstruction);
     			ii++;
