@@ -2,6 +2,7 @@ package edu.mit.compilers.controlflow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -75,6 +76,8 @@ public class SPSet {
                 containsMethodCalls = comp.containsMethodCalls();
             }
         }
+        
+        applyConstantFolding();
     }
 
     public SPSet(Expression expr){
@@ -250,6 +253,8 @@ public class SPSet {
         } else {
             throw new UnsupportedOperationException("Tried to initialize an SPSet with an invalid operator.");
         }
+        
+        applyConstantFolding();
     }
 
     private static void populateSPSet(SPSet outer, BinExpr expr) {
@@ -401,6 +406,102 @@ public class SPSet {
 
     }
 
+    public void applyConstantFolding(){
+    	if(operator == Ops.PLUS){
+    		long sum = 0;
+    		Iterator<Long> intSetIter = intSet.iterator();
+    		while(intSetIter.hasNext()){
+    			Long nextNumber = intSetIter.next();
+    			sum += nextNumber;
+    			intSetIter.remove();
+    		}
+    		addToIntSet(new IntLit(sum));
+    		if(SPSets.size()+varSet.size()+intSet.size()+boolSet.size()+ternSet.size()+methodCalls.size() == 1 && comparisons.size() == 0){
+    		    operator = null;
+    		}
+    	}
+    	else if(operator == Ops.TIMES){
+    		long product = 0;
+    		Iterator<Long> intSetIter = intSet.iterator();
+    		while(intSetIter.hasNext()){
+    			Long nextNumber = intSetIter.next();
+    			product *= nextNumber;
+    			intSetIter.remove();
+    		}
+    		if(product == 0){
+    			SPSets.clear();
+    		    varSet.clear();
+    		    intSet.clear();
+    		    boolSet.clear();
+    		    ternSet.clear();
+    		    comparisons.clear();
+    		    methodCalls.clear();
+    		    operator = null;
+    		}
+    		addToIntSet(new IntLit(product));
+    		if(SPSets.size()+varSet.size()+intSet.size()+boolSet.size()+ternSet.size()+methodCalls.size() == 1 && comparisons.size() == 0){
+    		    operator = null;
+    		}
+    	}
+    	else if(operator == Ops.AND){
+    		boolean result = true;
+    		boolean allFalseFlag = false;
+    		Iterator<Boolean> boolSetIter = boolSet.iterator();
+    		while(boolSetIter.hasNext()){
+    			boolean nextBool = boolSetIter.next();
+    			result = result && nextBool;
+    			boolSetIter.remove();
+    			if(!result){
+    				allFalseFlag = true;
+    				break;
+    			}
+    		}
+    		if(allFalseFlag){
+    			SPSets.clear();
+    		    varSet.clear();
+    		    intSet.clear();
+    		    boolSet.clear();
+    		    ternSet.clear();
+    		    comparisons.clear();
+    		    methodCalls.clear();
+    		    operator = null;
+    		}
+    		addToBoolSet(new BoolLit(result));
+    		if(!(allFalseFlag) && SPSets.size()+varSet.size()+intSet.size()+boolSet.size()+ternSet.size()+methodCalls.size() == 1 && comparisons.size() == 0){
+    		    operator = null;
+    		}
+    	}
+    	else if(operator == Ops.OR){
+    		boolean result = false;
+    		boolean allTrueFlag = false;
+    		Iterator<Boolean> boolSetIter = boolSet.iterator();
+    		while(boolSetIter.hasNext()){
+    			boolean nextBool = boolSetIter.next();
+    			result = result || nextBool;
+    			boolSetIter.remove();
+    			if(result){
+    				allTrueFlag = true;
+    				break;
+    			}
+    		}
+    		if(allTrueFlag){
+    			boolSet.clear();
+    			SPSets.clear();
+    		    varSet.clear();
+    		    intSet.clear();
+    		    boolSet.clear();
+    		    ternSet.clear();
+    		    comparisons.clear();
+    		    methodCalls.clear();
+    		    operator = null;
+    		}
+    		addToBoolSet(new BoolLit(result));
+    		if(!(allTrueFlag) && SPSets.size()+varSet.size()+intSet.size()+boolSet.size()+ternSet.size()+methodCalls.size() == 1 && comparisons.size() == 0){
+    		    operator = null;
+    		}
+    	}
+    }
+    
     // *(A,B) + (stuff) 
     //Looking at Mult(A,B)
     //Check whether any SPSets contain complete expressions within themselves.
