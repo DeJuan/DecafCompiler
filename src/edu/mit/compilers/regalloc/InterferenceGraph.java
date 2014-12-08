@@ -375,10 +375,12 @@ public class InterferenceGraph {
 	
 	private void addEdgesForAllWebsBetweenOverlappingMethods() {
 		for (START initialNode : flowNodes.values()) {
+			System.out.println("====== Method name: " + STARTToName.get(initialNode));
 			HashSet<Web> allWebsInOtherMethods = new HashSet<Web>();
-			for (START method : websForEachMethod.keySet()) {
+			for (START method : methodToMethodCalls.get(initialNode)) {
 				// all methods that are called from initialNode.
 				// All webs between them must have edges.
+				System.out.println(STARTToName.get(method));
 				if (method != null && !method.equals(initialNode)) {
 					// not own method.
 					allWebsInOtherMethods.addAll(websForEachMethod.get(method));
@@ -504,6 +506,9 @@ public class InterferenceGraph {
                 }
             }
         }
+        if (allMethods.contains(null)) {
+        	allMethods.remove(null);
+        }
         node.resetVisit();
         return allMethods;
 	}
@@ -512,13 +517,6 @@ public class InterferenceGraph {
 		for (START initialNode : flowNodes.values()) {
 			//setupParams(initialNode);
 			methodToMethodCalls.put(initialNode, getAllMethodCallsInCurrentMethod(initialNode));
-			// print to check all methods are found.
-			System.out.println("====== Method name: " + STARTToName.get(initialNode));
-			for (START st : methodToMethodCalls.get(initialNode)) {
-				if (st != null) {
-					System.out.print(STARTToName.get(st) + " ");
-				}
-			}
 			if (methodToMethodCalls.get(initialNode).contains(initialNode)) {
 				// There is a recursive call. Therefore, we cannot assign registers to any
 				// variable in this method.
