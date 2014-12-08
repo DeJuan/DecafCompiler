@@ -32,6 +32,9 @@ public class AssignRegisters {
 	static HashSet<GraphNode> assignments; 
 	static HashSet<GraphNode> spilledNodes;
 	static HashMap<IR_FieldDecl, LocReg> fieldDeclToReg = new HashMap<IR_FieldDecl, LocReg>();
+	
+	static HashSet<IR_FieldDecl> assignedVars = new HashSet<IR_FieldDecl>(); // hack to deal with use before assignment
+	static HashSet<IR_FieldDecl> usedBeforeAssignment = new HashSet<IR_FieldDecl>(); // hack to deal with use before assignment
 
     public static void setUp(ControlflowContext context, 
             List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals,
@@ -775,6 +778,7 @@ public class AssignRegisters {
 	        lhs.setColorReg(reg);
 	        fieldDeclToReg.put(lhs.getFieldDecl(), reg);
 	        context.putRegister(lhs.getName(), reg);
+	        assignedVars.add(lhs.getFieldDecl());
         }
         
         LocReg r10 = new LocReg(Regs.R10);
@@ -898,11 +902,17 @@ public class AssignRegisters {
     private static LocationMem generateVarLoc(Var var, ControlflowContext context, List<Instruction> ins) {
     	if (!var.isArray()) {
     		// We only assign registers to non-array variables.
-	    	//LocReg reg = context.findRegister(varName);
-    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
-	    	System.out.println("Use: " + var.getName() + ": " + reg);
-	    	if (reg != null) {
-			return reg;
+    		IR_FieldDecl decl = var.getFieldDecl();
+    		if (!usedBeforeAssignment.contains(decl) && assignedVars.contains(decl)) {
+	    		// that have been assigned previously (not just declared).
+		    	//LocReg reg = context.findRegister(varName);
+	    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
+		    	System.out.println("Use: " + var.getName() + ": " + reg);
+		    	if (reg != null) {
+		    		return reg;
+		    	}
+	    	} else {
+	    		usedBeforeAssignment.add(decl);
 	    	}
     	}
         Descriptor d = context.findSymbol(var.getName());

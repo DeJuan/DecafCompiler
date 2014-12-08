@@ -79,7 +79,7 @@ public class GenReachingDefs {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
 			if (st instanceof Assignment && notGlobalOrParam(((Assignment) st).getDestVar().getFieldDecl())) {
-				// Non-global assignment
+				// Non-global and non-parameter assignment
 				System.out.println("\n=======");
 				System.out.println("Statement: " + st);
 				Assignment assign = (Assignment) st;
