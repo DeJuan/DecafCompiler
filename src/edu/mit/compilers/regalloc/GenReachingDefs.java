@@ -10,7 +10,6 @@ import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.Branch;
 import edu.mit.compilers.controlflow.Branch.BranchType;
 import edu.mit.compilers.controlflow.Codeblock;
-import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.controlflow.Statement;
@@ -18,11 +17,13 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 
 public class GenReachingDefs {
 	
+	private List<IR_FieldDecl> globals;
 	private HashMap<String, START> flowNodes;
 	
 	private HashMap<FlowNode, FlowNode> whileParent = new HashMap<FlowNode, FlowNode>();
 	
-	public GenReachingDefs(ControlflowContext context, HashMap<String, START> flowNodes){
+	public GenReachingDefs(List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
+		this.globals = globals;
 		this.flowNodes = flowNodes;
 	}
 	
@@ -70,7 +71,8 @@ public class GenReachingDefs {
 	public ReachingDefinition generateCodeblockOUT(Codeblock node, ReachingDefinition RDin) {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
-			if (st instanceof Assignment) {
+			if (st instanceof Assignment && !globals.contains(((Assignment) st).getDestVar().getFieldDecl())) {
+				// Non-global assignment
 				System.out.println("\n=======");
 				System.out.println("Statement: " + st);
 				Assignment assign = (Assignment) st;

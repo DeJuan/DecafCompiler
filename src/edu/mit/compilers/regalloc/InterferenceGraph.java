@@ -414,7 +414,7 @@ public class InterferenceGraph {
 						Statement st = statementIter.next();
 						ReachingDefinition rd = st.getReachingDefinition();
 						System.out.println("RD size: " + rd.getAllWebs().size());
-						if (st instanceof Assignment){	
+						if (st instanceof Assignment && !globalList.contains(((Assignment) st).getDestVar().getFieldDecl())){	
 							Assignment assignment = (Assignment) st;
 							String varName = assignment.getDestVar().getName();
 							if (assignment.getDestVar().isArray()) {

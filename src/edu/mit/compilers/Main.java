@@ -298,7 +298,7 @@ class Main {
 				    		  HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
 				    		  System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
 				    		  System.out.println("\nGenerating Reaching Definitions\n===================================");
-				    		  GenReachingDefs genRDs = new GenReachingDefs(context, flowNodes);
+				    		  GenReachingDefs genRDs = new GenReachingDefs(globals, flowNodes);
 				    		  genRDs.run();
 				    		  System.out.println("\nBuilding Interference Graph\n===================================");
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes);
