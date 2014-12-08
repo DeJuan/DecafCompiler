@@ -772,13 +772,21 @@ public class AssignRegisters {
         ins.addAll(generateExpression(rhs,context));
         
         if (!lhs.isArray()) {
+        	IR_FieldDecl decl = lhs.getFieldDecl();
         	// We only assign registers to non-arrays variables.
-	        LocReg reg = assign.getRegister();
+        	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
+        		// used before assigned
+        		usedBeforeAssignment.add(decl);
+        		assignedVars.add(decl);
+        	}
+        	LocReg reg = assign.getRegister();
+        	if (usedBeforeAssignment.contains(decl))
+        		reg = null;
 	        System.out.println("Def: " + lhs.getName() + ": " + reg);
 	        lhs.setColorReg(reg);
-	        fieldDeclToReg.put(lhs.getFieldDecl(), reg);
+	        fieldDeclToReg.put(decl, reg);
 	        context.putRegister(lhs.getName(), reg);
-	        assignedVars.add(lhs.getFieldDecl());
+	        assignedVars.add(decl);
         }
         
         LocReg r10 = new LocReg(Regs.R10);
