@@ -19,6 +19,7 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 public class GenReachingDefs {
 	
 	private List<IR_FieldDecl> globals;
+	private List<IR_FieldDecl> arguments;
 	private HashMap<String, START> flowNodes;
 	
 	private HashMap<START, HashSet<Web>> websForEachMethod = new HashMap<START, HashSet<Web>>();
@@ -69,11 +70,15 @@ public class GenReachingDefs {
 		}
 		return newRD;
 	}
+	
+	public boolean notGlobalOrParam(IR_FieldDecl decl) {
+		return !globals.contains(decl) && !arguments.contains(decl);
+	}
 
 	public ReachingDefinition generateCodeblockOUT(Codeblock node, ReachingDefinition RDin, HashSet<Web> allWebs) {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
-			if (st instanceof Assignment && !globals.contains(((Assignment) st).getDestVar().getFieldDecl())) {
+			if (st instanceof Assignment && notGlobalOrParam(((Assignment) st).getDestVar().getFieldDecl())) {
 				// Non-global assignment
 				System.out.println("\n=======");
 				System.out.println("Statement: " + st);
@@ -151,6 +156,7 @@ public class GenReachingDefs {
 	
 	public HashMap<START, HashSet<Web>> run() {
 		for (START initialNode : flowNodes.values()) {
+			arguments = initialNode.getArguments();
 			websForEachMethod.put(initialNode, new HashSet<Web>());
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
 			System.out.println("Number of FlowNodes: " + listFlowNodes.size());

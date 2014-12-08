@@ -512,6 +512,10 @@ public class InterferenceGraph {
         return allMethods;
 	}
 	
+	public boolean notGlobalOrParam(IR_FieldDecl decl, START initialNode) {
+		return !globalList.contains(decl) && !initialNode.getArguments().contains(decl);
+	}
+	
 	public void buildGraph() {
 		for (START initialNode : flowNodes.values()) {
 			//setupParams(initialNode);
@@ -542,7 +546,7 @@ public class InterferenceGraph {
 						Statement st = statementIter.next();
 						ReachingDefinition rd = st.getReachingDefinition();
 						System.out.println("RD size: " + rd.getAllWebs().size());
-						if (st instanceof Assignment && !globalList.contains(((Assignment) st).getDestVar().getFieldDecl())){	
+						if (st instanceof Assignment && notGlobalOrParam(((Assignment) st).getDestVar().getFieldDecl(), initialNode)){	
 							Assignment assignment = (Assignment) st;
 							String varName = assignment.getDestVar().getName();
 							if (assignment.getDestVar().isArray()) {
