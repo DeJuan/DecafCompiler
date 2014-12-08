@@ -782,6 +782,7 @@ public class Assembler {
 
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
+        //SAVE_TEMP_REGS(ins, context);
         List<Expression> args = call.getArguments();
         for(int ii = 0; ii < args.size(); ii++){
             Expression arg = args.get(ii);
@@ -829,7 +830,22 @@ public class Assembler {
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
         }
+        //RESTORE_TEMP_REGS(ins, context);
         return ins;
+    }
+    
+    private void SAVE_TEMP_REGS(List<Instruction> ins, ControlflowContext context){
+    	ins.addAll(context.push(new LocReg(Regs.R12)));
+    	ins.addAll(context.push(new LocReg(Regs.R13)));
+    	ins.addAll(context.push(new LocReg(Regs.R14)));
+    	ins.addAll(context.push(new LocReg(Regs.R15)));
+    }
+    
+    private void RESTORE_TEMP_REGS(List<Instruction> ins, ControlflowContext context){
+    	ins.addAll(context.pop(new LocReg(Regs.R15)));
+    	ins.addAll(context.pop(new LocReg(Regs.R14)));
+    	ins.addAll(context.pop(new LocReg(Regs.R13)));
+    	ins.addAll(context.pop(new LocReg(Regs.R12)));
     }
 
     private static List<Instruction> generateFieldDecl(Declaration declare, ControlflowContext context){
