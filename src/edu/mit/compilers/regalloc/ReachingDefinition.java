@@ -66,13 +66,18 @@ public class ReachingDefinition {
 	 * Merge two webs if they refer to the same variable name.
 	 * @return
 	 */
-	public boolean merge() {
+	public boolean merge(HashSet<Web> allWebs) {
 		boolean didMerge = false;
 		for (IR_FieldDecl decl : webs.keySet()) {
 			Set<Web> webSet = webs.get(decl);
 			if (webSet.size() > 1) {
 				System.out.println("Merging webs for var: " + decl.getName());
 				Web newWeb = mergeWebs(decl);
+				// remove merged webs from Set, add new web.
+				for (Web web : webSet) {
+					allWebs.remove(web);
+				}
+				allWebs.add(newWeb);
 				setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 				didMerge = true;
 			}

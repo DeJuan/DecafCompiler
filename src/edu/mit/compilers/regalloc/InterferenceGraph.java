@@ -36,6 +36,7 @@ public class InterferenceGraph {
 	private HashMap<GraphNode, Set<GraphNode>> adjList = new HashMap<GraphNode, Set<GraphNode>>();
 	private HashSet<HashSet<GraphNode>> bitMatrix = new HashSet<HashSet<GraphNode>>();
 	
+	private HashMap<START, HashSet<Web>> websForEachMethod;
 	private HashMap<Web, GraphNode> webToNode = new HashMap<Web, GraphNode>();
 	
 	private ControlflowContext context;
@@ -45,12 +46,14 @@ public class InterferenceGraph {
 	private Optimizer optimizer;
 	
 	public InterferenceGraph(ControlflowContext context, 
-		List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
+		List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes, 
+		HashMap<START, HashSet<Web>> websForEachMethod){
 		this.context = context;
 		this.calloutList = callouts;
 		this.globalList = globals;
 		this.flowNodes = flowNodes;
 		this.optimizer = new Optimizer(context, callouts, globals, flowNodes);
+		this.websForEachMethod = websForEachMethod;
 	}
  
 	private List<IR_FieldDecl> getLiveVars(Bitvector liveMap) {
@@ -358,6 +361,27 @@ public class InterferenceGraph {
 		return done;
 	}
 	
+	private void addEdgesForAllWebsBetweenMethods() {
+		for (START initialNode : flowNodes.values()) {
+			HashSet<Web> allWebsInOtherMethods = new HashSet<Web>();
+			for (START method : websForEachMethod.keySet()) {
+				if (!method.equals(initialNode)) {
+					allWebsInOtherMethods.addAll(websForEachMethod.get(method));
+				}
+			}
+			for (Web web : websForEachMethod.get(initialNode)) {
+				GraphNode from = webToNode.get(web);
+				for (Web toWeb : allWebsInOtherMethods) {
+					GraphNode to = webToNode.get(toWeb);
+					if (to == null || from == null) {
+						throw new RuntimeException("Somethign is wrong.");
+					}
+					addEdge(from, to);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Process codeBlocks sequentially.
 	 * @param listOfCodeblocks
@@ -448,6 +472,7 @@ public class InterferenceGraph {
 				}
 			}
 		}
+		addEdgesForAllWebsBetweenMethods();
 	}
 	
 	public List<GraphNode> getNodes() {

@@ -2,6 +2,7 @@ package edu.mit.compilers.regalloc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -20,6 +21,7 @@ public class GenReachingDefs {
 	private List<IR_FieldDecl> globals;
 	private HashMap<String, START> flowNodes;
 	
+	private HashMap<START, HashSet<Web>> websForEachMethod = new HashMap<START, HashSet<Web>>();
 	private HashMap<FlowNode, FlowNode> whileParent = new HashMap<FlowNode, FlowNode>();
 	
 	public GenReachingDefs(List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
@@ -46,12 +48,12 @@ public class GenReachingDefs {
 		return listFlowNodes;
 	}
 	
-	public ReachingDefinition union(ReachingDefinition A, ReachingDefinition B) {
+	public ReachingDefinition union(ReachingDefinition A, ReachingDefinition B, HashSet<Web> allWebs) {
 		ReachingDefinition newRD = new ReachingDefinition(A);
 		for (Web web : B.getAllWebs()) {
 			newRD.addWeb(web);
 		}
-		Boolean didMerge = newRD.merge();
+		Boolean didMerge = newRD.merge(allWebs);
 		if (didMerge) {
 			System.out.println("Did merge!!");
 		} else {
@@ -68,7 +70,7 @@ public class GenReachingDefs {
 		return newRD;
 	}
 
-	public ReachingDefinition generateCodeblockOUT(Codeblock node, ReachingDefinition RDin) {
+	public ReachingDefinition generateCodeblockOUT(Codeblock node, ReachingDefinition RDin, HashSet<Web> allWebs) {
 		ReachingDefinition rd = new ReachingDefinition(RDin);
 		for (Statement st : node.getStatements()) {
 			if (st instanceof Assignment && !globals.contains(((Assignment) st).getDestVar().getFieldDecl())) {
@@ -108,7 +110,7 @@ public class GenReachingDefs {
 							// Note: if a is assigned the for loop, then there would be no issue because the webs would be merged.
 							// Note 2: Union is probably not completely necessary - we could probably just use the original web.
 							System.out.println("Weird case happened here where we have to union mid-statement.");
-							rd = union(st.getReachingDefinition(), rd);
+							rd = union(st.getReachingDefinition(), rd, allWebs);
 							addWeb = false;
 						}
 					}
@@ -132,6 +134,7 @@ public class GenReachingDefs {
 					Web web = new Web(decl, st, (FlowNode) node);
 					System.out.println("Created web " + web);
 					rd.addWeb(web);
+					allWebs.add(web);
 				}
 				System.out.println("After adding web: " + rd);
 			}
@@ -146,8 +149,9 @@ public class GenReachingDefs {
 		return rd;
 	}
 	
-	public void run() {
+	public HashMap<START, HashSet<Web>> run() {
 		for (START initialNode : flowNodes.values()) {
+			websForEachMethod.put(initialNode, new HashSet<Web>());
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
 			System.out.println("Number of FlowNodes: " + listFlowNodes.size());
 			LinkedHashSet<FlowNode> changed = new LinkedHashSet<FlowNode>(); // this will change
@@ -169,7 +173,7 @@ public class GenReachingDefs {
 				n.setIN(new ReachingDefinition());
 				for (FlowNode p : n.getParents()) {
 					System.out.println("Parents class: " + p.getClass());
-					ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
+					ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT(), websForEachMethod.get(initialNode));
 					n.setIN(unionReachDef);
 				}
 				// Deal with issue where While doesn't have a parent (when it should be there)
@@ -177,7 +181,7 @@ public class GenReachingDefs {
 					if (whileParent.containsKey(n)) {
 						System.out.println("Substituting extra while FlowNode");
 						FlowNode p = whileParent.get(n);
-						ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT());
+						ReachingDefinition unionReachDef = union(n.getIN(), p.getOUT(), websForEachMethod.get(initialNode));
 						n.setIN(unionReachDef);
 					}
 				}
@@ -186,7 +190,7 @@ public class GenReachingDefs {
 				
 				ReachingDefinition OUTn;
 				if (n instanceof Codeblock) {
-					OUTn = generateCodeblockOUT((Codeblock) n, n.getIN());
+					OUTn = generateCodeblockOUT((Codeblock) n, n.getIN(), websForEachMethod.get(initialNode));
 				} else {
 					OUTn = n.getIN();
 				}
@@ -207,10 +211,8 @@ public class GenReachingDefs {
 				n.setOUT(OUTn);
 				n.getOUT().setFlowNodes(n);
 				loopLimit++;
-				
 			}
-			
 		}
+		return websForEachMethod;
 	}
-
 }
