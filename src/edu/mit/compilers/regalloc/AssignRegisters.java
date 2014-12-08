@@ -564,15 +564,6 @@ public class AssignRegisters {
     private static List<Instruction>  generateVarExpr(Var var,
             ControlflowContext context) {
     	String varName = var.getName();
-    	if (!var.isArray()) {
-    		// We only assign registers to non-array variables.
-	    	//LocReg reg = context.findRegister(varName);
-    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
-	    	System.out.println("\"" + varName + "\" has register location: " + reg);
-	    	if (reg != null) {
-	    		var.setColorReg(reg);
-	    	}
-    	}
         List<Instruction> ins = new ArrayList<Instruction>();
         LocationMem loc = generateVarLoc(var, context, ins);
         ins.addAll(context.push(loc));
@@ -812,6 +803,7 @@ public class AssignRegisters {
     }
 
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
+        System.out.println("GENERATECALL BEING CALLED");
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
         List<Expression> args = call.getArguments();
         for(int ii = 0; ii < args.size(); ii++){
@@ -905,8 +897,19 @@ public class AssignRegisters {
     }
 
     private static LocationMem generateVarLoc(Var var, ControlflowContext context, List<Instruction> ins) {
-        if (var.getColorReg() != null) {
-            return var.getColorReg();
+        System.out.println("========== VARLOC BEING CALLED ===========: " + var.getName());
+	System.out.println("WHAT");
+    	if (!var.isArray()) {
+		System.out.println("WHAT");
+    		// We only assign registers to non-array variables.
+	    	//LocReg reg = context.findRegister(varName);
+    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
+	    	System.out.println("\"" + var.getName() + "\" has register location: " + reg);
+	    	if (reg != null) {
+			return reg;
+	    	}
+    	} else {
+		System.out.println("Something is wrong");
         }
         Descriptor d = context.findSymbol(var.getName());
         switch (d.getIR().getType()) {
