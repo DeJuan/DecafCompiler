@@ -776,6 +776,7 @@ public class AssignRegisters {
         	// We only assign registers to non-arrays variables.
         	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
         		// used before assigned
+        		System.out.println("USED BEFORE ASSIGNMENT: " + decl.getName());
         		usedBeforeAssignment.add(decl);
         		assignedVars.add(decl);
         	}
@@ -920,6 +921,7 @@ public class AssignRegisters {
 		    		return reg;
 		    	}
 	    	} else {
+	    		System.out.println("heheh: " + decl.getName());
 	    		usedBeforeAssignment.add(decl);
 	    	}
     	}
