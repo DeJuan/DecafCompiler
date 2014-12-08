@@ -376,7 +376,7 @@ public class InterferenceGraph {
 	private void addEdgesForAllWebsBetweenOverlappingMethods() {
 		for (START initialNode : flowNodes.values()) {
 			HashSet<Web> allWebsInOtherMethods = new HashSet<Web>();
-			for (START method : methodToMethodCalls.get(initialNode)) {
+			for (START method : websForEachMethod.get(initialNode)) {
 				// all methods that are called from initialNode.
 				// All webs between them must have edges.
 				if (method != null && !method.equals(initialNode)) {
