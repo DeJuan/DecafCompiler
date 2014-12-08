@@ -32,7 +32,7 @@ for file in $PWD/input/*.dcf; do
 
   cp $orig_input $input;
   msg=""
-  if runcompiler_opt $file $asm; then
+  if runcompiler_opt $file $asm 2>&1 >/dev/null; then
     if gcc -o $binary -L${orig_pwd}/lib $asm -l6035 -lpthread; then
       cd $workingdir
       if $binary > $timing_opt; then
@@ -49,7 +49,7 @@ for file in $PWD/input/*.dcf; do
     msg="Program failed to generate assembly.";
   fi
   cd "$orig_pwd";
-  if runcompiler_unopt $file $asm; then
+  if runcompiler_unopt $file $asm 2>&1 >/dev/null; then
     if gcc -o $binary -L${orig_pwd}/lib $asm -l6035 -lpthread; then
       cd $workingdir
       if $binary > $timing_unopt; then
