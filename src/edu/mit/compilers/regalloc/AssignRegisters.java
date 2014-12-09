@@ -28,6 +28,10 @@ import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.Ops;
 import edu.mit.compilers.ir.Type;
 
+/**
+ * Almost identical to the Assembler class.
+ *
+ */
 public class AssignRegisters {
 	static HashSet<GraphNode> assignments; 
 	static HashSet<GraphNode> spilledNodes;
@@ -858,12 +862,13 @@ public class AssignRegisters {
         }
         ins.add(new Instruction("call ", new LocLabel(call.getMethodName()) ));
 
-        //pop all arguments on the stack
+        //pop all arguments on the stack (Strings aren't pushed to stack in first place)
         for (int ii = args.size() - 1; ii >= 0; ii--) {
             if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
         }
+        // pop off all arguments that don't fit on registers.
         if (args.size() > CodegenConst.N_REG_ARG) {
 	        for (int ii = args.size() - CodegenConst.N_REG_ARG - 1; ii >= 0; ii--) {
 	            ins.addAll(context.pop(new LocReg(Regs.R10)));

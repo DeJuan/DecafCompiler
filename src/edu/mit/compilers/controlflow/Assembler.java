@@ -782,7 +782,6 @@ public class Assembler {
 
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
-        //SAVE_TEMP_REGS(ins, context);
         List<Expression> args = call.getArguments();
         for(int ii = 0; ii < args.size(); ii++){
             Expression arg = args.get(ii);
@@ -824,28 +823,19 @@ public class Assembler {
         }
         ins.add(new Instruction("call ", new LocLabel(call.getMethodName()) ));
 
-        //pop all arguments on the stack
+        //pop all arguments on the stack (Strings aren't pushed to stack in first place)
         for (int ii = args.size() - 1; ii >= 0; ii--) {
             if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
         }
-        //RESTORE_TEMP_REGS(ins, context);
+        // pop off all arguments that don't fit on registers.
+        if (args.size() > CodegenConst.N_REG_ARG) {
+	        for (int ii = args.size() - CodegenConst.N_REG_ARG - 1; ii >= 0; ii--) {
+	            ins.addAll(context.pop(new LocReg(Regs.R10)));
+	        }
+        }
         return ins;
-    }
-    
-    private void SAVE_TEMP_REGS(List<Instruction> ins, ControlflowContext context){
-    	ins.addAll(context.push(new LocReg(Regs.R12)));
-    	ins.addAll(context.push(new LocReg(Regs.R13)));
-    	ins.addAll(context.push(new LocReg(Regs.R14)));
-    	ins.addAll(context.push(new LocReg(Regs.R15)));
-    }
-    
-    private void RESTORE_TEMP_REGS(List<Instruction> ins, ControlflowContext context){
-    	ins.addAll(context.pop(new LocReg(Regs.R15)));
-    	ins.addAll(context.pop(new LocReg(Regs.R14)));
-    	ins.addAll(context.pop(new LocReg(Regs.R13)));
-    	ins.addAll(context.pop(new LocReg(Regs.R12)));
     }
 
     private static List<Instruction> generateFieldDecl(Declaration declare, ControlflowContext context){
