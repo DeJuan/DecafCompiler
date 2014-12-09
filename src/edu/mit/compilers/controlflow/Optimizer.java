@@ -694,14 +694,67 @@ public class Optimizer {
         		//Now we know all the flownodes in the loop and all the variables modified in the loop. 
         		List<FlowNode> processing = new ArrayList<FlowNode>();
         		processing.add(loopHeader.getTrueBranch());
-        		List<IR_FieldDecl> usedVars = new ArrayList<IR_FieldDecl>();
+        		Set<IR_FieldDecl> usedVars = new HashSet<IR_FieldDecl>();
+        		usedVars.addAll(getVarIRsFromExpression(loopHeader.getExpr()));
         		while(!processing.isEmpty());
         		{
         			FlowNode currentNode = processing.remove(0);
         			
         			if(currentNode instanceof Codeblock){
-        				
+        				Codeblock c = (Codeblock)currentNode;
+        				Iterator<Statement> stateIter = c.getStatements().iterator();
+        				List<IR_FieldDecl> declIRsToDelete = new ArrayList<IR_FieldDecl>();
+        				while(stateIter.hasNext()){
+        					Statement next = stateIter.next();
+        					if(next instanceof Assignment){
+        						boolean hoistable = true;
+        						Assignment assign = (Assignment)next;
+        						if(containsMethodCall(assign.getValue())){continue;}
+        						List<IR_FieldDecl> rhsVars = getVarIRsFromExpression(assign.getValue());
+        						
+        						for(IR_FieldDecl var : rhsVars){
+        							if(usedVars.contains(var)){
+        								hoistable = false;
+        								usedVars.addAll(rhsVars);
+        								break;
+        							}
+        						}
+        							
+        						if(hoistable){
+        							IR_FieldDecl assignLHS = assign.getDestVar().getFieldDecl();
+            						declsToMove.add(new Declaration(assignLHS));
+            						declIRsToDelete.add(assignLHS);
+            						assignsToMove.add(assign);
+            						stateIter.remove();
+            					}
+        					}
+        					
+        					
+        					else if(next instanceof MethodCallStatement){
+        						MethodCallStatement nextCall = (MethodCallStatement)next;
+        						List<Expression> methodArgs = nextCall.getMethodCall().getArguments();
+        						for(Expression arg : methodArgs)
+        						usedVars.addAll(getVarIRsFromExpression(arg));
+        					}
+        					
+        					//ignore decls as we go. wheeeeee
+        				}
+        				//clear up decls we're hoisting
+        				if(!declIRsToDelete.isEmpty()){
+        					Iterator<Statement> declDeletor = c.getStatements().iterator();
+        					while(declDeletor.hasNext()){
+        						Statement next = declDeletor.next();
+        						if(!(next instanceof Declaration)){continue;}
+        						Declaration decl = (Declaration)next;
+        						if(declIRsToDelete.contains(decl.getFieldDecl())){
+        							declDeletor.remove();
+        							declIRsToDelete.remove(decl.getFieldDecl());
+        							if(declIRsToDelete.isEmpty()){break;}
+        						}
+        					}
+        				}
         			}
+        			
         			else if(currentNode instanceof Branch){
         				Branch b = (Branch)currentNode;;
         				usedVars.addAll(getVarIRsFromExpression(b.getExpr()));
@@ -719,13 +772,24 @@ public class Optimizer {
         					}
         				}
         			}
-        			
         			else if(currentNode instanceof START){
         				START s = (START)currentNode;
         				usedVars.addAll(s.getArguments());
         			}
-        			
+        			else if(currentNode instanceof END){
+        				continue;
+        			}
+        			else if(currentNode instanceof NoOp){
+        				for(FlowNode nextChild : currentNode.getChildren()){
+    						if(!nextChild.visited){
+        						processing.add(nextChild);
+        					}
+    					}
+        			}
         		}
+        		//Hoist before doing reset and moving to next branch.
+        		hoistInvariantCode(declsToMove, assignsToMove, loopHeader);
+        		initialNode.totalVisitReset(); //need to use the guaranteed full reset version since we're doing non-standard iteration
     		}
     	}
     	return true;
