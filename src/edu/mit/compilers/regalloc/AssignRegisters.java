@@ -776,15 +776,15 @@ public class AssignRegisters {
         	//usedBeforeAssignment.add(decl);
         	// We only assign registers to non-arrays variables.
         	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
-        		// used before assigned
-        		System.out.println("USED BEFORE ASSIGNMENT: " + decl.getName());
+        		// Variable is used before assigned.
+        		//System.out.println("USED BEFORE ASSIGNMENT: " + decl.getName());
         		usedBeforeAssignment.add(decl);
         		assignedVars.add(decl);
         	}
         	LocReg reg = assign.getRegister();
         	if (usedBeforeAssignment.contains(decl))
         		reg = null;
-	        System.out.println("Def: " + lhs.getName() + ": " + reg);
+	        //System.out.println("Def: " + lhs.getName() + ": " + reg);
 	        lhs.setColorReg(reg);
 	        fieldDeclToReg.put(decl, reg);
 	        context.putRegister(lhs.getName(), reg);
@@ -938,12 +938,12 @@ public class AssignRegisters {
 	    		// that have been assigned previously (not just declared).
 		    	//LocReg reg = context.findRegister(varName);
 	    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
-		    	System.out.println("Use: " + var.getName() + ": " + reg);
+		    	//System.out.println("Use: " + var.getName() + ": " + reg);
 		    	if (reg != null) {
 		    		return reg;
 		    	}
-	    	} else {
-	    		System.out.println("heheh: " + decl.getName());
+	    	} else if (!usedBeforeAssignment.contains(decl)) {
+	    		//System.out.println("Used before assigned");
 	    		usedBeforeAssignment.add(decl);
 	    	}
     	}

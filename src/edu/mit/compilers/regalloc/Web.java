@@ -19,7 +19,7 @@ public class Web {
 	}
 	
 	public Web(IR_FieldDecl decl, Statement st, FlowNode node) {
-		System.out.println("New web for var: " + decl.getName() + ", Statement: " + st);
+		//System.out.println("New web for var: " + decl.getName() + ", Statement: " + st);
 		this.decl = decl;
 		this.startingStatements = new HashSet<Statement>(Arrays.asList(st));
 		this.statements = new HashSet<Statement>(Arrays.asList(st));
