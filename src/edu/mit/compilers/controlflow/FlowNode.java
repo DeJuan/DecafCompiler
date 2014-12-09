@@ -80,17 +80,15 @@ public abstract class FlowNode {
 	
 	public void setWeb(Web newWeb, HashSet<Web> oldWebs) {
 		IR_FieldDecl decl = newWeb.getFieldDecl();
-		System.out.println("Size of oldWebs: " + oldWebs);
+		//System.out.println("Old webs for FlowNode: " + oldWebs);
 		if (IN.getWebsMap().containsKey(decl) && 
 				oldWebs.contains((new ArrayList<Web>(IN.getWebsMap().get(decl)).get(0)))) {
 			// only set IN if original IN contains old web.
-			System.out.println("Replacing IN");
 			IN.setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 		}
 		if (OUT.getWebsMap().containsKey(decl) && 
 				oldWebs.contains((new ArrayList<Web>(OUT.getWebsMap().get(decl)).get(0)))) {
 			// only set OUT if original OUT contains old web.
-			System.out.println("Replacing OUT");
 			OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 		}
 	}
