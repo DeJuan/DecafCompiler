@@ -343,7 +343,7 @@ public class ControlflowContext {
     		LocationMem locationBA = currentInstruction.args.get(1);
     		LocationMem locationBB = nextInstruction.args.get(0);
     		if(!locationBA.equals(locationBB)){continue;}
-    		if(!locationBA.equals(r10) && !locationBA.equals(r11)){continue;}
+    		if(!(locationBA == r10) && !(locationBA == r11)){continue;}
     		ins.set(ii, new Instruction("movq", currentInstruction.args.get(0), nextInstruction.args.get(1)));
     		instructionsToDelete.add(nextInstruction);
     		ii++;
