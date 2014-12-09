@@ -239,21 +239,25 @@ class Main {
 			    		  List<IR_FieldDecl> globals = new ArrayList<IR_FieldDecl>();  // type IR_FieldDecl
 			    		  HashMap<String, START> flowNodes = new HashMap<String, START>();
 			    		  GenerateFlow.generateProgram(root, context, callouts, globals, flowNodes);
-			    		  // TODO: Process flowNodes and generate assembly code.
 			    		  context = Assembler.generateProgram(root);
 			    		  // Print things for debugging purposes.
-			    		  //System.out.println("\nCallouts:");
-						  for (IR_Node callout : callouts)
-							  //System.out.println(((IR_MethodDecl) callout).getName());
-						  //System.out.println("\nGlobal vars:");
-						  for (IR_Node global : globals)
-							  //System.out.println(((IR_FieldDecl) global).getName());
-						  //System.out.println("\nMethods:");
-						  for (String s : flowNodes.keySet())
-							  //System.out.println(s);
-						  //System.out.println("");
+			    		  /*
+			    		  System.out.println("\nCallouts:");
+						  for (IR_Node callout : callouts) {
+							  System.out.println(((IR_MethodDecl) callout).getName());
+						  }
+						  System.out.println("\nGlobal vars:");
+						  for (IR_Node global : globals) {
+							  System.out.println(((IR_FieldDecl) global).getName());
+						  }
+						  System.out.println("\nMethods:");
+						  for (String s : flowNodes.keySet()) {
+							  System.out.println(s);
+						  }
+						  System.out.println("");
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
+						  */
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);
 						  //{"dce", "dlr", "cse", "regalloc"}
 				    	  if (CLI.opts[0]) {
