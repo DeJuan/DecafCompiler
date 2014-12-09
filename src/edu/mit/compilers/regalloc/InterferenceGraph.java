@@ -356,7 +356,10 @@ public class InterferenceGraph {
 				System.out.println("Considering adding edge to var: " + web.getFieldDecl().getName());
 				System.out.println("Live map: " + getLiveVars(st.getLiveMap()));
 				GraphNode otherNode = webToNode.get(web);
-				if (st.getLiveMap() == null || st.getLiveMap().get(web.getFieldDecl()) == 1) {
+				if (st.getLiveMap() == null){
+					throw new UnsupportedOperationException("st.getLiveMap() at line 359 is null. Why? Please either fix it so it doesn't happen, or justify the shortcut to your group members.");
+				}
+				if(st.getLiveMap().get(web.getFieldDecl()) == 1) {
 					// Variable will be live later, so we want to add an edge to that web
 					System.out.println("Live web. Adding edge");
 					addEdge(node, otherNode);
@@ -580,7 +583,7 @@ public class InterferenceGraph {
 				}
 			}
 		}
-		addEdgesForAllWebsBetweenOverlappingMethods();
+		//addEdgesForAllWebsBetweenOverlappingMethods();
 	}
 	
 	public List<GraphNode> getNodes() {
