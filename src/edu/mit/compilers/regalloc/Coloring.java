@@ -11,6 +11,12 @@ import java.util.Stack;
 import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * Given a set of GraphNodes representing Webs and an InterferenceGraph, this class
+ * colors the nodes such that no two neighboring nodes share the same color.
+ * If this coloring is not possible, then it will spill the node onto the stack.
+ *
+ */
 public class Coloring {
 	
 	InterferenceGraph graph;

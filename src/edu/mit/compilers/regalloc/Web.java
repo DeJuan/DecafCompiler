@@ -7,6 +7,13 @@ import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * Representation of a web for a particular variable. It contains all 
+ * Statements and FlowNodes in which the variable can be reached.
+ * The key is that all uses and defs of a variable belonging to the same web must 
+ * use the same register.
+ *
+ */
 public class Web {
 	private IR_FieldDecl decl;
 	private HashSet<Statement> startingStatements; // initial assignment statement

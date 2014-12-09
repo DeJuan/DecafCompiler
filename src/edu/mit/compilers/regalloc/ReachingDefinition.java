@@ -10,6 +10,14 @@ import edu.mit.compilers.controlflow.FlowNode;
 import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * Representation of reaching definitions for each Statement or FlowNode. 
+ * It contains a map of FieldDecl to a set of Web objects. Each FieldDecl should
+ * only have one Web at a given time. Multiple webs for a FieldDecl can be generated,
+ * but they should immediately be merged at each iteration. Each Web represents 
+ * the fact that a FieldDecl can be reached at that point in the program.
+ *
+ */
 public class ReachingDefinition {
 	
 	private HashMap<IR_FieldDecl, HashSet<Web>> webs = new HashMap<IR_FieldDecl, HashSet<Web>>();

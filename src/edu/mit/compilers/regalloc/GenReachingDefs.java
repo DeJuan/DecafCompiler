@@ -16,6 +16,12 @@ import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * This class generates the reaching definitions for all FlowNodes and Statements.
+ * Each FlowNode and Statement would contain a ReachingDefinition class, which 
+ * contains Webs of variables that can be reached.
+ *
+ */
 public class GenReachingDefs {
 	
 	private List<IR_FieldDecl> globals;
