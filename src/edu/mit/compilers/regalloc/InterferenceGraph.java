@@ -31,7 +31,6 @@ import edu.mit.compilers.controlflow.Optimizer;
 import edu.mit.compilers.controlflow.START;
 import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.controlflow.Ternary;
-import edu.mit.compilers.controlflow.Var;
 import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_MethodDecl;
 import edu.mit.compilers.ir.Ops;
@@ -348,23 +347,23 @@ public class InterferenceGraph {
 					//   c = 1;
 					// }
 					// Thus, we need to process it later.
-					System.out.println("We do not yet have the web for var: " + web.getFieldDecl().getName() + ". Need to reprocess.");
+					//System.out.println("We do not yet have the web for var: " + web.getFieldDecl().getName() + ". Need to reprocess.");
 					done = false;
 					continue;
 					//throw new RuntimeException("webToNode should always contain the key for web: " + web.getFieldDecl().getName() + ". " + web);
 				}
-				System.out.println("Considering adding edge to var: " + web.getFieldDecl().getName());
-				System.out.println("Live map: " + getLiveVars(st.getLiveMap()));
+				//System.out.println("Considering adding edge to var: " + web.getFieldDecl().getName());
+				//System.out.println("Live map: " + getLiveVars(st.getLiveMap()));
 				GraphNode otherNode = webToNode.get(web);
 				if (st.getLiveMap() == null){
 					throw new UnsupportedOperationException("st.getLiveMap() at line 359 is null. Why? Please either fix it so it doesn't happen, or justify the shortcut to your group members.");
 				}
 				if(st.getLiveMap().get(web.getFieldDecl()) == 1) {
 					// Variable will be live later, so we want to add an edge to that web
-					System.out.println("Live web. Adding edge");
+					//System.out.println("Live web. Adding edge");
 					addEdge(node, otherNode);
 				} else {
-					System.out.println("Dead web.");
+					//System.out.println("Dead web.");
 				}
 				
 			}
@@ -378,11 +377,11 @@ public class InterferenceGraph {
 	
 	private void addEdgesForAllWebsBetweenOverlappingMethods() {
 		for (START initialNode : flowNodes.values()) {
-			System.out.println("====== Method name: " + STARTToName.get(initialNode));
+			//System.out.println("====== Method name: " + STARTToName.get(initialNode));
 			HashSet<Web> allWebsInOtherMethods = new HashSet<Web>();
 			for (START method : websForEachMethod.keySet()) {
 				// get all methods. All webs between them must have edges.
-				System.out.println(STARTToName.get(method));
+				//System.out.println(STARTToName.get(method));
 				if (method != null && !method.equals(initialNode)) {
 					// not own method.
 					allWebsInOtherMethods.addAll(websForEachMethod.get(method));
@@ -542,30 +541,30 @@ public class InterferenceGraph {
 				while (codeblockIter.hasNext()) {
 					Codeblock cblock = codeblockIter.next();
 					List<Statement> statementList = cblock.getStatements();
-					System.out.println("\n====== Processing codeblock: " + cblock.toString());
+					//System.out.println("\n====== Processing codeblock: " + cblock.toString());
 					
 					Iterator<Statement> statementIter = statementList.iterator();
 					while(statementIter.hasNext()){
 						Statement st = statementIter.next();
 						ReachingDefinition rd = st.getReachingDefinition();
-						System.out.println("RD size: " + rd.getAllWebs().size());
+						//System.out.println("RD size: " + rd.getAllWebs().size());
 						if (st instanceof Assignment && notGlobalOrParam(((Assignment) st).getDestVar().getFieldDecl(), initialNode)){	
 							Assignment assignment = (Assignment) st;
 							String varName = assignment.getDestVar().getName();
 							if (assignment.getDestVar().isArray()) {
-								System.out.println("\"" + varName + "\" is an array. Skipping.");
+								//System.out.println("\"" + varName + "\" is an array. Skipping.");
 								continue;
 							}
 							IR_FieldDecl decl = assignment.getDestVar().getFieldDecl();
-							System.out.println("Variable being processed: " + varName);
+							//System.out.println("Variable being processed: " + varName);
 							Web curWeb = (new ArrayList<Web>(rd.getWebsMap().get(decl))).get(0);
 							GraphNode node;
 							if (webToNode.containsKey(curWeb)) {
-								System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
+								//System.out.println("Retrieving web for var " + varName + " to webToNode: " + curWeb);
 								node = webToNode.get(curWeb);
 							} else {
 								node = new GraphNode(curWeb);
-								System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
+								//System.out.println("Putting web for var " + varName + " to webToNode: " + curWeb);
 								webToNode.put(curWeb, node);
 								nodes.add(node);
 							}

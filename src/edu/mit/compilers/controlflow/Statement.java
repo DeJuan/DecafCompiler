@@ -49,7 +49,7 @@ public abstract class Statement {
 	
 	public void setWeb(Web web) {
 		IR_FieldDecl decl = web.getFieldDecl();
-		System.out.println("Statement: " + this + ". Old web: " + this.rd.getWebsMap().get(decl) + " new web: " + web);
+		//System.out.println("Statement: " + this + ". Old web: " + this.rd.getWebsMap().get(decl) + " new web: " + web);
 		this.rd.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
 	}
 }

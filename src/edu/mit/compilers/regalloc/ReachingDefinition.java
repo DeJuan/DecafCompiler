@@ -30,12 +30,12 @@ public class ReachingDefinition {
 		if (thisAllWebs.size() != otherAllWebs.size()) {
 			return true;
 		}
-		System.out.println("This webs: " + thisAllWebs);
-		System.out.println("Other webs: " + otherAllWebs);
+		//System.out.println("This webs: " + thisAllWebs);
+		//System.out.println("Other webs: " + otherAllWebs);
 		for (Web web : otherAllWebs) {
-			System.out.println("Web: " + web.getFieldDecl().getName());
+			//System.out.println("Web: " + web.getFieldDecl().getName());
 			if (!thisAllWebs.contains(web)) {
-				System.out.println("Different!");
+				//System.out.println("Different!");
 				return true;
 			}
 		}
@@ -45,7 +45,7 @@ public class ReachingDefinition {
 	
 	public Web mergeWebs(IR_FieldDecl decl) {
 		Web newWeb = new Web(decl);
-		System.out.println("Created web " + newWeb);
+		//System.out.println("Created web " + newWeb);
 		HashSet<Statement> startingStatements = new HashSet<Statement>();
 		for (Web web : webs.get(decl)) {
 			for (Statement st : web.getStatements()) {
@@ -71,7 +71,7 @@ public class ReachingDefinition {
 		for (IR_FieldDecl decl : webs.keySet()) {
 			Set<Web> webSet = webs.get(decl);
 			if (webSet.size() > 1) {
-				System.out.println("Merging webs for var: " + decl.getName());
+				//System.out.println("Merging webs for var: " + decl.getName());
 				Web newWeb = mergeWebs(decl);
 				// remove merged webs from Set, add new web.
 				for (Web web : webSet) {
@@ -98,7 +98,6 @@ public class ReachingDefinition {
 	}
 	
 	public void setWebs(IR_FieldDecl decl, HashSet<Web> newWebs) {
-		System.out.println("Setting web for var: " + decl.getName());
 		webs.put(decl, newWebs);
 	}
 	
@@ -118,7 +117,7 @@ public class ReachingDefinition {
 	public void removeWeb(Web web) {
 		IR_FieldDecl decl = web.getFieldDecl();
 		if (webs.containsKey(decl)) {
-			System.out.println("I'm removing a web!!!");
+			//System.out.println("Removing a web: " + web);
 			webs.get(decl).remove(web);
 		}
 	}
@@ -129,7 +128,7 @@ public class ReachingDefinition {
 		Iterator<Web> it = curWebs.iterator();
 		while (it.hasNext()) {
 			Web web = it.next();
-			System.out.println("Removing web #" + count + ": " + web);
+			//System.out.println("Removing web #" + count + ": " + web);
 			it.remove();
 			count++;
 		}
@@ -149,7 +148,7 @@ public class ReachingDefinition {
 	
 	@Override
 	public String toString() {
-		System.out.println("Size of webs: " + getAllWebs().size());
+		//System.out.println("Size of webs: " + getAllWebs().size());
 		StringBuilder sb = new StringBuilder();
 		for (Web web : getAllWebs()) {
 			sb.append(web.getFieldDecl().getName() + " ");

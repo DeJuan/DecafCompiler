@@ -9,9 +9,10 @@ import edu.mit.compilers.codegen.LocLiteral;
 import edu.mit.compilers.codegen.LocReg;
 import edu.mit.compilers.codegen.Regs;
 import edu.mit.compilers.ir.Ops;
+import edu.mit.compilers.regalloc.AssignRegisters;
 
 public abstract class ShortCircuitNode {
-    abstract public List<Instruction> codegen (ControlflowContext context);
+    abstract public List<Instruction> codegen (ControlflowContext context, boolean useAssignRegister);
     public String jumpLabel;
     public boolean generated=false;
     public String getLabel(){
@@ -27,7 +28,7 @@ public abstract class ShortCircuitNode {
             jumpLabel = label;
         }       
         @Override
-        public List<Instruction> codegen(ControlflowContext context) {
+        public List<Instruction> codegen(ControlflowContext context, boolean useAssignRegister) {
             ArrayList<Instruction> ins = new ArrayList<Instruction>();
             generated = true;
             return ins;
@@ -45,13 +46,17 @@ public abstract class ShortCircuitNode {
         }
 
         @Override
-        public List<Instruction> codegen(ControlflowContext context) {
+        public List<Instruction> codegen(ControlflowContext context, boolean useAssignRegister) {
             generated = true;
             ArrayList<Instruction> ins = new ArrayList<Instruction>();
             if(jumpLabel != null){
                 ins.add(Instruction.labelInstruction(jumpLabel));               
             }
-            ins.addAll(Assembler.generateExpression(c, context));
+            if (useAssignRegister) {
+            	ins.addAll(AssignRegisters.generateExpression(c, context));
+            } else {
+            	ins.addAll(Assembler.generateExpression(c, context));
+            }
             LocReg r10 = new LocReg(Regs.R10);
             LocLiteral zero = new LocLiteral(0);
             ins.addAll(context.pop(r10));
@@ -70,10 +75,10 @@ public abstract class ShortCircuitNode {
             ins.add(new Instruction("je", flabel));
             ins.add(new Instruction("jmp", tlabel));
             if(!f.generated){
-                ins.addAll(f.codegen(context));
+                ins.addAll(f.codegen(context, useAssignRegister));
             }
             if(!t.generated){
-                ins.addAll(t.codegen(context));
+                ins.addAll(t.codegen(context, useAssignRegister));
             }
             return ins;
         }
@@ -90,13 +95,17 @@ public abstract class ShortCircuitNode {
         }
 
         
-        public List<Instruction> codegen(ControlflowContext context) {
+        public List<Instruction> codegen(ControlflowContext context, boolean useAssignRegister) {
             generated = true;
             ArrayList<Instruction> ins = new ArrayList<Instruction>();
             if(jumpLabel != null){
                 ins.add(Instruction.labelInstruction(jumpLabel));               
             }
-            ins.addAll(Assembler.generateExpression(c, context));
+            if (useAssignRegister) {
+            	ins.addAll(AssignRegisters.generateExpression(c, context));
+            } else {
+            	ins.addAll(Assembler.generateExpression(c, context));
+            }
             LocReg r10 = new LocReg(Regs.R10);
             LocLiteral zero = new LocLiteral(0);
             ins.addAll(context.pop(r10));
@@ -115,10 +124,10 @@ public abstract class ShortCircuitNode {
             ins.add(new Instruction("je", flabel));
             ins.add(new Instruction("jmp", tlabel));
             if(!f.generated){
-                ins.addAll(f.codegen(context));
+                ins.addAll(f.codegen(context, useAssignRegister));
             }
             if(!t.generated){
-                ins.addAll(t.codegen(context));
+                ins.addAll(t.codegen(context, useAssignRegister));
             }
             return ins;
         }

@@ -610,7 +610,7 @@ public class Assembler {
 
         ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
 
-        List<Instruction> ins = cfg.codegen(context);
+        List<Instruction> ins = cfg.codegen(context, false);
 
         ins.add(Instruction.labelInstruction(tLabel));
         ins.add(new Instruction("pushq", one));

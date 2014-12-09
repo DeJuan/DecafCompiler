@@ -36,7 +36,7 @@ public class Coloring {
 		if (neighbors.size() == 0)
 			return regs;
 		for (GraphNode node : neighbors) {
-			System.out.println("Register: " + node.getRegister());
+			//System.out.println("Register: " + node.getRegister());
 			if (!node.isRemoved() && node.hasAssignedRegister()) {
 				regs.add(node.getRegister());
 			}
@@ -60,19 +60,19 @@ public class Coloring {
 	public void assignColors() {
 		while (!removedNodes.empty()) {
 			GraphNode node = removedNodes.pop();
-			System.out.println("\n========== Variable: " + node.getWeb().getFieldDecl().getName());
+			//System.out.println("\n========== Variable: " + node.getWeb().getFieldDecl().getName());
 			Set<GraphNode> neighbors = graph.getAdjList().get(node);
-			System.out.println("Neighbors size: " + neighbors.size());
+			//System.out.println("Neighbors size: " + neighbors.size());
 			Set<Regs> asssignedRegisters = getAssignedRegisters(neighbors);
-			System.out.println("Assigned registers: " + asssignedRegisters);
+			//System.out.println("Assigned registers: " + asssignedRegisters);
 			Regs assignedRegister = assignRegister(node, asssignedRegisters);
 			if (assignedRegister == null) {
 				// cannot assign an empty register; must spill instead.
-				System.out.println("Spilling during assigning colors");
+				//System.out.println("Spilling during assigning colors");
 				spillNodes.push(node);
 				node.spill();
 			} else {
-				System.out.println("Node assigned to register: " + assignedRegister.toString());
+				//System.out.println("Node assigned to register: " + assignedRegister.toString());
 				node.setRegister(assignedRegister);
 				node.unmarkAsRemoved();
 			}
@@ -134,7 +134,7 @@ public class Coloring {
 			if (nodesToProcess.size() > 0) {
 				// must spill one node, then try again.
 				GraphNode nodeToSpill = getMinSpillCost(nodesToProcess);
-				System.out.println("Spilling var: " + nodeToSpill.getWeb().getFieldDecl().getName());
+				//System.out.println("Spilling var: " + nodeToSpill.getWeb().getFieldDecl().getName());
 				spillNodes.push(nodeToSpill);
 				nodeToSpill.markAsRemoved();
 				nodeToSpill.spill();
@@ -154,7 +154,7 @@ public class Coloring {
 		// Simple heuristic for now.
 		IR_FieldDecl decl = node.getWeb().getFieldDecl();
 		double spillCost = fieldDeclToSpillCost.get(decl) * 1.0;
-		System.out.println("Spill cost for var " + decl.getName() + " is: " + spillCost);
+		//System.out.println("Spill cost for var " + decl.getName() + " is: " + spillCost);
 		return spillCost;
 	}
 }
