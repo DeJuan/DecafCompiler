@@ -1,5 +1,6 @@
 #!/bin/bash
 
+./build.sh
 run_times="${1:-1}"
 rm -f output_derby.txt
 for ((i=0; i<run_times; i++))
