@@ -242,16 +242,16 @@ class Main {
 			    		  // TODO: Process flowNodes and generate assembly code.
 			    		  context = Assembler.generateProgram(root);
 			    		  // Print things for debugging purposes.
-			    		  System.out.println("\nCallouts:");
+			    		  //System.out.println("\nCallouts:");
 						  for (IR_Node callout : callouts)
-							  System.out.println(((IR_MethodDecl) callout).getName());
-						  System.out.println("\nGlobal vars:");
+							  //System.out.println(((IR_MethodDecl) callout).getName());
+						  //System.out.println("\nGlobal vars:");
 						  for (IR_Node global : globals)
-							  System.out.println(((IR_FieldDecl) global).getName());
-						  System.out.println("\nMethods:");
+							  //System.out.println(((IR_FieldDecl) global).getName());
+						  //System.out.println("\nMethods:");
 						  for (String s : flowNodes.keySet())
-							  System.out.println(s);
-						  System.out.println("");
+							  //System.out.println(s);
+						  //System.out.println("");
 						  // Traverse all FlowNodes and print them.
 						  printIR(flowNodes);
 						  Optimizer optimizer = new Optimizer(context, callouts, globals, flowNodes);

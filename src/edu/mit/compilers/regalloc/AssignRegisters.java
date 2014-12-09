@@ -566,7 +566,6 @@ public class AssignRegisters {
 
     private static List<Instruction>  generateVarExpr(Var var,
             ControlflowContext context) {
-    	String varName = var.getName();
         List<Instruction> ins = new ArrayList<Instruction>();
         LocationMem loc = generateVarLoc(var, context, ins);
         ins.addAll(context.push(loc));
