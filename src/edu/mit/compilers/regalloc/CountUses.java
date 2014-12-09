@@ -30,8 +30,8 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class CountUses {
 	
-	private final double LOOP_COST = 10; // multiplier to spill cost for each nested loop.
-	private final double ASSIGNMENT_WEIGHT = 2; // multiplier to weight each assignment (over a use).
+	private final double LOOP_COST = 10000.0; // multiplier to spill cost for each nested loop.
+	private final double ASSIGNMENT_WEIGHT = 1.5; // multiplier to weight each assignment (over a use).
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;

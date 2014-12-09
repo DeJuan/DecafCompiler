@@ -80,7 +80,7 @@ public class Coloring {
 	}
 	
 	private GraphNode getMaxSpillCost(List<GraphNode> nodes) {
-		double maxSpillCost = Integer.MIN_VALUE;
+		double maxSpillCost = Double.MIN_VALUE;
 		GraphNode returnNode = null;
 		for (GraphNode node : nodes) {
 			if (nodeToSpillCost.get(node) > maxSpillCost) {
@@ -92,7 +92,7 @@ public class Coloring {
 	}
 	
 	private GraphNode getMinSpillCost(List<GraphNode> nodes) {
-		double minSpillCost = Integer.MAX_VALUE;
+		double minSpillCost = Double.MAX_VALUE;
 		GraphNode returnNode = null;
 		for (GraphNode node : nodes) {
 			if (nodeToSpillCost.get(node) < minSpillCost) {
