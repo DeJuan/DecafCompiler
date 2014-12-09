@@ -11,7 +11,6 @@ import edu.mit.compilers.controlflow.Assignment;
 import edu.mit.compilers.controlflow.BinExpr;
 import edu.mit.compilers.controlflow.Branch;
 import edu.mit.compilers.controlflow.Codeblock;
-import edu.mit.compilers.controlflow.ControlflowContext;
 import edu.mit.compilers.controlflow.Declaration;
 import edu.mit.compilers.controlflow.END;
 import edu.mit.compilers.controlflow.Expression;
@@ -26,15 +25,12 @@ import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.controlflow.Ternary;
 import edu.mit.compilers.controlflow.Var;
 import edu.mit.compilers.ir.IR_FieldDecl;
-import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class CountUses {
 	
 	private final double LOOP_COST = 10000.0; // multiplier to spill cost for each nested loop.
 	private final double ASSIGNMENT_WEIGHT = 1.5; // multiplier to weight each assignment (over a use).
 	
-	private ControlflowContext context;
-	private List<IR_MethodDecl> calloutList;
 	private List<IR_FieldDecl> globalList;
 	private HashMap<String, START> flowNodes;
 	
@@ -45,10 +41,7 @@ public class CountUses {
 	// number of loops the FlowNode is under (approximately)
 	private HashMap<FlowNode, Double> numLoops = new HashMap<FlowNode, Double>();
 	
-	public CountUses(ControlflowContext context, 
-			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
-		this.context = context;
-		this.calloutList = callouts;
+	public CountUses(List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
 		this.globalList = globals;
 		this.flowNodes = flowNodes;
 	}
@@ -175,7 +168,7 @@ public class CountUses {
 	
 	public void countExpressions(Expression expr, double spillCost) {
 		for (IR_FieldDecl decl : getFieldDeclsFromExpression(expr)) {
-			System.out.println("Adding spill cost to var: " + decl.getName() + ", " + spillCost);
+			//System.out.println("Adding spill cost to var: " + decl.getName() + ", " + spillCost);
 			fieldDeclToSpillCost.put(decl, fieldDeclToSpillCost.get(decl) + spillCost);
 		}
 	}
@@ -187,7 +180,7 @@ public class CountUses {
 				Var lhs = ((Assignment) st).getDestVar();
 				if (lhs.getIndex() == null) {
 					// not an array.
-					System.out.println("Adding spill cost to var: " + lhs.getName() + ", " + spillCost);
+					//System.out.println("Adding spill cost to var: " + lhs.getName() + ", " + spillCost);
 					fieldDeclToSpillCost.put(lhs.getFieldDecl(), 
 							fieldDeclToSpillCost.get(lhs.getFieldDecl()) + spillCost*ASSIGNMENT_WEIGHT);
 				}
@@ -219,9 +212,9 @@ public class CountUses {
 		// Walk through graph and count uses.
 		for (START initialNode : flowNodes.values()) {
 			final List<FlowNode> listFlowNodes = getAllFlowNodes(initialNode); // this will not change
-			System.out.println("Number of FlowNodes: " + listFlowNodes.size());
+			//System.out.println("Number of FlowNodes: " + listFlowNodes.size());
 			for (FlowNode flowNode : listFlowNodes) {
-				System.out.println("Current FlowNode has loops: " + numLoops.get(flowNode) + ". Type: " + flowNode.getClass());
+				//System.out.println("Current FlowNode has loops: " + numLoops.get(flowNode) + ". Type: " + flowNode.getClass());
 				if (flowNode instanceof Codeblock) {
 					countCodeblock((Codeblock) flowNode);
 				} else if (flowNode instanceof Branch) {

@@ -299,7 +299,7 @@ class Main {
 							  // Register allocation
 				    		  System.out.println("Running Register Allocation");
 				    		  //System.out.println("\nCounting uses\n===================================");
-				    		  CountUses uses = new CountUses(context, callouts, globals, flowNodes);
+				    		  CountUses uses = new CountUses(globals, flowNodes);
 				    		  uses.run();
 				    		  HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
 				    		  //System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
@@ -307,7 +307,7 @@ class Main {
 				    		  GenReachingDefs genRDs = new GenReachingDefs(globals, flowNodes);
 				    		  HashMap<START, HashSet<Web>> websForEachMethod = genRDs.run();
 				    		  //System.out.println("\nBuilding Interference Graph\n===================================");
-							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes, websForEachMethod);
+							  InterferenceGraph ig = new InterferenceGraph(globals, flowNodes, websForEachMethod);
 							  optimizer.generateLivenessMap(new ArrayList<START>(flowNodes.values()), true);
 							  ig.buildGraph();
 							  //System.out.println("\nColoring nodes\n===================================");
