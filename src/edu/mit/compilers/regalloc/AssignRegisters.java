@@ -818,7 +818,7 @@ public class AssignRegisters {
 
     private static List<Instruction> generateCall(MethodCall call, ControlflowContext context) {
         ArrayList<Instruction> ins = new ArrayList<Instruction>();
-        SAVE_TEMP_REGS(ins, context);
+        //SAVE_TEMP_REGS(ins, context);
         List<Expression> args = call.getArguments();
         for(int ii = 0; ii < args.size(); ii++){
             Expression arg = args.get(ii);
@@ -866,7 +866,7 @@ public class AssignRegisters {
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
         }
-        RESTORE_TEMP_REGS(ins, context);
+        //RESTORE_TEMP_REGS(ins, context);
         return ins;
     }
 
