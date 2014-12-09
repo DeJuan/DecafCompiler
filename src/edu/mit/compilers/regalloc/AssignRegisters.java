@@ -866,6 +866,13 @@ public class AssignRegisters {
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
         }
+        if (args.size() > CodegenConst.N_REG_ARG) {
+	        for (int ii = args.size() - CodegenConst.N_REG_ARG - 1; ii >= 0; ii--) {
+	            if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
+	                ins.addAll(context.pop(new LocReg(Regs.R10)));
+	            }
+	        }
+        }
         RESTORE_TEMP_REGS(ins, context);
         return ins;
     }
