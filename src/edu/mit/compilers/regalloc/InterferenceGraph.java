@@ -583,7 +583,7 @@ public class InterferenceGraph {
 				}
 			}
 		}
-		addEdgesForAllWebsBetweenOverlappingMethods();
+		//addEdgesForAllWebsBetweenOverlappingMethods();
 	}
 	
 	public List<GraphNode> getNodes() {
