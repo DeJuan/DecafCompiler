@@ -1,0 +1,13 @@
+callout printf;
+void foo(int a) {
+  printf("%d %d %d %d %d %d %d", a, a, a, a, a, a, a); // issues with 7 a's
+  // printf("%d %d %d %d %d %d", a, a, a, a, a, a); // issues with 6 a's
+  // printf("%d %d %d %d %d", a, a, a, a, a); // no issues with 5 a's
+}
+void main(){
+  int i;
+  i = 1;
+  foo(1);
+  printf("i is: %d\n", i);
+  // i is 1 if normal. i is 0 if printf has 7+ a's, i is some random int if printf has 6 a's.
+}
