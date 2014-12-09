@@ -345,6 +345,30 @@ public class ControlflowContext {
     	}
     	
     	instructionsToDelete = new HashSet<Instruction>();
+    	LocReg r10 = new LocReg(Regs.R10);
+		LocReg r11 = new LocReg(Regs.R11);
+    	for(int ii = 0; ii < ins.size()-2; ii++){
+    		Instruction currentInstruction = ins.get(ii);
+    		String currentIns = currentInstruction.cmd;
+    		if(currentIns == null || !currentIns.equals("movq")){continue;}
+    		Instruction nextInstruction = ins.get(ii+1);
+    		String nextIns = nextInstruction.cmd;
+    		if(nextIns == null || !nextIns.equals("movq")){continue;}
+    		//have proven both are move instructions.
+    		LocationMem locationBA = currentInstruction.args.get(1);
+    		LocationMem locationBB = nextInstruction.args.get(0);
+    		if(!locationBA.equals(locationBB)){continue;}
+    		if(!locationBA.equals(r10) && !locationBA.equals(r11)){continue;}
+    		ins.set(ii, new Instruction("movq", currentInstruction.args.get(0), nextInstruction.args.get(1)));
+    		instructionsToDelete.add(nextInstruction);
+    		ii++;
+    	}
+    		
+    	for (Instruction redundantMovement : instructionsToDelete){
+    		ins.remove(redundantMovement);
+    	}
+    	
+    	instructionsToDelete = new HashSet<Instruction>();
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
