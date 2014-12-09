@@ -68,7 +68,16 @@ public class Optimizer {
         }
         return assignedVars;
     }
-
+    
+    public List<IR_FieldDecl> getIRsFromVar(Var varia){
+    	List<IR_FieldDecl> irList = new ArrayList<IR_FieldDecl>();
+    	irList.add((IR_FieldDecl)varia.getVarDescriptor().getIR());
+    	if(varia.getIndex() != null){
+            irList.addAll(getVarIRsFromExpression(varia.getIndex()));
+        }
+    	return irList;
+    }
+    
     /**
      * This method allows you to get the IR_FieldDecls representing the variables in a given Expression. It recursively searches the expression until it finds just
      * the variables, and gets their IR. 
@@ -574,8 +583,154 @@ public class Optimizer {
         return dominanceMap;
     }
 
-
-
+    private List<FlowNode> getAllNodesInLoop(Branch header) {
+        List<FlowNode> loopBody = new ArrayList<FlowNode>();
+        loopBody.add(header);
+        List<FlowNode> processing = new ArrayList<FlowNode>();
+        processing.add(header.getTrueBranch());
+        while (!processing.isEmpty()) {
+            FlowNode currentNode = processing.remove(0);
+            if (currentNode instanceof START) {
+                loopBody.add(currentNode);
+                processing.add(currentNode.getChildren().get(0));
+            } else if (currentNode instanceof Codeblock) {
+                loopBody.add(currentNode);
+                if (!((Codeblock) currentNode).getIsBreak()) {
+                    processing.addAll(currentNode.getChildren());
+                }
+            } else if (currentNode instanceof Branch) {
+                if (currentNode == header) {
+                    continue;
+                }
+                loopBody.add(currentNode);
+                processing.addAll(currentNode.getChildren());
+            } else if (currentNode instanceof NoOp) {
+                loopBody.add(currentNode);
+                processing.addAll(currentNode.getChildren());
+            } else if (currentNode instanceof END) {
+                loopBody.add(currentNode);
+            }
+        }
+        return loopBody;
+    }
+    
+    private Set<IR_FieldDecl> getVarsModifiedInLoop(Branch header) {
+        Set<IR_FieldDecl> ans = new HashSet<IR_FieldDecl>();
+        if (containsMethodCall(header.getExpr())) {
+            ans.addAll(globalList);
+        }
+        List<FlowNode> loopBody = new ArrayList<FlowNode>();
+        for (FlowNode f : loopBody) {
+            if (f instanceof Codeblock) {
+                for (Statement s : ((Codeblock) f).getStatements()) {
+                    if (s instanceof Assignment) {
+                        Assignment assn = (Assignment) s;
+                        ans.add(assn.getDestVar().getFieldDecl());
+                        if (containsMethodCall(assn.getValue())) {
+                            ans.addAll(globalList);
+                        }
+                    } else if (s instanceof MethodCallStatement) {
+                        ans.addAll(globalList);
+                    }
+                }
+            } else if (f instanceof Branch) {
+                if (containsMethodCall(((Branch) f).getExpr())) {
+                    ans.addAll(globalList);
+                }
+            }  else if (f instanceof END) {
+                if (containsMethodCall(((END) f).getReturnExpression())) {
+                    ans.addAll(globalList);
+                }
+            }
+        }
+        return ans;
+    }
+    
+    public void hoistInvariantCode(List<Declaration> declsToMove, List<Assignment>assignsToMove, Branch loopHeader){
+    	FlowNode potAssignmentsHere = findUpperParent(loopHeader);
+    	Codeblock declarationsHere = topOfScopeForBranch(loopHeader);
+    	if(!(potAssignmentsHere instanceof Codeblock)){
+    		Codeblock assignmentsHere = new Codeblock();
+    		assignmentsHere.addParent(potAssignmentsHere);
+    		assignmentsHere.addChild(loopHeader);
+    		potAssignmentsHere.getChildren().remove(loopHeader);
+    		potAssignmentsHere.getChildren().add(assignmentsHere);
+    		loopHeader.removeParent(potAssignmentsHere);
+    		loopHeader.addParent(assignmentsHere);
+    		for(Declaration decl : declsToMove){
+        		declarationsHere.addStatement(decl);
+        	}
+        	for(Assignment assign : assignsToMove){
+        		assignmentsHere.addStatement(assign);
+        	}
+    	}
+    }
+    
+    public boolean applyLICM(List<START> startsForMethods){
+    	for(START initialNode : startsForMethods){
+    		List<Branch> loopHeaders = new ArrayList<Branch>(); //gotta find those headers
+    		List<FlowNode> scanning = new ArrayList<FlowNode>(); //going to scan for them
+    		scanning.addAll(initialNode.getChildren());
+    		while(!scanning.isEmpty()){
+    			FlowNode currentNode = scanning.remove(0);
+    			currentNode.visit();
+    			if(currentNode instanceof Branch){
+    				Branch potHeader = (Branch)currentNode; //potential header
+    				if(!(potHeader.getType() == BranchType.IF)){ //if not an if, it's a header
+    					loopHeaders.add(potHeader);
+    				}
+    			}
+    			for(FlowNode child : currentNode.getChildren()){
+    				if(!child.visited){
+    					scanning.add(child);
+    				}
+    			}
+    		}
+    		initialNode.resetVisit(); //we tampered with visits, fix them.
+    		for(Branch loopHeader : loopHeaders){ 
+    			List<Declaration> declsToMove = new ArrayList<Declaration>(); //yay containers
+        		List<Assignment> assignsToMove = new ArrayList<Assignment>(); //another container whee
+        		Set<IR_FieldDecl> varsModifiedInLoop = getVarsModifiedInLoop(loopHeader);
+        		//Now we know all the flownodes in the loop and all the variables modified in the loop. 
+        		List<FlowNode> processing = new ArrayList<FlowNode>();
+        		processing.add(loopHeader.getTrueBranch());
+        		List<IR_FieldDecl> usedVars = new ArrayList<IR_FieldDecl>();
+        		while(!processing.isEmpty());
+        		{
+        			FlowNode currentNode = processing.remove(0);
+        			
+        			if(currentNode instanceof Codeblock){
+        				
+        			}
+        			else if(currentNode instanceof Branch){
+        				Branch b = (Branch)currentNode;;
+        				usedVars.addAll(getVarIRsFromExpression(b.getExpr()));
+        				if(b.getType() == BranchType.IF){
+        					NoOp nextChild = Assembler.findNop(b);
+        					if(!nextChild.visited){
+        						processing.add(nextChild);
+        					}
+        				}
+        				else{
+        					for(FlowNode nextChild : b.getChildren()){
+        						if(!nextChild.visited){
+            						processing.add(nextChild);
+            					}
+        					}
+        				}
+        			}
+        			
+        			else if(currentNode instanceof START){
+        				START s = (START)currentNode;
+        				usedVars.addAll(s.getArguments());
+        			}
+        			
+        		}
+    		}
+    	}
+    	return true;
+    }
+    
     /**
      * In order to do loop optimizations, one must first find the loops.
      * This method takes in startsForMethods and for each branch, finds the loop 
@@ -1657,7 +1812,7 @@ public class Optimizer {
         //return Assembler.generateProgram(calloutList, globalList, flowNodes);
         return anythingReplaced;
     }
-
+    
     private Codeblock findTopOfScope(Codeblock cblock, Map<FlowNode, MapContainer> nodeToContainer) {
         FlowNode currentNode = cblock;
         while (!(currentNode instanceof START)) {
@@ -1691,6 +1846,37 @@ public class Optimizer {
         return topOfScope;
     }
 
+    private Codeblock topOfScopeForBranch(Branch loopHeader){
+    	FlowNode currentNode = findUpperParent(loopHeader);
+    	while (!(currentNode instanceof START)) {
+            if (currentNode instanceof END) {
+                throw new RuntimeException("this should have been impossible");
+            } else if (currentNode instanceof Codeblock) {
+                currentNode = currentNode.getParents().get(0);
+            } else if (currentNode instanceof Branch) {
+                currentNode = findUpperParent((Branch) currentNode);
+            } else if (currentNode instanceof NoOp) {
+                currentNode = findBranch((NoOp) currentNode);
+            } else {
+                throw new RuntimeException("missing case");
+            }
+        }
+        FlowNode nextChild = currentNode.getChildren().get(0);
+        Codeblock declarationsHere;
+        if (nextChild instanceof Codeblock) {
+            declarationsHere = (Codeblock) nextChild;
+        } 
+        else {
+            declarationsHere = new Codeblock();
+            declarationsHere.addParent(currentNode);
+            ((START) currentNode).removeChild(nextChild);
+            currentNode.addChild(declarationsHere);
+            declarationsHere.addChild(nextChild);
+            nextChild.replaceParent(declarationsHere, currentNode);
+        }
+        return declarationsHere;
+    }
+    
     private Branch findBranch(NoOp nop) {
         for (FlowNode p : nop.getParents()) {
             if (p instanceof Branch) {
