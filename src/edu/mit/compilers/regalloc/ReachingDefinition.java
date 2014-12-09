@@ -54,7 +54,7 @@ public class ReachingDefinition {
 			}
 			for (FlowNode node : web.getNodes()) {
 				newWeb.addNode(node);
-				node.setWeb(newWeb);
+				node.setWeb(newWeb, webs.get(decl));
 			}
 			startingStatements.addAll(web.getStartingStatements());
 		}
