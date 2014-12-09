@@ -28,6 +28,13 @@ import edu.mit.compilers.controlflow.Statement;
 import edu.mit.compilers.controlflow.Ternary;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * Builds an InterferenceGraph given each the webs and the reaching definitions.
+ * A GraphNode object is created for each Web. Edges are made between nodes 
+ * such that neighboring nodes can be assigned to the same register.
+ * The actual assignments are done in Coloring.
+ *
+ */
 public class InterferenceGraph {
 	
 	private List<GraphNode> nodes = new ArrayList<GraphNode>();

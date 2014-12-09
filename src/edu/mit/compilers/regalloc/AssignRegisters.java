@@ -29,7 +29,11 @@ import edu.mit.compilers.ir.Ops;
 import edu.mit.compilers.ir.Type;
 
 /**
- * Almost identical to the Assembler class.
+ * Almost identical to the Assembler class. Generates the final 
+ * assembly code using ControlFlowContext, given the IR_Nodes.
+ * The difference is that it also looks for the register location
+ * using fieldDeclToReg whenever GenerateVarLoc is called. It finds 
+ * the register location by looking at the Statement class during an assignment.
  *
  */
 public class AssignRegisters {

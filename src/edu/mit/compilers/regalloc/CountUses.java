@@ -26,6 +26,13 @@ import edu.mit.compilers.controlflow.Ternary;
 import edu.mit.compilers.controlflow.Var;
 import edu.mit.compilers.ir.IR_FieldDecl;
 
+/**
+ * This class calculates the spill cost heuristics used by Coloring.java. 
+ * The heuristics is calculated by counting the number of defs and uses 
+ * for each IR_FieldDecl. It factors in how many nested for/while loops
+ * each def/use is in to give a better heuristic.
+ *
+ */
 public class CountUses {
 	
 	private final double LOOP_COST = 10000.0; // multiplier to spill cost for each nested loop.

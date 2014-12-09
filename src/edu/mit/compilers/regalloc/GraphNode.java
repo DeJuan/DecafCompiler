@@ -2,6 +2,11 @@ package edu.mit.compilers.regalloc;
 
 import edu.mit.compilers.codegen.Regs;
 
+/**
+ * Each node represents a Web. Edges between nodes mean that those nodes
+ * cannot be assigned to the same register.
+ *
+ */
 public class GraphNode {
 	
 	Web web;
