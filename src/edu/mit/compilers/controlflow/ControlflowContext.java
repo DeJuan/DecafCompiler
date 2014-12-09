@@ -335,10 +335,10 @@ public class ControlflowContext {
     	for(int ii = 0; ii < ins.size()-2; ii++){
     		Instruction currentInstruction = ins.get(ii);
     		String currentIns = currentInstruction.cmd;
-    		if(currentIns == null || !currentIns.equals("movq")){continue;}
+    		if(currentIns == null || !currentIns.startsWith("movq")){continue;}
     		Instruction nextInstruction = ins.get(ii+1);
     		String nextIns = nextInstruction.cmd;
-    		if(nextIns == null || !nextIns.equals("movq")){continue;}
+    		if(nextIns == null || !nextIns.startsWith("movq")){continue;}
     		//have proven both are move instructions.
     		LocationMem locationBA = currentInstruction.args.get(1);
     		LocationMem locationBB = nextInstruction.args.get(0);
