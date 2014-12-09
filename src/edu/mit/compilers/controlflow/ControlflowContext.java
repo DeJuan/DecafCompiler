@@ -285,6 +285,7 @@ public class ControlflowContext {
         
         
         instructionEfficiencyHack(ins);
+        instructionEfficiencyHack(ins);
         
         for(int ii = 0;ii<ins.size();ii++){
             ps.println(ins.get(ii));
