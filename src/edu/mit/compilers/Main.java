@@ -308,7 +308,7 @@ class Main {
 				    		  HashMap<START, HashSet<Web>> websForEachMethod = genRDs.run();
 				    		  //System.out.println("\nBuilding Interference Graph\n===================================");
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes, websForEachMethod);
-							  ig.generateLivenessMap();
+							  optimizer.generateLivenessMap(new ArrayList<START>(flowNodes.values()), true);
 							  ig.buildGraph();
 							  //System.out.println("\nColoring nodes\n===================================");
 							  Coloring coloring = new Coloring(ig, 4, fieldDeclToSpillCost);

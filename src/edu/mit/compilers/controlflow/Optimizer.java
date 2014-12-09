@@ -34,8 +34,7 @@ public class Optimizer {
     private List<IR_MethodDecl> calloutList;
     private List<IR_FieldDecl> globalList;
     private HashMap<String, START> flowNodes;
-
-
+    
     private int tempCounter = 0;
     /**
      * This is an constructor for optimizer. Once optimizations are done, it will call generateProgram with these parameters.  
@@ -833,6 +832,10 @@ public class Optimizer {
         }
         return loopContainer;
     }
+    
+    public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
+    	return generateLivenessMap(startsForMethods, false);
+    }
 
     /**
      * This is the method we'll be actually using to generate liveness vectors to do DCE. 
@@ -846,7 +849,7 @@ public class Optimizer {
      * @param startsForMethods : List of START nodes for the given methods in the program. 
      * @return 
      */
-    public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods){
+    public Map<START, Map<FlowNode, Bitvector>> generateLivenessMap(List<START> startsForMethods, boolean registerAllocationMode){
         Map<START, Map<FlowNode, Bitvector>> liveStorage = new HashMap<START, Map<FlowNode, Bitvector>>();
         for(START methodStart : startsForMethods){
             Map<FlowNode, Integer> ticksForRevisit = new HashMap<FlowNode, Integer>();
@@ -962,7 +965,10 @@ public class Optimizer {
                         Iterator<Statement> statementIter = statementList.iterator();
                         while(statementIter.hasNext()){
                             Statement currentState = statementIter.next();
-                            if(currentState instanceof Assignment){ 
+                            if(currentState instanceof Assignment){
+                            	if (registerAllocationMode) {
+                            		currentState.setLiveMap(liveVector.copyBitvector()); // Set live vector of current statement
+                            	}
                                 Assignment assign = (Assignment)currentState;
                                 IR_FieldDecl lhs = assign.getDestVar().getFieldDecl();
                                 List<IR_FieldDecl> varsInRHS = getVarIRsFromExpression(assign.getValue());
