@@ -773,7 +773,7 @@ public class AssignRegisters {
         
         if (!lhs.isArray()) {
         	IR_FieldDecl decl = lhs.getFieldDecl();
-        	usedBeforeAssignment.add(decl);
+        	//usedBeforeAssignment.add(decl);
         	// We only assign registers to non-arrays variables.
         	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
         		// used before assigned
