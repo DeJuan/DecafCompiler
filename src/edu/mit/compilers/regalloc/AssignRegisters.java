@@ -773,7 +773,7 @@ public class AssignRegisters {
         
         if (!lhs.isArray()) {
         	IR_FieldDecl decl = lhs.getFieldDecl();
-        	usedBeforeAssignment.add(decl);
+        	//usedBeforeAssignment.add(decl);
         	// We only assign registers to non-arrays variables.
         	if(op != Ops.ASSIGN && !assignedVars.contains(decl)){
         		// used before assigned
@@ -865,6 +865,11 @@ public class AssignRegisters {
             if(args.get(ii).getExprType() != ExpressionType.STRING_LIT){
                 ins.addAll(context.pop(new LocReg(Regs.R10)));
             }
+        }
+        if (args.size() > CodegenConst.N_REG_ARG) {
+	        for (int ii = args.size() - CodegenConst.N_REG_ARG - 1; ii >= 0; ii--) {
+	            ins.addAll(context.pop(new LocReg(Regs.R10)));
+	        }
         }
         RESTORE_TEMP_REGS(ins, context);
         return ins;

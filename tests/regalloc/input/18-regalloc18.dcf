@@ -1,48 +1,12 @@
-callout random;
-callout srandom;
 callout printf;
-int a[10];
-void swap ( int x, int y ) {
-  int temp;
-  printf("x: %d\n", x);
-  printf("y: %d\n", y);
-  temp = a[x];
-  printf("x: %d\n", x);
-  printf("y: %d\n", y);
-  a[x] = a[y];
-  printf("x: %d\n", x);
-  printf("y: %d\n", y);
-  a[y] = temp;
-  printf("x: %d\n", x);
-  printf("y: %d\n", y);
-}
+
 void main ( ) {
-  int i;
-  srandom ( 17 );
+  int i,j,sum;
   for ( i = 0, 10 ) {
-    int temp;
-    temp = random ( );
-    a[i] = temp;
+    printf("hi");
   }
-  for ( i = 0, 10 ) {
-    printf ( "%d\n", a[i] );
-  }
-  printf ( "\n" );
-  for ( i = 0, 10 ) {
-    int j;
-    printf("BYE\n");
-    j = i - 1;
-    while ( ( j >= 0 ) && ( a[j] > a[j+1] ) ) {
-      printf("BEFORE SWAP: %d\n", j);
-      swap ( j+1, j );
-      printf("HELLO: %d\n", j);
-      j -= 1;
-      printf("HELLO HELLO: %d\n", j);
-    }
-    printf("I AM THERE\n");
-  }
-  printf("I AM HERE\n");
-  for ( i = 0, 10 ) {
-    printf ( "%d\n", a[i] );
+  
+  for ( j = 0, 10) {
+    sum = 2;
   }
 }

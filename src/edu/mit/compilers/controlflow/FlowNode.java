@@ -1,5 +1,6 @@
 package edu.mit.compilers.controlflow;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -77,13 +78,21 @@ public abstract class FlowNode {
 		this.IN = IN;
 	}
 	
-	public void setWeb(Web web) {
-		IR_FieldDecl decl = web.getFieldDecl();
-		if (this.IN.getWebsMap().containsKey(decl)) {
+	public void setWeb(Web newWeb, HashSet<Web> oldWebs) {
+		IR_FieldDecl decl = newWeb.getFieldDecl();
+		System.out.println("Size of oldWebs: " + oldWebs);
+		if (IN.getWebsMap().containsKey(decl) && 
+				oldWebs.contains((new ArrayList<Web>(IN.getWebsMap().get(decl)).get(0)))) {
 			// only set IN if original IN contains old web.
-			this.IN.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+			System.out.println("Replacing IN");
+			IN.setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
 		}
-		this.OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(web)));
+		if (OUT.getWebsMap().containsKey(decl) && 
+				oldWebs.contains((new ArrayList<Web>(OUT.getWebsMap().get(decl)).get(0)))) {
+			// only set OUT if original OUT contains old web.
+			System.out.println("Replacing OUT");
+			OUT.setWebs(decl, new HashSet<Web>(Arrays.asList(newWeb)));
+		}
 	}
 	
 }
