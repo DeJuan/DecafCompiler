@@ -620,13 +620,13 @@ public class AssignRegisters {
         String tLabel = context.genLabel();
         String fLabel = context.genLabel();
 
-        ShortCircuitNodeReg.SCLabel t = new ShortCircuitNodeReg.SCLabel(tLabel);
-        ShortCircuitNodeReg.SCLabel f = new ShortCircuitNodeReg.SCLabel(fLabel);
+        ShortCircuitNode.SCLabel t = new ShortCircuitNode.SCLabel(tLabel);
+        ShortCircuitNode.SCLabel f = new ShortCircuitNode.SCLabel(fLabel);
         String endLabel = context.genLabel();
 
-        ShortCircuitNodeReg cfg = ShortCircuitNodeReg.shortCircuit(expr, t, f);
+        ShortCircuitNode cfg = ShortCircuitNode.shortCircuit(expr, t, f);
 
-        List<Instruction> ins = cfg.codegen(context);
+        List<Instruction> ins = cfg.codegen(context, true);
 
         ins.add(Instruction.labelInstruction(tLabel));
         ins.add(new Instruction("pushq", one));
@@ -785,9 +785,8 @@ public class AssignRegisters {
         	if (usedBeforeAssignment.contains(decl))
         		reg = null;
 	        //System.out.println("Def: " + lhs.getName() + ": " + reg);
-	        lhs.setColorReg(reg);
+	        lhs.setReg(reg);
 	        fieldDeclToReg.put(decl, reg);
-	        context.putRegister(lhs.getName(), reg);
 	        assignedVars.add(decl);
         }
         
@@ -936,7 +935,6 @@ public class AssignRegisters {
     		IR_FieldDecl decl = var.getFieldDecl();
     		if (!usedBeforeAssignment.contains(decl) && assignedVars.contains(decl)) {
 	    		// that have been assigned previously (not just declared).
-		    	//LocReg reg = context.findRegister(varName);
 	    		LocReg reg = fieldDeclToReg.get(var.getFieldDecl());
 		    	//System.out.println("Use: " + var.getName() + ": " + reg);
 		    	if (reg != null) {

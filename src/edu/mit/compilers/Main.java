@@ -293,24 +293,25 @@ class Main {
 				    	  }
 				    	  if (CLI.opts[3]) {
 							  // Register allocation
-				    		  System.out.println("\nCounting uses\n===================================");
+				    		  System.out.println("Running Register Allocation");
+				    		  //System.out.println("\nCounting uses\n===================================");
 				    		  CountUses uses = new CountUses(context, callouts, globals, flowNodes);
 				    		  uses.run();
 				    		  HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
-				    		  System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
-				    		  System.out.println("\nGenerating Reaching Definitions\n===================================");
+				    		  //System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
+				    		  //System.out.println("\nGenerating Reaching Definitions\n===================================");
 				    		  GenReachingDefs genRDs = new GenReachingDefs(globals, flowNodes);
 				    		  HashMap<START, HashSet<Web>> websForEachMethod = genRDs.run();
-				    		  System.out.println("\nBuilding Interference Graph\n===================================");
+				    		  //System.out.println("\nBuilding Interference Graph\n===================================");
 							  InterferenceGraph ig = new InterferenceGraph(context, callouts, globals, flowNodes, websForEachMethod);
 							  ig.generateLivenessMap();
 							  ig.buildGraph();
-							  System.out.println("\nColoring nodes\n===================================");
+							  //System.out.println("\nColoring nodes\n===================================");
 							  Coloring coloring = new Coloring(ig, 4, fieldDeclToSpillCost);
 							  HashSet<GraphNode> assignments = new HashSet<GraphNode>(coloring.run());
 							  HashSet<GraphNode> spillNodes = new HashSet<GraphNode>(coloring.getSpilledNodes());
-							  System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());
-							  System.out.println("\nGenerating Assembly for program\n===================================");
+							  //System.out.println("\n====================\nNumber of spilled nodes: " + spillNodes.size());
+							  //System.out.println("\nGenerating Assembly for program\n===================================");
 							  context = AssignRegisters.generateProgram(assignments, spillNodes, callouts, globals, flowNodes);
 						  } else {
 							  context = Assembler.generateProgram(callouts, globals, flowNodes);

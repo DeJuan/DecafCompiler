@@ -22,7 +22,6 @@ import edu.mit.compilers.ir.IR_FieldDecl;
 import edu.mit.compilers.ir.IR_Literal.IR_IntLiteral;
 import edu.mit.compilers.ir.IR_Node;
 import edu.mit.compilers.ir.SymbolTable;
-import edu.mit.compilers.regalloc.RegisterTable;
 
 /**@brief Information used throughout the control flow.
  */
@@ -36,8 +35,6 @@ public class ControlflowContext {
     /**@brief symbol table for locations of variables*/
     public SymbolTable<Descriptor> symbol;
     
-    public RegisterTable<LocReg> registers;
-
     // Stack implementation that keeps track of which for/while loop we are in.
     private Stack<Branch> loopScope;
 
@@ -68,10 +65,8 @@ public class ControlflowContext {
         stringLiterals = new HashMap<String,Long>();
         ins = new ArrayList<Instruction>();
         symbol = new SymbolTable<Descriptor>();
-        registers = new RegisterTable<LocReg>();
         loopScope = new Stack<Branch>();
         symbol.incScope();
-        registers.incScope();
         rsp = new LocStack();
         numLabels = 0;
     }
@@ -85,10 +80,6 @@ public class ControlflowContext {
         return symbol.put(name, d);
     }
     
-    public boolean putRegister(String name, LocReg reg){
-        return registers.put(name, reg);
-    }
-
     /**
      * @param name
      * @return first Descriptor in the deepest scope.
@@ -98,10 +89,6 @@ public class ControlflowContext {
         return symbol.lookup(name);
     }
     
-    public LocReg findRegister(String name){
-        return registers.lookup(name);
-    }
-
     public void addIns(Instruction ii){
         ins.add(ii);
     }
@@ -154,14 +141,12 @@ public class ControlflowContext {
      */
     public void incScope(Boolean isLoop){
         symbol.incScope();
-        registers.incScope();
         localVarSize.add(0L);
         this.isLoop.add(isLoop);
     }
 
     public void decScopeWithSideEffects(){
         symbol.decScope();
-        registers.decScope();
         int idx = localVarSize.size()-1;
         long locals = localVarSize.get(idx);
         localVarSize.remove(idx);
