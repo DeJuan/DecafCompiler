@@ -30,7 +30,7 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class CountUses {
 	
-	private Integer LOOP_COST = 10; // multiplier to spill cost for each nested loop.
+	private int LOOP_COST = 10; // multiplier to spill cost for each nested loop.
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;
@@ -148,7 +148,7 @@ public class CountUses {
 		numLoops.put(initialNode, 1);
 		while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 			FlowNode currentNode = scanning.remove(0);
-			Integer curLoops = numLoops.get(currentNode);
+			int curLoops = numLoops.get(currentNode);
 			listFlowNodes.add(currentNode);
 			currentNode.visit();
 			//System.err.println("Now visiting " + currentNode);
@@ -157,7 +157,7 @@ public class CountUses {
 					if ((child instanceof Branch) && ( !(((Branch) child).getType() == Branch.BranchType.IF))) {
 						// It's a for or while loop.
 						numLoops.put(child, curLoops*LOOP_COST);
-					} else if ((child instanceof NoOp) && (child.getChildren().size() == 1)) {
+					} else if ((child instanceof NoOp) && (child.getParents().size() == 1)) {
 						// Got out of a for or while loop.
 						numLoops.put(child, curLoops/LOOP_COST);
 					} else {
@@ -172,7 +172,7 @@ public class CountUses {
 		return listFlowNodes;
 	}
 	
-	public void countExpressions(Expression expr, Integer spillCost) {
+	public void countExpressions(Expression expr, int spillCost) {
 		for (IR_FieldDecl decl : getFieldDeclsFromExpression(expr)) {
 			System.out.println("Adding spill cost to var: " + decl.getName() + ", " + spillCost);
 			fieldDeclToSpillCost.put(decl, fieldDeclToSpillCost.get(decl) + spillCost);
@@ -180,7 +180,7 @@ public class CountUses {
 	}
 	
 	public void countCodeblock(Codeblock block) {
-		Integer spillCost = numLoops.get((FlowNode) block);
+		int spillCost = numLoops.get((FlowNode) block);
 		for (Statement st : block.getStatements()) {
 			if (st instanceof Assignment) {
 				Var lhs = ((Assignment) st).getDestVar();
@@ -200,7 +200,7 @@ public class CountUses {
 	}
 	
 	public void countBranch(Branch branch) {
-		Integer spillCost = numLoops.get((FlowNode) branch);
+		int spillCost = numLoops.get((FlowNode) branch);
 		countExpressions(branch.getExpr(), spillCost);
 	}
 	
