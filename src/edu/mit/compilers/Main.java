@@ -301,7 +301,7 @@ class Main {
 				    		  //System.out.println("\nCounting uses\n===================================");
 				    		  CountUses uses = new CountUses(context, callouts, globals, flowNodes);
 				    		  uses.run();
-				    		  HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
+				    		  HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = uses.getFieldDeclToSpillCost();
 				    		  //System.out.println("Spill cost: " + uses.getFieldDeclToSpillCost());
 				    		  //System.out.println("\nGenerating Reaching Definitions\n===================================");
 				    		  GenReachingDefs genRDs = new GenReachingDefs(globals, flowNodes);

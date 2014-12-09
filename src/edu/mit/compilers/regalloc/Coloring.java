@@ -18,14 +18,14 @@ public class Coloring {
 	Stack<GraphNode> removedNodes = new Stack<GraphNode>();
 	Stack<GraphNode> spillNodes = new Stack<GraphNode>();
 	
-	HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Integer>();
+	HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Double>();
 	HashMap<GraphNode, Double> nodeToSpillCost = new HashMap<GraphNode, Double>();
 	
 	private final static List<Regs> regsToHoldVars = Arrays.asList(Regs.R12, Regs.R13, Regs.R14, Regs.R15);
 	
 	int k; // maximum number of colors
 	
-	public Coloring(InterferenceGraph graph, int k, HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost) {
+	public Coloring(InterferenceGraph graph, int k, HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost) {
 		this.graph = graph;
 		this.k = k;
 		this.fieldDeclToSpillCost = fieldDeclToSpillCost;
@@ -153,7 +153,7 @@ public class Coloring {
 	public double calcSpillCost(GraphNode node) {
 		// Simple heuristic for now.
 		IR_FieldDecl decl = node.getWeb().getFieldDecl();
-		double spillCost = fieldDeclToSpillCost.get(decl) * 1.0;
+		double spillCost = fieldDeclToSpillCost.get(decl);
 		//System.out.println("Spill cost for var " + decl.getName() + " is: " + spillCost);
 		return spillCost;
 	}

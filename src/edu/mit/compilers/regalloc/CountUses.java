@@ -30,7 +30,8 @@ import edu.mit.compilers.ir.IR_MethodDecl;
 
 public class CountUses {
 	
-	private int LOOP_COST = 10; // multiplier to spill cost for each nested loop.
+	private final double LOOP_COST = 10; // multiplier to spill cost for each nested loop.
+	private final double ASSIGNMENT_WEIGHT = 2; // multiplier to weight each assignment (over a use).
 	
 	private ControlflowContext context;
 	private List<IR_MethodDecl> calloutList;
@@ -40,9 +41,9 @@ public class CountUses {
 	// set of all IR_FieldDecls
 	private Set<IR_FieldDecl> fieldDecls = new HashSet<IR_FieldDecl>();
 	// map of FieldDecl to approx spill cost
-	private HashMap<IR_FieldDecl, Integer> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Integer>();
+	private HashMap<IR_FieldDecl, Double> fieldDeclToSpillCost = new HashMap<IR_FieldDecl, Double>();
 	// number of loops the FlowNode is under (approximately)
-	private HashMap<FlowNode, Integer> numLoops = new HashMap<FlowNode, Integer>();
+	private HashMap<FlowNode, Double> numLoops = new HashMap<FlowNode, Double>();
 	
 	public CountUses(ControlflowContext context, 
 			List<IR_MethodDecl> callouts, List<IR_FieldDecl> globals, HashMap<String, START> flowNodes){
@@ -145,10 +146,10 @@ public class CountUses {
 		List<FlowNode> scanning = new ArrayList<FlowNode>(); //Need to find all the Codeblocks
 		List<FlowNode> listFlowNodes = new ArrayList<FlowNode>();
 		scanning.add(initialNode);
-		numLoops.put(initialNode, 1);
+		numLoops.put(initialNode, 1.0);
 		while(!scanning.isEmpty()){ //scan through all nodes and create listing.
 			FlowNode currentNode = scanning.remove(0);
-			int curLoops = numLoops.get(currentNode);
+			double curLoops = numLoops.get(currentNode);
 			listFlowNodes.add(currentNode);
 			currentNode.visit();
 			//System.err.println("Now visiting " + currentNode);
@@ -172,7 +173,7 @@ public class CountUses {
 		return listFlowNodes;
 	}
 	
-	public void countExpressions(Expression expr, int spillCost) {
+	public void countExpressions(Expression expr, double spillCost) {
 		for (IR_FieldDecl decl : getFieldDeclsFromExpression(expr)) {
 			System.out.println("Adding spill cost to var: " + decl.getName() + ", " + spillCost);
 			fieldDeclToSpillCost.put(decl, fieldDeclToSpillCost.get(decl) + spillCost);
@@ -180,7 +181,7 @@ public class CountUses {
 	}
 	
 	public void countCodeblock(Codeblock block) {
-		int spillCost = numLoops.get((FlowNode) block);
+		double spillCost = numLoops.get((FlowNode) block);
 		for (Statement st : block.getStatements()) {
 			if (st instanceof Assignment) {
 				Var lhs = ((Assignment) st).getDestVar();
@@ -188,7 +189,7 @@ public class CountUses {
 					// not an array.
 					System.out.println("Adding spill cost to var: " + lhs.getName() + ", " + spillCost);
 					fieldDeclToSpillCost.put(lhs.getFieldDecl(), 
-							fieldDeclToSpillCost.get(lhs.getFieldDecl()) + spillCost);
+							fieldDeclToSpillCost.get(lhs.getFieldDecl()) + spillCost*ASSIGNMENT_WEIGHT);
 				}
 				countExpressions(((Assignment) st).getValue(), spillCost);
 			} else if (st instanceof MethodCallStatement) {
@@ -200,7 +201,7 @@ public class CountUses {
 	}
 	
 	public void countBranch(Branch branch) {
-		int spillCost = numLoops.get((FlowNode) branch);
+		double spillCost = numLoops.get((FlowNode) branch);
 		countExpressions(branch.getExpr(), spillCost);
 	}
 	
@@ -212,7 +213,7 @@ public class CountUses {
 		}
 		// Populate fieldDecl HashMap with initial spill cost.
 		for (IR_FieldDecl decl : fieldDecls) {
-			fieldDeclToSpillCost.put(decl, 0);
+			fieldDeclToSpillCost.put(decl, 0.0);
 		}
 		
 		// Walk through graph and count uses.
@@ -231,7 +232,7 @@ public class CountUses {
 		}
 	}
 	
-	public HashMap<IR_FieldDecl, Integer> getFieldDeclToSpillCost() {
+	public HashMap<IR_FieldDecl, Double> getFieldDeclToSpillCost() {
 		return fieldDeclToSpillCost;
 	}
 
